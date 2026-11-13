@@ -11,7 +11,8 @@
 |---|---|
 | `install.sh` | 首次部署一条命令搞定（Ubuntu 22.04/24.04、Debian 12） |
 | `update.sh` | 更新发布：备份 → 拉代码 → 重启 → 探活，失败给回滚命令 |
-| `backup.sh` | 备份 / 列备份 / 恢复，带 JSON 合法性硬校验 |
+| `backup.sh` | 备份 / 列备份 / 恢复，带 JSON 合法性硬校验（**裸机部署**用，依赖宿主机 `node`） |
+| `backup-docker.sh` | 同上，**Docker 部署**用：数据从容器里取、用容器里的 node 校验（宿主机无需 node） |
 | `tideglass-api.service` | systemd 单元，含最小权限加固 |
 | `nginx-tideglass.conf` | 有域名版：Nginx 反代 + 静态托管 + HTTPS + 安全头 |
 | `nginx-tideglass-port.conf` | **无域名版**：只听独立端口，不碰已有站点的 80/443 |
