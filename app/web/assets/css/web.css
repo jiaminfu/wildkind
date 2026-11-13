@@ -293,3 +293,16 @@
   .admsearch input{width:100%;min-width:0}
 }
 
+
+/* 订单列表分页（v1.3 补）：接口一直支持 page/limit，前端此前没画按钮，
+   90 单只能看到前 25 单。这里给翻页条一个统一外观，与本页其他按钮同一套视觉。 */
+.adm__body .pager{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;
+  border-top:1px solid var(--line);padding-top:12px;
+}
+.adm__body .pager .sub{font-size:11px;color:var(--muted)}
+.abtn.is-off{
+  opacity:.38;pointer-events:none;cursor:default;
+  border-color:var(--line);color:var(--muted);background:transparent;
+}

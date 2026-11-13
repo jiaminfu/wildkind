@@ -154,7 +154,10 @@ function routes(router) {
     const me = auth.requireAuth(req);
     auth.requirePerm(me, 'orders:read');
     const db = store.get();
-    let list = db.orders.slice();
+    // 按时间倒序：真实下单是 unshift（新单在数组头），但演示数据的日期是打散的，
+    // 不排序的话列表看起来是乱的。统一按 createdAt 倒序，谁看都是"最近的在上"。
+    let list = db.orders.slice().sort((a, b) =>
+      String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
     if (req.query.status) list = list.filter(o => o.status === req.query.status);
     if (req.query.q) {
       const n = String(req.query.q).toLowerCase();

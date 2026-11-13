@@ -231,6 +231,7 @@
         var qs = new URLSearchParams();
         if (r.query.status) qs.set('status', r.query.status);
         if (r.query.q) qs.set('q', r.query.q);
+        if (r.query.page) qs.set('page', r.query.page);
         var list = await API.get('/admin/orders?' + qs.toString(), { auth: true });
         return A.shell(A.orders(list.data, list.meta, r.query), 'orders', 'Orders', staff);
       }

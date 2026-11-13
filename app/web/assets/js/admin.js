@@ -57,8 +57,9 @@
       '<div class="afld"><label>Email</label><input name="email" value="owner@tideglassjewelry.com" autocomplete="username" required></div>' +
       '<div class="afld"><label>Password</label><input name="password" type="password" placeholder="••••••••" autocomplete="current-password" required></div>' +
       '<button class="btn btn--full" type="submit" style="margin-top:6px">Sign in</button></form>' +
-      '<div class="loginwrap__hint">Demo accounts — owner@tideglassjewelry.com / tideglass2026（全权限）<br>' +
-      'ops@tideglassjewelry.com / tideglass-ops（无设置权限，可用于验收权限位）<br>' +
+      // 这里绝对不能再写默认口令：这一页挂在公网上，等于把账号密码挂牌公示。
+      // 需要看演示账号的，看 handover/README.md 或服务器上的 deploy/.env。
+      '<div class="loginwrap__hint">Forgot the password? The store owner resets it on the server.<br>' +
       '<a href="#/" style="text-decoration:underline">← Back to store</a></div>' +
       '</div></div>';
   }
@@ -124,13 +125,36 @@
         '<td>' + U.fmtDate(o.createdAt) + '</td></tr>';
     }).join('');
 
+    // 分页：接口本来就支持 page/limit 并返回 hasMore，之前只是前端没画按钮，
+    // 导致 90 单只能看到前 25 单（第 26 单在界面上根本够不到）。
+    var per = Number(meta.limit) || 25;
+    var total = Number(meta.total) || 0;
+    var page = Number(meta.page) || 1;
+    var pages = Math.max(1, Math.ceil(total / per));
+    function pgLink(p) {
+      var s = [];
+      if (q.status) s.push('status=' + encodeURIComponent(q.status));
+      if (q.q) s.push('q=' + encodeURIComponent(q.q));
+      if (p > 1) s.push('page=' + p);
+      return '#/admin/orders' + (s.length ? '?' + s.join('&') : '');
+    }
+    var pager = '<div class="panel__bd pager">' +
+      (page > 1
+        ? '<a class="abtn sm" href="' + pgLink(page - 1) + '">← Prev</a>'
+        : '<span class="abtn sm is-off">← Prev</span>') +
+      '<span class="sub">' + total + ' orders · page ' + page + ' of ' + pages + '</span>' +
+      (page < pages
+        ? '<a class="abtn sm" href="' + pgLink(page + 1) + '">Next →</a>'
+        : '<span class="abtn sm is-off">Next →</span>') +
+      '</div>';
+
     return '<div class="panel"><div class="panel__hd"><h2>Orders</h2>' +
       '<form class="admsearch" data-act="osearch"><input name="q" placeholder="Search number, email or name" value="' + U.esc(q.q || '') + '"></form></div>' +
       '<div class="panel__bd" style="display:flex;gap:8px;flex-wrap:wrap">' + tabs + '</div>' +
       '<div class="panel__bd flush"><table class="atable"><thead><tr>' +
       '<th>Order</th><th>Customer</th><th>Status</th><th class="num">Items</th><th class="num">Total</th><th>Date</th>' +
       '</tr></thead><tbody>' + (rows || '<tr><td colspan="6">No orders match.</td></tr>') + '</tbody></table></div>' +
-      '<div class="panel__bd sub">' + meta.total + ' orders · page ' + meta.page + '</div></div>';
+      pager + '</div>';
   }
 
   /* 地址拼装：空字段要跳过，不能留下「, Portland OR , United States」这种孤零零的逗号。
