@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>运营意见评审记录 · TG-REV-001 v1.0</title>
+<style>
+  :root{
+    --ink:#1c1c1c; --ink2:#3d3a36; --muted:#6d6862; --line:#e2ddd5; --line2:#efeae3;
+    --bone:#f8f7f2; --cream:#f3e8de; --white:#fff; --accent:#1B3A34;
+    --r:#b3261e; --y:#b06f00; --g:#2f7a1f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font:15px/1.78 -apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;color:var(--ink);background:var(--bone)}
+  .layout{display:grid;grid-template-columns:250px minmax(0,1fr);align-items:start}
+  .toc{position:sticky;top:0;height:100vh;overflow:auto;border-right:1px solid var(--line);background:var(--white)}
+  .toc__in{padding:28px 20px 40px}
+  .toc__t{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+  .toc a{display:block;padding:5px 0;font-size:13px;color:var(--ink2);text-decoration:none}
+  .toc a:hover{color:var(--accent)}
+  .doc{max-width:940px;padding:56px 60px 120px}
+  .cover{border:1px solid var(--line);background:var(--white);padding:56px 48px;margin-bottom:44px}
+  .cover__kicker{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin:0 0 22px}
+  .cover h1{font-size:38px;line-height:1.15;letter-spacing:-.02em;margin:0 0 14px;font-weight:600}
+  .cover h1 small{display:block;font-size:16.5px;font-weight:400;color:var(--muted);letter-spacing:0;margin-top:12px}
+  .meta{display:grid;grid-template-columns:repeat(2,1fr);margin-top:34px;border-top:1px solid var(--line2)}
+  .meta div{padding:12px 0;border-bottom:1px solid var(--line2);font-size:13.5px}
+  .meta div:nth-child(odd){color:var(--muted)}
+  h2{font-size:24px;margin:64px 0 8px;letter-spacing:-.01em;font-weight:600;padding-top:20px;border-top:1px solid var(--line)}
+  h2 .n{color:var(--accent);font-weight:400;margin-right:10px}
+  h3{font-size:17px;margin:36px 0 8px;font-weight:600}
+  h4{font-size:14px;margin:20px 0 6px;font-weight:600;letter-spacing:.03em;color:var(--ink2)}
+  p{margin:10px 0}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:5px 0}
+  code{background:var(--cream);padding:1px 6px;font-size:13px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .lede{font-size:16px;color:var(--ink2)}
+  .note{border-left:2px solid var(--accent);background:var(--white);padding:14px 18px;margin:18px 0;font-size:14px}
+  .note b{color:var(--accent)}
+  .warn{border-left:2px solid var(--r);background:#fdf6f5;padding:14px 18px;margin:18px 0;font-size:14px}
+  .warn b{color:var(--r)}
+  table{width:100%;border-collapse:collapse;margin:16px 0 22px;font-size:13.5px;background:var(--white)}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:#faf8f4;font-weight:600;font-size:12.5px;letter-spacing:.03em;white-space:nowrap}
+  .yes{color:var(--g);font-weight:600;white-space:nowrap}
+  .part{color:var(--y);font-weight:600;white-space:nowrap}
+  .no{color:var(--r);font-weight:600;white-space:nowrap}
+  .kv{display:grid;grid-template-columns:92px 1fr;margin:14px 0;border-top:1px solid var(--line2)}
+  .kv div{padding:9px 0;border-bottom:1px solid var(--line2);font-size:13.5px}
+  .kv div:nth-child(odd){color:var(--muted);font-size:12.5px;letter-spacing:.04em}
+  .verdict{display:inline-block;font-size:12px;padding:2px 9px;border:1px solid var(--line);margin-left:8px}
+  @media(max-width:900px){.layout{grid-template-columns:1fr}.toc{display:none}.doc{padding:30px 20px 80px}.cover{padding:32px 24px}.cover h1{font-size:28px}.meta{grid-template-columns:1fr}table{font-size:12.5px}th,td{padding:7px 9px}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc"><div class="toc__in">
+  <p class="toc__t">目录</p>
+  <a href="#s1">1 评审口径</a>
+  <a href="#s2">2 判定汇总</a>
+  <a href="#s3">3 逐条判定（13 条）</a>
+  <a href="#s4">4 产品侧追加（6 条）</a>
+  <a href="#s5">5 落地清单</a>
+  <a href="#s6">6 争议与保留意见</a>
+</div></nav>
+
+<main class="doc">
+
+<div class="cover">
+  <p class="cover__kicker">TIDEGLASS · Product Review of Ops Proposal</p>
+  <h1>运营意见评审记录
+    <small>对 TG-OPS-001 的逐条判定 · 采纳 7 / 部分采纳 5 / 不采纳 1 / 另补 6 条</small>
+  </h1>
+  <div class="meta">
+    <div>文档编号</div><div>TG-REV-001</div>
+    <div>版本</div><div>v1.0</div>
+    <div>日期</div><div>2026-11-13</div>
+    <div>评审对象</div><div>运营建议意见稿 v1.0（13 条建议 + 5 条不做清单）</div>
+    <div>产出</div><div>FRD v2.1（新增 23 条需求 / 2 条业务规则）· SDD v2.1（新增 5 张表 / 3 个流程）</div>
+    <div>结论</div><div>运营的方向基本正确，但<b>有 3 条存在合规风险、2 条逻辑需要修正</b>，不能照原样落地</div>
+  </div>
+</div>
+
+<h2 id="s1"><span class="n">1</span>评审口径</h2>
+
+<p class="lede">运营提的是"我需要什么"，产品要回答"这件事该不该做、该怎么做、做了会不会带来新问题"。所以每条不只看它有没有用，还要看三件事：<b>合规风险、与现有需求的冲突、长期成本。</b></p>
+
+<p>判定分四档：</p>
+<ul>
+  <li><b>采纳</b>：按运营原意落地，可能补充实现细节。</li>
+  <li><b>部分采纳</b>：目标认，方案要改（通常是改了触发条件、加了限制、或换了实现方式）。</li>
+  <li><b>不采纳</b>：方向错或有负收益，说明理由并给替代方案。</li>
+  <li><b>降级</b>：认，但首版不做，排到后续。</li>
+</ul>
+
+<div class="note"><b>先说结论</b>：13 条里没有一条是"想当然"的，运营的现场感很准。但有 <b>3 条踩在合规红线上</b>——评价激励（FTC）、邮件频次与退订（CAN-SPAM / GDPR）、渠道追踪（Cookie 同意）。这三条如果按运营原话实现，上线后可能收投诉甚至罚单。<b>产品在这里的价值就是：把它改成既能达到运营目的、又不越线的方式。</b></div>
+
+<h2 id="s2"><span class="n">2</span>判定汇总</h2>
+
+<table>
+  <tr><th>#</th><th>运营建议</th><th>判定</th><th>关键改动</th><th>落地编号</th></tr>
+  <tr><td>1</td><td>弃购挽回三段式</td><td class="part">部分采纳</td><td>时间从 1h/24h/72h 改为 4h/24h/72h；加退订与频次上限</td><td>FR-S-160~163</td></tr>
+  <tr><td>2</td><td>评价收集出口 + 带图给券</td><td class="part">部分采纳</td><td><b>带图给券必须披露</b>（FTC）；触发从 7 天改为 10 天</td><td>FR-S-164~166、BR-21</td></tr>
+  <tr><td>3</td><td>预计送达日期</td><td class="yes">采纳</td><td>补"节假日不发货"与异常兜底文案</td><td>FR-S-167、FR-A-058</td></tr>
+  <tr><td>4</td><td>渠道归因看板</td><td class="part">部分采纳</td><td>首版只做末次点击，不做多触点模型；与 Cookie 同意联动</td><td>FR-A-050~052</td></tr>
+  <tr><td>5</td><td>优惠券批量发码</td><td class="yes">采纳</td><td>原 FR-A-022 已有，补齐渠道标签的报表口径</td><td>FR-A-022 强化</td></tr>
+  <tr><td>6</td><td>活动定时生效与熔断告警</td><td class="yes">采纳</td><td>补"生效前 1 小时预检"</td><td>FR-A-053</td></tr>
+  <tr><td>7</td><td>商品批量编辑</td><td class="part">部分采纳</td><td>批量改价<b>仅 owner 可用</b> + 二次确认 + 5 分钟撤销</td><td>FR-A-054~055</td></tr>
+  <tr><td>8</td><td>库存预警与可售天数</td><td class="yes">采纳</td><td>日均销量取近 30 天；新品用类目均值兜底</td><td>FR-A-056</td></tr>
+  <tr><td>9</td><td>凑单推荐</td><td class="part">部分采纳</td><td><b>不按毛利率排序</b>，改为价格带匹配优先</td><td>FR-S-168</td></tr>
+  <tr><td>10</td><td>客户分层群发</td><td class="part">部分采纳（降级）</td><td>首版只做筛选 + 导出，不做群发</td><td>FR-A-057</td></tr>
+  <tr><td>11</td><td>生日石 / 纪念日营销</td><td class="part">部分采纳（降级）</td><td>字段做可选 + 双重确认；营销动作放二期</td><td>FR-S-169、BR-22</td></tr>
+  <tr><td>12</td><td>UGC 晒单聚合</td><td class="yes">采纳</td><td>需在评价条款里取得图片使用授权</td><td>FR-A-059、BR-21</td></tr>
+  <tr><td>13</td><td>售后自助</td><td class="yes">采纳</td><td>只做提交与状态查询，不做自动审批</td><td>FR-S-170、FR-A-060</td></tr>
+</table>
+
+<p class="small">统计：采纳 7 · 部分采纳 5 · 不采纳 0 · 降级 2（与前两项有重叠）· 产品侧另补 6 条。</p>
+
+<h2 id="s3"><span class="n">3</span>逐条判定</h2>
+
+<h3>3.1 弃购挽回 <span class="verdict">部分采纳</span></h3>
+<div class="kv">
+  <div>认同</div><div>这是 13 条里 ROI 最高的一条，必须有。运营算的 $5,500–$11,000/月 量级合理</div>
+  <div>改动一</div><div>第一封从 <b>1 小时改为 4 小时</b>。1 小时内用户很可能还在同一会话里浏览，"你忘了什么"会显得催促且廉价；4 小时后仍未回来，才是真的离开</div>
+  <div>改动二</div><div>加<b>频次上限与退订</b>：同一用户 30 天内最多触发 2 轮弃购；每封邮件底部必须有退订链接，退订后不得再发营销邮件（CAN-SPAM 要求 10 个工作日内生效，我们做即时生效）。这是硬性合规，不是可选项</div>
+  <div>改动三</div><div>运营建议"第二封带免运只给新客"，<b>采纳并扩展</b>：老客第二封给"赠品（海玻璃收纳袋）"而不是折扣。理由：老客已付过一次全价，再给折扣等于告诉他不该按原价买</div>
+</div>
+
+<h3>3.2 评价收集 <span class="verdict">部分采纳</span></h3>
+<div class="kv">
+  <div>认同</div><div>评价条数确实是转化的第一变量，且"佩戴几个月"这个字段是品牌最有力的证据，必须让用户填</div>
+  <div class="warn" style="grid-column:1/-1;margin:6px 0">⚠️ <b>运营的建议在这里踩了 FTC 红线</b>：原文是"带图评价给下次下单 10% 券"。美国联邦贸易委员会（FTC）对评价激励有明确规定——<b>不得以金钱或等价物换取评价</b>，除非同时满足：① 激励不以"正面评价"为条件（给差评也必须给）；② 在评价展示处<b>明确披露</b>该评价来自激励。如果只做了①没做②，属于"未披露的实质性关联"，会被处罚</div>
+  <div>改动</div><div>改为：<b>给图即赠券，不论星级</b>（1 星带图同样给），且在评价条目上显示"Verified · Received a thank-you credit"。另外加一条：<b>不得引导用户修改或删除低分评价</b>，与 BR-19 的"低分保护"一致</div>
+  <div>改动二</div><div>触发从签收后 7 天改为 <b>10 天</b>。7 天太早，用户还没戴够，"佩戴多久"只能填"一周"，说服力弱；10 天既跨过一个完整使用周期，又不至于忘掉</div>
+  <div>改动三</div><div>券成本记账口径：算<b>营销预算</b>，不算售后。它买的是内容与转化，不是补偿</div>
+</div>
+
+<h3>3.3 预计送达日期 <span class="verdict">采纳</span></h3>
+<p>完全没有争议。补两点实现细节：① 计算要跳过周末与设置的节假日，否则承诺会落空；② 当计算结果超过 14 天时，文案改为"通常在 X 个工作日内发出"而不给具体日期——跨境物流的尾部波动大，给死日期反而制造投诉。</p>
+
+<h3>3.4 渠道归因 <span class="verdict">部分采纳</span></h3>
+<div class="kv">
+  <div>认同</div><div>预算分配靠这个，必须有</div>
+  <div>改动</div><div>首版只做<b>末次点击</b>（last-click）与"首次注册来源"，<b>不做多触点归因</b>。多触点需要完整的曝光日志与归因模型，开发量是末次点击的 5 倍以上，而单人在投的阶段用不上</div>
+  <div class="warn" style="grid-column:1/-1;margin:6px 0">⚠️ <b>合规关联</b>：UTM 采集与 Cookie 追踪属于"分析类"，在 GDPR/CCPA 下必须<b>先取得同意</b>再加载。所以 FR-S-095 的 Cookie 同意条不再只是"上线前要补"，而是<b>渠道归因的前置依赖</b>——同意条没做完，归因数据就是违规采集的</div>
+  <div>改动二</div><div>CAC 的花费录入<b>手填</b>：每周 10 分钟，一年 500 多分钟，对接广告平台 API 的开发与维护成本远高于此</div>
+</div>
+
+<h3>3.5 优惠券批量发码 <span class="verdict">采纳</span></h3>
+<p>FR-A-022 已在 v1.1 定义，只是原型没做。补一条报表口径：按 <code>batchId</code> 与 <code>channel</code> 聚合使用次数与带来营收，这样"每个红人带来多少单"才能一眼看出来。</p>
+
+<h3>3.6 活动定时与熔断告警 <span class="verdict">采纳</span></h3>
+<p>补一个运营没想到的点：<b>生效前 1 小时做预检</b>——检查关联商品是否上架、库存是否充足、赠品 SKU 是否有货、门槛是否高于最低售价。黑五活动到点发现赠品缺货，比活动没生效更糟。</p>
+
+<h3>3.7 商品批量编辑 <span class="verdict">部分采纳</span></h3>
+<div class="kv">
+  <div>认同</div><div>100 款逐个改确实不可行</div>
+  <div>改动</div><div><b>批量改价仅 owner 可用</b>，且必须：二次确认（显示"将修改 36 款商品，最低 $58 → $52"）→ 写操作日志（记录每款改前改后）→ 提供 <b>5 分钟内一键撤销</b>。理由：批量改价是最容易造成真实损失的误操作，一次手滑全站亏 10%</div>
+  <div>改动二</div><div>CSV 导入分两步：先<b>校验预览</b>（列出错误行与原因，不写库）→ 再确认导入。不允许"上传即生效"</div>
+</div>
+
+<h3>3.8 库存预警 <span class="verdict">采纳</span></h3>
+<p>补两点：① 日均销量用近 30 天，不足 30 天的新品用同类目均值兜底，避免"新品可售天数 = 无穷大"；② 可售天数按 <code>onHand − reserved</code> 算，不按 onHand，否则占用中的库存会被算成可卖。</p>
+
+<h3>3.9 凑单推荐 <span class="verdict">部分采纳</span></h3>
+<div class="kv">
+  <div>认同</div><div>门槛设了却没有承接动作，这是明显的漏点</div>
+  <div>不认同</div><div>运营建议"按毛利率排序"——<b>这条不能照做</b>。按毛利率排会让推荐位永远只出现那几款高毛利商品，与用户当前所选商品的风格完全无关（比如买了星象系列，推一个林地系列的高毛利款），转化率反而低，且长期看会拉低"搭配感"，伤害品牌</div>
+  <div>改为</div><div>排序按：<b>① 价格带匹配</b>（差额 +10% ~ +60%）→ <b>② 同题材 / 同集合优先</b> → <b>③ 毛利率</b>（仅作为前两项同分时的次序）。另加硬规则：<b>排除已加购、缺货、不可售变体</b></div>
+</div>
+
+<h3>3.10 客户分层群发 <span class="verdict">部分采纳 · 降级</span></h3>
+<p>方向对，但首版不做群发功能。改为：后台提供<b>筛选器 + 导出 CSV</b>（按 tier / 最后下单距今天数 / 累计消费），群发先用邮件工具的批量导入完成。理由：自建群发要处理退订、退信、频次控制、发送队列，这些和弃购邮件是同一套能力——<b>等弃购邮件那套建好后，群发是顺手加的，现在单独做等于重复建设</b>。</p>
+
+<h3>3.11 生日石营销 <span class="verdict">部分采纳 · 降级</span></h3>
+<div class="kv">
+  <div>认同</div><div>生日礼是饰品最强的确定性需求，值得做</div>
+  <div>改动</div><div>生日字段<b>可选填、不强制</b>；且营销使用前需要<b>单独勾选同意接收生日提醒</b>（双重确认）。理由：生日属于个人信息，在 CCPA 下用户有权知道"这个字段用来做什么"，笼统的服务条款覆盖不了定向营销</div>
+  <div>降级理由</div><div>首版没有稳定的客户基数，生日提醒的覆盖人数太少，投入产出不划算。字段先埋，二期再做自动化</div>
+</div>
+
+<h3>3.12 UGC 晒单聚合 <span class="verdict">采纳</span></h3>
+<p>采纳，但补一个必须做的事：评价提交页的条款里要明确写"你上传的图片可用于本品牌的营销展示"。没有这句授权，把用户晒图放到首页与社媒就是侵权——这是很多小品牌踩过的坑。</p>
+
+<h3>3.13 售后自助 <span class="verdict">采纳</span></h3>
+<p>采纳，只做"提交申请 + 查状态"，不做自动审批。30 天退换与终身颜色保证都有明确边界（BR-11 / BR-15），自动审批会把不该退的单也放过去。表单里必须让用户选售后类型并上传凭证，后台进售后队列。</p>
+
+<h2 id="s4"><span class="n">4</span>产品侧追加（运营没提到，但必须补）</h2>
+
+<p>运营看的是"我能不能干活"，产品还要看"做了会不会引出新问题"。以下 6 条是从评审过程中发现、运营意见里没有的：</p>
+
+<table>
+  <tr><th>#</th><th>追加项</th><th>为什么必须补</th><th>落地</th></tr>
+  <tr><td>A1</td><td><b>邮件订阅授权模型</b>（MarketingConsent）</td><td>弃购邮件、邀评邮件、生日提醒都要发信，但"下单时填了邮箱"≠"同意接收营销邮件"。必须区分<b>交易类邮件</b>（订单、发货、退款，无需同意）与<b>营销类邮件</b>（弃购提醒、活动、生日），后者需单独 opt-in</td><td>BR-22、SDD Consent 表</td></tr>
+  <tr><td>A2</td><td><b>评价激励披露</b></td><td>见 3.2，FTC 要求。属于上线前必须有的合规项</td><td>BR-21</td></tr>
+  <tr><td>A3</td><td><b>Cookie 同意成为归因前置</b></td><td>见 3.4。同意条从"待补"升级为"阻塞项"</td><td>FR-S-095 提级、FR-A-050 依赖</td></tr>
+  <tr><td>A4</td><td><b>邮件发送日志与限流</b></td><td>弃购 + 邀评 + 生日三套自动化叠加，同一用户一天可能收 3 封。必须有一张发送日志表做频次控制（同一用户 24 小时内最多 1 封营销信）</td><td>FR-A-061、SDD EmailLog</td></tr>
+  <tr><td>A5</td><td><b>推荐位排除逻辑</b></td><td>凑单推荐、关联推荐、心愿单推荐都要排除已加购与缺货，否则会出现"推荐你刚买的东西"</td><td>FR-S-168 附规则</td></tr>
+  <tr><td>A6</td><td><b>批量操作与权限位联动</b></td><td>批量改价、批量下架属于高危操作，需挂到 v2.0 引入的权限位上（owner 专属），并进操作日志</td><td>FR-A-054、FR-A-016</td></tr>
+</table>
+
+<h2 id="s5"><span class="n">5</span>落地清单</h2>
+
+<h3>5.1 FRD v2.1 新增</h3>
+<table>
+  <tr><th>位置</th><th>内容</th><th>条目数</th></tr>
+  <tr><td>5.10 生命周期与自动化（新增节）</td><td>弃购挽回、邀评、送达日期、凑单推荐、售后自助、生日字段</td><td>11 条（FR-S-160~170）</td></tr>
+  <tr><td>6.4 运营效率（新增节）</td><td>渠道归因、活动预检、批量编辑、库存预警、客户筛选导出、UGC 标记、售后队列、邮件日志</td><td>12 条（FR-A-050~061）</td></tr>
+  <tr><td>7 业务规则</td><td>BR-21 评价激励与图片授权；BR-22 邮件类型与频次</td><td>2 条</td></tr>
+  <tr><td>11 待确认</td><td>新增 Q7 生日字段是否收集、Q8 渠道花费录入方式</td><td>2 条</td></tr>
+</table>
+
+<h3>5.2 SDD v2.1 新增</h3>
+<table>
+  <tr><th>位置</th><th>内容</th></tr>
+  <tr><td>5.2 表（+5 张 → 34 张）</td><td>AbandonedCart（弃购）、ReviewInvite（邀评）、MarketingConsent（订阅授权）、EmailLog（发送日志）、ChannelCost（渠道花费）</td></tr>
+  <tr><td>7.6 弃购挽回流程</td><td>触发条件、三段节奏、频次与退订校验、邮件去重</td></tr>
+  <tr><td>7.7 邀评与激励流程</td><td>签收 +10 天触发、券发放不分星级、披露字段落库</td></tr>
+  <tr><td>7.8 渠道归因采集</td><td>UTM 落地页写 cookie、同意后才启用、订单创建时固化末次来源</td></tr>
+  <tr><td>9 安全与合规</td><td>补"营销邮件同意与退订""评价激励披露""生日字段用途限制"</td></tr>
+</table>
+
+<h2 id="s6"><span class="n">6</span>争议与保留意见</h2>
+
+<div class="note"><b>唯一一句要写下来的保留意见</b>：运营建议的第二封免运邮件，我按"只给新客"采纳了。但即便只给新客，仍然会训练出一批"加购后等 24 小时"的用户——他们会发现等一天就有免运。这个成本在数据上表现为"新客首单转化周期变长"，短期看不出来，半年后才会显形。<br>
+我的建议是：<b>第二封先只给赠品，不给免运</b>；等积累 2–3 个月数据，比较 A/B 两组的首单转化率与 90 天复购率，再决定要不要放开免运。这条写进 FR-S-161 的可配置项里，不锁死在代码里。</div>
+
+<p>除此之外，运营的 13 条我全部认。这套建议的现场感很准，尤其"评价收得进来但没有出口"这一条——它暴露的是原型与文档之间的断层（评价提交页 FR-S-098 一直没做），运营是第一个从结果反推出这个缺口的人。</p>
+
+<p class="small" style="margin-top:40px;color:var(--muted)">— 文档结束 · TG-REV-001 v1.0 · 下一步：按第 5 节清单修改 FRD / SDD 至 v2.1，随后进入架构闭环评估 —</p>
+
+</main>
+</div>
+</body>
+</html>

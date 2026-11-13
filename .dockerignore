@@ -1,0 +1,23 @@
+# ============================================================
+# 镜像构建时排除的东西。
+# 这些目录占了几十 MB 但运行时用不到（截图、评审 HTML、测试脚本）。
+# ============================================================
+handover/
+review/
+branding/
+docs/
+public/
+prototype/assets/img/
+prototype/assets/css/
+prototype/*.html
+tools/
+shots*/
+tmp_*/
+.tmp/
+.git/
+.gitignore
+*.log
+README.md
+start.bat
+server.js
+data/

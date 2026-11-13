@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TIDEGLASS — Sea glass doesn't fade.</title>
+<meta name="description" content="316L stainless steel jewellery with a PVD colour layer that does not fade. Swim in it. Shower in it. Sleep in it.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%231B3A34'/%3E%3Ctext x='32' y='46' font-family='Georgia,serif' font-size='38' fill='%23FAF6EF' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&family=Italiana&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="assets/css/refine.css">
+<style>
+  /* 原型导航（仅评审用，不属于设计稿） */
+  #protoNavBtn{
+    position:fixed; right:18px; bottom:18px; z-index:300;
+    width:34px; height:34px; border-radius:50%; background:#1B3A34; color:#FAF6EF;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 4px 18px rgba(19,43,38,.28); opacity:.32; transition:.25s;
+  }
+  #protoNavBtn:hover{opacity:1; transform:translateY(-1px)}
+  /* Cookie 条出现时整条固定在底部，浮层要抬到它上面，否则正好压住 Accept all */
+  body.ck-open #protoNavBtn{bottom:calc(var(--ckh, 74px) + 22px)}
+  body.ck-open #protoNavPanel{bottom:calc(var(--ckh, 74px) + 70px)}
+  /* 抽屉从右侧滑出时，浮层让位到左边，否则正好压在 Checkout / 筛选抽屉的确认按钮上 */
+  body.drawer-open #protoNavBtn, body.drawer-open #protoNavPanel,
+  body.filter-open #protoNavBtn, body.filter-open #protoNavPanel{right:auto; left:18px}
+  #protoNavBtn svg{width:17px;height:17px}
+  #protoNavPanel{
+    position:fixed; right:18px; bottom:66px; z-index:300; width:246px;
+    background:#FAF6EF; border:1px solid #E2DCD2; box-shadow:0 10px 40px rgba(19,43,38,.18);
+    padding:14px 16px; font:12px/1.6 "Figtree",-apple-system,sans-serif; color:#2E2A25;
+    opacity:0; pointer-events:none; transform:translateY(6px); transition:.22s;
+  }
+  #protoNavPanel.open{opacity:1; pointer-events:auto; transform:none}
+  #protoNavPanel b{display:block; font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:#948C81; margin:12px 0 5px}
+  #protoNavPanel b:first-child{margin-top:0}
+  #protoNavPanel a{display:block; padding:3px 0; color:#2E2A25; text-decoration:none; font-size:11.5px}
+  #protoNavPanel a:hover{color:#1B3A34; text-decoration:underline}
+  #protoNavPanel .hint{font-size:10px; color:#948C81; margin-top:10px; padding-top:9px; border-top:1px solid #E2DCD2; line-height:1.6}
+  @media(max-width:620px){ #protoNavPanel{width:calc(100vw - 36px)} }
+  /* 手机上这个浮层无论放哪都压在正文上（首屏文案、Cookie 条按钮都撞过），
+     手机端评审直接改地址栏 hash 即可，没必要留一个碍眼的球 */
+  @media(max-width:700px){ #protoNavBtn, #protoNavPanel{display:none} }
+</style>
+</head>
+<body>
+<script>
+window.addEventListener('error', function (e) {
+  var d = document.getElementById('app');
+  if (!d) return;
+  d.innerHTML = '<pre style="color:#B4472F;padding:24px;font:12px/1.7 ui-monospace,Consolas,monospace;white-space:pre-wrap">JS ERROR: '
+    + (e.message || '') + '\n' + (e.filename || '') + ' :' + e.lineno + '\n\n'
+    + ((e.error && e.error.stack) || '') + '</pre>';
+});
+</script>
+<div id="app">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;color:#1B3A34">Loading…</div>
+</div>
+
+<button id="protoNavBtn" title="Prototype navigation">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+    <path d="M4 7h16M4 12h16M4 17h16"/>
+  </svg>
+</button>
+<div id="protoNavPanel">
+  <b>Storefront</b>
+  <a href="#/">Home</a>
+  <a href="#/collections/best-sellers">Collection</a>
+  <a href="#/products/foxtrot-pendant-necklace">Product detail</a>
+  <a href="#/checkout">Checkout</a>
+  <a href="#/account">Track order</a>
+  <a href="#/pages/materials">Content page</a>
+  <b>Admin</b>
+  <a href="#/admin">Sign in</a>
+  <a href="#/admin/marketing">Marketing</a>
+  <a href="#/admin/reviews">Reviews</a>
+  <b>Try this</b>
+  <a href="#/products/tidepool-choker">Add 2 pieces, use code TIDEGLASS10</a>
+  <div class="hint">Data is stored in your browser. Reset it under Admin → Settings.</div>
+</div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/account.js"></script>
+<script src="assets/js/admin.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+/* ------------------------------------------------------------------
+   旧版后台（本页面里的 #/admin）已停止维护。
+   原因不是"想删"，是两套后台必然跑偏：这一套 11 个模块、写死在内存里，
+   交付版 4600 是 13 个模块、接真实接口、含权限位与库存流水。
+   两边同时改，改哪边都有一边是错的——上一轮就出现过
+   「订单列表点进去报错」只在其中一边被修掉。
+   所以这里只做一件事：把访问者送到唯一的后台。
+   ------------------------------------------------------------------ */
+(function () {
+  'use strict';
+  var GO = location.protocol + '//' + location.hostname + ':4600/#/admin';
+  function notice() {
+    if (!/^#\/admin/.test(location.hash)) return;
+    var app = document.getElementById('app');
+    if (!app) return;
+    // 提示页不是商店页面，把浮动菜单按钮收起来，否则右下角留个孤零零的按钮
+    if (!document.getElementById('proto-notice-style')) {
+      var st = document.createElement('style');
+      st.id = 'proto-notice-style';
+      st.textContent = '.mob-menu-btn,.mob-bar{display:none!important}';
+      document.head.appendChild(st);
+    }
+    app.innerHTML =
+      '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;' +
+      'background:#FAF6EF;padding:32px;font-family:Figtree,system-ui,sans-serif;color:#1B3A34">' +
+      '<div style="max-width:520px">' +
+      '<p style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#8A8578;margin:0 0 14px">' +
+      'TIDEGLASS · prototype</p>' +
+      '<h1 style="font-family:Georgia,serif;font-weight:400;font-size:30px;line-height:1.2;margin:0 0 14px">' +
+      '后台已经搬到交付版</h1>' +
+      '<p style="font-size:14px;line-height:1.7;color:#4A4A44;margin:0 0 20px">' +
+      '这一套是早期的静态原型，后台只有内存数据、没有权限位，也没有库存流水。' +
+      '要看真正的后台（13 个模块、接真实接口、PC 与手机都已适配），请打开下面这个地址。' +
+      '本页仍然可以浏览商店前台的原型页面。</p>' +
+      '<p style="margin:0 0 24px"><a href="' + GO + '" style="display:inline-block;padding:13px 22px;' +
+      'background:#1B3A34;color:#FAF6EF;text-decoration:none;font-size:12px;letter-spacing:.14em;' +
+      'text-transform:uppercase">去交付版后台 →</a></p>' +
+      '<p style="font-size:12px;color:#8A8578;margin:0">' + GO + '</p>' +
+      '<p style="font-size:12px;color:#8A8578;margin:6px 0 0">' +
+      '账号 owner@tideglassjewelry.com / tideglass2026</p>' +
+      '</div></div>';
+  }
+  // 注册在 app.js 之后：同一个 hashchange 事件里我们后执行，渲染结果以这里为准
+  window.addEventListener('hashchange', notice);
+  if (document.readyState !== 'loading') notice();
+  else document.addEventListener('DOMContentLoaded', notice);
+})();
+</script>
+</body>
+</html>

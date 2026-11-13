@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>系统设计说明书 · WK-SDD-001 v1.0（评审稿）</title>
+<style>
+  :root{
+    --ink:#1c1c1c; --ink2:#3d3a36; --muted:#6d6862; --line:#e2ddd5; --line2:#efeae3;
+    --bone:#f8f7f2; --cream:#f3e8de; --accent:#8a6a40; --white:#fff;
+    --r:#b3261e; --y:#b06f00; --g:#2f7a1f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font:15px/1.75 -apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;color:var(--ink);background:var(--bone)}
+  .layout{display:grid;grid-template-columns:250px minmax(0,1fr);align-items:start}
+  .toc{position:sticky;top:0;height:100vh;overflow:auto;border-right:1px solid var(--line);background:var(--white)}
+  .toc__in{padding:28px 20px 40px}
+  .toc__t{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+  .toc a{display:block;padding:5px 0;font-size:13px;color:var(--ink2);text-decoration:none}
+  .toc a:hover{color:var(--accent)}
+  .doc{max-width:940px;padding:56px 60px 120px}
+  .cover{border:1px solid var(--line);background:var(--white);padding:56px 48px;margin-bottom:44px}
+  .cover__kicker{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin:0 0 22px}
+  .cover h1{font-size:38px;line-height:1.14;letter-spacing:-.02em;margin:0 0 14px;font-weight:600}
+  .cover h1 small{display:block;font-size:17px;font-weight:400;color:var(--muted);margin-top:12px;letter-spacing:0}
+  .meta{display:grid;grid-template-columns:repeat(2,1fr);margin-top:34px;border-top:1px solid var(--line2)}
+  .meta div{padding:12px 0;border-bottom:1px solid var(--line2);font-size:13.5px}
+  .meta div:nth-child(odd){color:var(--muted)}
+  .badge{display:inline-block;font-size:11px;letter-spacing:.1em;padding:3px 9px;background:var(--cream);color:#7a5a30}
+  h2{font-size:23px;margin:62px 0 10px;font-weight:600;padding-top:18px;border-top:1px solid var(--line);letter-spacing:-.01em}
+  h2 .n{color:var(--accent);font-weight:400;margin-right:10px}
+  h3{font-size:16.5px;margin:32px 0 10px;font-weight:600}
+  p{margin:10px 0}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:5px 0}
+  code{background:var(--cream);padding:1px 6px;font-size:13px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  pre{background:#2a2724;color:#efe9e1;padding:16px 18px;overflow:auto;font-size:12.5px;line-height:1.6;margin:14px 0}
+  pre code{background:none;color:inherit;padding:0}
+  .lede{font-size:16px;color:var(--ink2)}
+  .note{border-left:2px solid var(--accent);background:var(--white);padding:14px 18px;margin:18px 0;font-size:14px}
+  table{width:100%;border-collapse:collapse;margin:16px 0 22px;font-size:13.5px;background:var(--white)}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:#faf8f4;font-weight:600;font-size:12.5px;white-space:nowrap}
+  td.id{white-space:nowrap;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px}
+  .p1{color:var(--r);font-weight:600}
+  .p2{color:var(--y)}
+  .p3{color:var(--g)}
+  /* layered diagram */
+  .stack{border:1px solid var(--line);background:var(--white);padding:16px;margin:20px 0}
+  .layer{display:grid;grid-template-columns:130px 1fr;gap:12px;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line2)}
+  .layer:last-child{border-bottom:0}
+  .layer b{font-size:12.5px;letter-spacing:.06em;color:var(--muted);font-weight:600}
+  .boxes{display:flex;flex-wrap:wrap;gap:8px}
+  .boxes span{border:1px solid var(--line);background:var(--bone);padding:7px 11px;font-size:12.5px}
+  .boxes span.hl{background:var(--cream);border-color:#e3cdb4}
+  .small{font-size:12.5px;color:var(--muted)}
+  hr{border:0;border-top:1px solid var(--line2);margin:34px 0}
+  @media print{
+    .toc{display:none}.layout{display:block}body{background:#fff}
+    .doc{max-width:none;padding:0}
+    h2{page-break-after:avoid}
+    table,.note,.stack,pre{page-break-inside:avoid}
+    @page{margin:18mm}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside class="toc"><div class="toc__in">
+  <p class="toc__t">目录</p>
+  <a href="#s1">1 文档说明</a>
+  <a href="#s2">2 架构总览</a>
+  <a href="#s3">3 技术选型</a>
+  <a href="#s4">4 模块划分</a>
+  <a href="#s5">5 数据模型</a>
+  <a href="#s6">6 接口设计</a>
+  <a href="#s7">7 关键流程</a>
+  <a href="#s8">8 部署与运维</a>
+  <a href="#s9">9 安全与合规</a>
+  <a href="#s10">10 性能与缓存</a>
+  <a href="#s11">11 演进路线</a>
+  <a href="#s12">12 风险与对策</a>
+  <a href="#s13">13 待确认</a>
+</div></aside>
+
+<main class="doc">
+
+<div class="cover">
+  <p class="cover__kicker">Wildkind · System Design</p>
+  <h1>系统设计说明书
+    <small>System Design Document · 技术架构、数据模型、接口与部署</small>
+  </h1>
+  <div class="meta">
+    <div>文档编号</div><div>WK-SDD-001</div>
+    <div>版本</div><div>v1.0 评审稿（<span class="badge">待审核</span>）</div>
+    <div>编写日期</div><div>2026-11-12</div>
+    <div>上游文档</div><div>WK-FRD-001 功能需求说明书 v1.0</div>
+    <div>适用对象</div><div>开发、运维、后续接手者</div>
+    <div>本轮交付</div><div>仅设计方案，不含实现代码</div>
+  </div>
+</div>
+
+<h2 id="s1"><span class="n">1</span>文档说明</h2>
+<p class="lede">本文回答"这套系统怎么搭、数据怎么存、接口怎么定、上线放哪里、出问题怎么查"。所有关键决策都给出<b>选项对比 + 建议 + 待确认标记</b>，不默认你已经同意某一个方案。</p>
+<p>与 FRD 的关系：FRD 定义"做什么"，本文定义"怎么做"。凡是本文出现的技术选择，若与你的预期冲突，以你的确认为准，改文档成本远低于改代码。</p>
+
+<h2 id="s2"><span class="n">2</span>架构总览</h2>
+
+<h3>2.1 分层结构</h3>
+<div class="stack">
+  <div class="layer"><b>访问层</b><div class="boxes"><span>Cloudflare / CDN</span><span>HTTPS</span><span>WAF 基础防护</span></div></div>
+  <div class="layer"><b>应用层</b><div class="boxes"><span class="hl">前台服务（SSR）</span><span class="hl">后台服务（SPA + API）</span><span>静态资源</span></div></div>
+  <div class="layer"><b>领域层</b><div class="boxes"><span>商品与变体</span><span>集合与导航</span><span>购物车</span><span>订单与状态机</span><span>库存</span><span>客户</span><span>内容</span></div></div>
+  <div class="layer"><b>数据层</b><div class="boxes"><span class="hl">PostgreSQL</span><span>对象存储（商品图）</span><span>Redis（可选缓存）</span></div></div>
+  <div class="layer"><b>外部服务</b><div class="boxes"><span>Stripe 支付</span><span>Resend 邮件</span><span>海外仓 / 物流</span><span>GA4 + 错误监控</span></div></div>
+</div>
+
+<h3>2.2 两个前端形态</h3>
+<table>
+  <tr><th>形态</th><th>使用方</th><th>渲染方式</th><th>为什么这样选</th></tr>
+  <tr><td>前台商城</td><td>消费者</td><td>服务端渲染（SSR）+ 少量客户端脚本</td><td>商品页要能被 Google 收录，首屏要快；交互只在加购、抽屉、筛选处增强</td></tr>
+  <tr><td>后台管理</td><td>你 / 运营</td><td>单页应用 + JSON API</td><td>不需要 SEO，追求操作不刷新、切页快</td></tr>
+</table>
+<p class="small">两者共用同一套领域逻辑与数据库，避免"前台一套规则、后台一套规则"导致数据对不上——这是上一版最需要避免的问题。</p>
+
+<h2 id="s3"><span class="n">3</span>技术选型</h2>
+
+<h3>3.1 三个候选方案</h3>
+<table>
+  <tr><th>方案</th><th>构成</th><th>优点</th><th>代价</th><th>适合场景</th></tr>
+  <tr>
+    <td><b>A（建议）</b><br>自建全栈</td>
+    <td>Next.js + Prisma + PostgreSQL + Stripe + Resend，部署在 Coolify</td>
+    <td>完全可控、无平台抽成、结构随意扩展、SEO 友好</td>
+    <td>需要自己维护服务器与备份</td>
+    <td>长期做品牌、SKU 会持续增加</td>
+  </tr>
+  <tr>
+    <td>B 轻量自建</td>
+    <td>Node 原生服务 + 单文件 JSON 存储</td>
+    <td>极轻、启动快、零依赖、改起来最快</td>
+    <td>并发与数据量上限低；多人同时改易冲突</td>
+    <td>纯演示 / 内部评审 <span class="badge">原型阶段用过</span></td>
+  </tr>
+  <tr>
+    <td>C 平台托管</td>
+    <td>Shopify + 主题定制</td>
+    <td>交易、支付、物流生态成熟，几乎不用写代码</td>
+    <td>月费 + 交易抽成；深度定制受限；数据不在自己手里</td>
+    <td>想最快开店、不打算做特殊流程</td>
+  </tr>
+</table>
+
+<div class="note"><b>建议：A。</b>理由：你的 100 款 SKU 与多轴集合体系需要自定义数据结构；后台的成本拆解、定制单这类需求平台方案做不了；长期看自建的可控性更重要。若你更看重"最快上线"，C 也成立，但要接受抽成与定制上限。</div>
+
+<h3>3.2 具体技术清单（方案 A）</h3>
+<table>
+  <tr><th>层</th><th>选型</th><th>说明</th></tr>
+  <tr><td>框架</td><td>Next.js（App Router）</td><td>SSR + 静态生成混合，前台页面按需选择</td></tr>
+  <tr><td>语言</td><td>TypeScript</td><td>订单、金额相关逻辑必须有类型约束</td></tr>
+  <tr><td>样式</td><td>Tailwind CSS + 少量自定义 CSS 变量</td><td>设计规范沉淀在 token 里，改色改字号集中可控</td></tr>
+  <tr><td>数据库</td><td>PostgreSQL 16</td><td>订单与库存需要事务；JSON 字段可存变体快照</td></tr>
+  <tr><td>ORM</td><td>Prisma</td><td>迁移可追溯，schema 即文档</td></tr>
+  <tr><td>支付</td><td>Stripe（Embedded Checkout）</td><td>卡号不进入我们服务器，PCI 责任转移给 Stripe</td></tr>
+  <tr><td>邮件</td><td>Resend</td><td>事务邮件（订单确认、发货、退款）</td></tr>
+  <tr><td>图片</td><td>对象存储 + CDN，输出 WebP/AVIF</td><td>统一 4:5 裁切，多尺寸响应式</td></tr>
+  <tr><td>部署</td><td>Coolify（Docker）+ Nginx</td><td>一台 2C4G 起步够用，后续可水平扩展</td></tr>
+  <tr><td>监控</td><td>访问日志 + 错误监控 + 支付失败告警</td><td>先保证"能发现问题"</td></tr>
+</table>
+
+<h2 id="s4"><span class="n">4</span>模块划分</h2>
+<table>
+  <tr><th>模块</th><th>职责</th><th>对外提供</th><th>依赖</th></tr>
+  <tr><td>catalog</td><td>商品、变体、集合、导航、搜索</td><td>列表、详情、筛选、搜索</td><td>DB</td></tr>
+  <tr><td>cart</td><td>购物车增删改、算价、免邮判断</td><td>cart API</td><td>catalog</td></tr>
+  <tr><td>checkout</td><td>地址校验、运费与税、创建支付意图、回调处理</td><td>checkout API、webhook</td><td>cart、payment、inventory</td></tr>
+  <tr><td>order</td><td>订单生成、状态机、发货、退款登记</td><td>admin order API</td><td>checkout、inventory、mail</td></tr>
+  <tr><td>inventory</td><td>库存读写、扣减与回滚、低库存预警</td><td>内部服务</td><td>DB</td></tr>
+  <tr><td>customer</td><td>由订单聚合客户、分层、查询</td><td>admin customer API</td><td>order</td></tr>
+  <tr><td>content</td><td>首页区块、内容页、公告栏</td><td>前台读取、后台编辑</td><td>DB</td></tr>
+  <tr><td>auth</td><td>后台登录、会话、限流</td><td>admin auth API</td><td>DB</td></tr>
+  <tr><td>mail</td><td>模板管理与发送</td><td>内部服务</td><td>Resend</td></tr>
+</table>
+<p class="small">模块之间只通过定义好的函数/接口通信，不跨模块直接读对方表，避免后期耦合。</p>
+
+<h2 id="s5"><span class="n">5</span>数据模型</h2>
+
+<h3>5.1 实体关系</h3>
+<pre><code>Collection ──&lt; CollectionProduct &gt;── Product ──&lt; Variant
+                                          │
+                                          └──&lt; ProductImage
+Order ──&lt; OrderItem (快照: 标题/价格/变体)
+  │
+  ├──&lt; PaymentRecord
+  └──&lt; StatusLog
+Customer 1──&lt; Order (以邮箱识别)
+Setting (单行配置)   ContentBlock / ContentPage</code></pre>
+
+<h3>5.2 核心表</h3>
+<table>
+  <tr><th>表</th><th>关键字段</th><th>索引 / 约束</th></tr>
+  <tr><td>Product</td><td>id、handle（唯一）、title、description、status、price、compareAtPrice、cost、tags、seoTitle、seoDesc、createdAt</td><td>handle 唯一；status + createdAt 联合索引</td></tr>
+  <tr><td>Variant</td><td>id、productId、sku（唯一）、metal（gold/silver）、size、price、stock、weight</td><td>sku 唯一；productId 索引</td></tr>
+  <tr><td>ProductImage</td><td>id、productId、url、alt、position</td><td>productId + position</td></tr>
+  <tr><td>Collection</td><td>id、handle（唯一）、title、description、isNav、parentId、menuGroup、position、ruleJson</td><td>handle 唯一；isNav + position</td></tr>
+  <tr><td>CollectionProduct</td><td>collectionId、productId、position</td><td>联合主键</td></tr>
+  <tr><td>Order</td><td>id、number（唯一）、email、status、subtotal、shipping、tax、total、currency、addressJson、shippingMethod、trackingNo、carrier、createdAt、paidAt</td><td>number 唯一；email + createdAt；status</td></tr>
+  <tr><td>OrderItem</td><td>id、orderId、productId、variantId、titleSnap、variantSnap、unitPrice、qty、costSnap</td><td>orderId 索引</td></tr>
+  <tr><td>StatusLog</td><td>id、orderId、from、to、note、operator、createdAt</td><td>orderId + createdAt</td></tr>
+  <tr><td>Customer</td><td>id、email（唯一）、name、ordersCount、totalSpent、firstOrderAt、lastOrderAt、tier</td><td>email 唯一</td></tr>
+  <tr><td>Setting</td><td>单行：brandName、currency、freeShipThreshold、costs(JSON)、warehouses(JSON)、adminEmail、adminPasswordHash</td><td>固定 id=1</td></tr>
+  <tr><td>ContentBlock</td><td>key（唯一）、type、payloadJson、updatedAt</td><td>key 唯一</td></tr>
+  <tr><td>ContentPage</td><td>slug（唯一）、title、bodyHtml、seoTitle、seoDesc</td><td>slug 唯一</td></tr>
+  <tr><td>Discount（若进 v1）</td><td>code（唯一）、type、value、minSubtotal、startsAt、endsAt、usageLimit、usedCount</td><td>code 唯一</td></tr>
+</table>
+
+<h3>5.3 两个关键设计决定</h3>
+<ul>
+  <li><b>订单项存快照</b>：下单时把标题、价格、变体、成本写入 OrderItem，之后商品改价不影响历史订单与毛利核算。</li>
+  <li><b>客户以邮箱为主键</b>：不做账户体系时，邮箱是唯一可用的身份锚点；同一邮箱多次下单聚合为同一客户，用于复购统计。</li>
+</ul>
+
+<h2 id="s6"><span class="n">6</span>接口设计</h2>
+
+<h3>6.1 前台接口</h3>
+<table>
+  <tr><th>方法</th><th>路径</th><th>说明</th><th>鉴权</th></tr>
+  <tr><td>GET</td><td><code>/api/products?collection=&amp;metal=&amp;sort=&amp;page=</code></td><td>集合与筛选列表</td><td>公开</td></tr>
+  <tr><td>GET</td><td><code>/api/products/{handle}</code></td><td>商品详情（含变体、关联）</td><td>公开</td></tr>
+  <tr><td>GET</td><td><code>/api/search?q=</code></td><td>搜索与联想</td><td>公开</td></tr>
+  <tr><td>GET / POST / PATCH / DELETE</td><td><code>/api/cart</code></td><td>读、加、改数量、删行</td><td>购物车 Cookie</td></tr>
+  <tr><td>POST</td><td><code>/api/checkout/intent</code></td><td>创建支付意图，返回客户端密钥</td><td>购物车 Cookie</td></tr>
+  <tr><td>POST</td><td><code>/api/webhooks/stripe</code></td><td>支付结果回调（签名校验）</td><td>Stripe 签名</td></tr>
+  <tr><td>POST</td><td><code>/api/orders/lookup</code></td><td>订单号 + 邮箱查单</td><td>公开 + 限流</td></tr>
+  <tr><td>POST</td><td><code>/api/newsletter</code></td><td>订阅</td><td>公开 + 限流</td></tr>
+</table>
+
+<h3>6.2 后台接口</h3>
+<table>
+  <tr><th>方法</th><th>路径</th><th>说明</th></tr>
+  <tr><td>POST</td><td><code>/api/admin/login</code></td><td>登录，成功写 HttpOnly 会话 Cookie</td></tr>
+  <tr><td>GET</td><td><code>/api/admin/summary?days=30</code></td><td>概览指标与图表数据</td></tr>
+  <tr><td>GET / PATCH</td><td><code>/api/admin/orders</code>、<code>/api/admin/orders/{id}</code></td><td>列表筛选、详情、改状态</td></tr>
+  <tr><td>GET / POST / PATCH</td><td><code>/api/admin/products</code></td><td>商品增改、上下架</td></tr>
+  <tr><td>GET / PATCH</td><td><code>/api/admin/inventory</code></td><td>库存查询与批量调整</td></tr>
+  <tr><td>GET / PATCH</td><td><code>/api/admin/collections</code></td><td>集合与导航排序</td></tr>
+  <tr><td>GET</td><td><code>/api/admin/customers</code></td><td>客户列表与分层</td></tr>
+  <tr><td>GET / PATCH</td><td><code>/api/admin/content</code></td><td>首页区块与内容页</td></tr>
+  <tr><td>GET / PATCH</td><td><code>/api/admin/settings</code></td><td>品牌、费率、仓库、密码</td></tr>
+</table>
+
+<h3>6.3 约定</h3>
+<ul>
+  <li>统一响应体：<code>{ ok, data, error }</code>；错误带 <code>code</code> 与可读 <code>message</code>。</li>
+  <li>金额一律用<b>整数分</b>存储与传输，避免浮点误差。</li>
+  <li>后台接口全部要求会话；写操作校验 CSRF Token；列表接口强制分页（默认 20，上限 100）。</li>
+  <li>幂等：<code>/api/checkout/intent</code> 与 webhook 以 <code>idempotencyKey</code> / 事件 id 去重，防止重复建单。</li>
+</ul>
+
+<h2 id="s7"><span class="n">7</span>关键流程</h2>
+
+<h3>7.1 下单与扣库存</h3>
+<div class="stack">
+  <div class="layer"><b>1 提交</b><div class="boxes"><span>校验地址与库存</span><span>计算运费与税</span><span>创建 pending 订单</span></div></div>
+  <div class="layer"><b>2 支付</b><div class="boxes"><span>创建 PaymentIntent</span><span>用户在 Stripe 内嵌表单支付</span></div></div>
+  <div class="layer"><b>3 回调</b><div class="boxes"><span class="hl">校验签名 + 事件去重</span><span>订单转 paid</span><span>扣减库存</span></div></div>
+  <div class="layer"><b>4 通知</b><div class="boxes"><span>发确认邮件</span><span>写入 StatusLog</span><span>后台出现待配货</span></div></div>
+</div>
+<p class="small">失败路径：支付失败 → 订单保持 pending → 30 分钟后自动关闭并释放占用；回调重复 → 按事件 id 丢弃，不重复扣库存。</p>
+
+<h3>7.2 发货与退款</h3>
+<ul>
+  <li>后台填运单 → 订单转 fulfilled → 发发货邮件（含物流号）→ 客户可用订单号查单。</li>
+  <li>退款：后台登记退款申请 → 二次确认 → 调 Stripe 退款 → 订单转 refunded → 发退款邮件 → 库存是否回补由人工决定（默认不回补，避免二次销售瑕疵品）。</li>
+</ul>
+
+<h2 id="s8"><span class="n">8</span>部署与运维</h2>
+<table>
+  <tr><th>项</th><th>方案</th><th>说明</th></tr>
+  <tr><td>服务器</td><td>2C4G 云主机起步</td><td>预估日订单 &lt; 200 完全够用</td></tr>
+  <tr><td>容器</td><td>Docker + Coolify</td><td>一键部署、回滚到上一版本</td></tr>
+  <tr><td>反向代理</td><td>Nginx</td><td>HTTPS 终止、gzip/brotli、静态资源长缓存</td></tr>
+  <tr><td>域名与证书</td><td>自有域名 + Let's Encrypt 自动续期</td><td>强制 HTTPS，HTTP 301</td></tr>
+  <tr><td>数据库</td><td>同机 PostgreSQL 起步，后续迁托管</td><td><b>每日全量备份 + 保留 30 天</b>，备份需实测可恢复</td></tr>
+  <tr><td>环境</td><td>production / staging 两套</td><td>staging 用于验收，不接真实支付</td></tr>
+  <tr><td>日志</td><td>应用日志 + 访问日志 + 支付失败告警</td><td>保留 14 天</td></tr>
+  <tr><td>回滚</td><td>镜像版本回退 + 数据库迁移分离</td><td>迁移只做向前兼容，不回滚数据</td></tr>
+</table>
+
+<h2 id="s9"><span class="n">9</span>安全与合规</h2>
+<table>
+  <tr><th>面</th><th>措施</th></tr>
+  <tr><td>后台鉴权</td><td>密码哈希（bcrypt/argon2）、HttpOnly + SameSite Cookie、会话 24h、登录失败限流与锁定</td></tr>
+  <tr><td>输入</td><td>服务端全量校验；富文本白名单过滤；上传限类型与大小</td></tr>
+  <tr><td>CSRF / XSS</td><td>写操作校验 Token；输出转义；CSP 限制外链脚本</td></tr>
+  <tr><td>支付</td><td>Stripe 托管卡信息，服务端只存支付意图 id 与结果，不落卡号（PCI 责任转移）</td></tr>
+  <tr><td>隐私</td><td>只收集履约必需信息；隐私政策与删除通道；Cookie 同意后才加载分析</td></tr>
+  <tr><td>合规</td><td>GDPR / CCPA（同意、访问、删除）；IOSS 与关税展示（待确认具体国家）</td></tr>
+  <tr><td>数据</td><td>全链路 HTTPS；备份加密；敏感配置走环境变量不入库不入 Git</td></tr>
+  <tr><td>审计</td><td>后台关键动作写操作日志（改价、改库存、退款）</td></tr>
+</table>
+
+<h2 id="s10"><span class="n">10</span>性能与缓存</h2>
+<ul>
+  <li><b>页面</b>：商品页与集合页 SSR 后做短时缓存（60s）+ 内容变更时主动失效。</li>
+  <li><b>图片</b>：统一 4:5，输出 3 档宽度（480 / 900 / 1400），WebP 优先，懒加载首屏以下。</li>
+  <li><b>数据库</b>：列表查询走索引；后台统计用按日聚合表，避免每次全表扫描。</li>
+  <li><b>前端</b>：首页 JS 体积控制在 100KB 以内；图表用轻量 SVG 自绘，不引大库。</li>
+  <li><b>指标</b>：LCP ≤ 2.5s、CLS ≤ 0.1、TTFB ≤ 500ms（目标值，验收时实测）。</li>
+</ul>
+
+<h2 id="s11"><span class="n">11</span>演进路线</h2>
+<table>
+  <tr><th>阶段</th><th>内容</th><th>触发条件</th></tr>
+  <tr><td>v1</td><td>访客下单、8 个后台模块、Stripe + 邮件、内容可维护</td><td>当前</td></tr>
+  <tr><td>v1.1</td><td>折扣码、数据导出、定制需求单列表</td><td>首版上线后 1 个月</td></tr>
+  <tr><td>v2</td><td>账户体系与收藏、多语言（英/法）、客户分层营销</td><td>月订单 &gt; 500 或进入加拿大法语区</td></tr>
+  <tr><td>v3</td><td>多仓发货、自动选物流、退货自助</td><td>SKU &gt; 300 或订单 &gt; 50/天</td></tr>
+</table>
+
+<h2 id="s12"><span class="n">12</span>风险与对策</h2>
+<table>
+  <tr><th>风险</th><th>影响</th><th>对策</th></tr>
+  <tr><td>支付回调丢失</td><td>已付款但订单未转 paid</td><td>定时对账任务，按 Stripe 会话反查并补单</td></tr>
+  <tr><td>超卖</td><td>客户付款后无货</td><td>支付成功时事务内扣减，扣失败自动退款并告警</td></tr>
+  <tr><td>图片体积过大</td><td>首屏慢、转化下降</td><td>上传即转码，限制源图尺寸</td></tr>
+  <tr><td>单机故障</td><td>全站不可用</td><td>每日备份 + 镜像化部署，30 分钟内可重建</td></tr>
+  <tr><td>合规披露不全</td><td>被投诉 / 支付通道风控</td><td>上线前逐项核对政策页与 Cookie 同意</td></tr>
+</table>
+
+<h2 id="s13"><span class="n">13</span>待确认</h2>
+<table>
+  <tr><th>#</th><th>决策点</th><th>我的建议</th></tr>
+  <tr><td>D1</td><td>选方案 A / B / C</td><td>A（自建全栈）</td></tr>
+  <tr><td>D2</td><td>数据库用 PostgreSQL 还是 MySQL</td><td>PostgreSQL（JSON 字段与事务更顺手）</td></tr>
+  <tr><td>D3</td><td>是否引入 Redis 缓存</td><td>v1 不引，先用页面缓存；有性能问题再加</td></tr>
+  <tr><td>D4</td><td>服务器放哪个区域</td><td>美国东部（客户主要在美东/加东）</td></tr>
+  <tr><td>D5</td><td>图片是否上 CDN</td><td>上线即上，Cloudflare 起步</td></tr>
+  <tr><td>D6</td><td>是否要 staging 环境</td><td>要，验收与培训都在 staging 做</td></tr>
+</table>
+
+<hr>
+<p class="small">— 文档结束 · WK-SDD-001 v1.0 评审稿 · 与 FRD 一并确认后再进入实现 —</p>
+
+</main>
+</div>
+</body>
+</html>

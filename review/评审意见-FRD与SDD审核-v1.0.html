@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>评审意见 · 对 FRD / SDD / 原型的审核</title>
+<style>
+  :root{--ink:#1c1c1c;--ink2:#3d3a36;--muted:#6d6862;--line:#e2ddd5;--line2:#efeae3;--bone:#f8f7f2;--cream:#f3e8de;--accent:#8a6a40;--white:#fff;--r:#b3261e;--y:#b06f00;--g:#2f7a1f}
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font:15px/1.75 -apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;color:var(--ink);background:var(--bone)}
+  .doc{max-width:980px;margin:0 auto;padding:56px 48px 120px}
+  .cover{border:1px solid var(--line);background:var(--white);padding:48px 42px;margin-bottom:40px}
+  .cover__kicker{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin:0 0 20px}
+  h1{font-size:34px;line-height:1.16;letter-spacing:-.02em;margin:0 0 12px;font-weight:600}
+  h1 small{display:block;font-size:16px;font-weight:400;color:var(--muted);margin-top:12px;letter-spacing:0}
+  .meta{display:grid;grid-template-columns:repeat(2,1fr);margin-top:28px;border-top:1px solid var(--line2)}
+  .meta div{padding:11px 0;border-bottom:1px solid var(--line2);font-size:13.5px}
+  .meta div:nth-child(odd){color:var(--muted)}
+  h2{font-size:22px;margin:56px 0 10px;font-weight:600;padding-top:16px;border-top:1px solid var(--line)}
+  h2 .n{color:var(--accent);font-weight:400;margin-right:10px}
+  h3{font-size:16px;margin:28px 0 8px;font-weight:600}
+  p{margin:10px 0}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:5px 0}
+  code{background:var(--cream);padding:1px 6px;font-size:13px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  table{width:100%;border-collapse:collapse;margin:14px 0 22px;font-size:13px;background:var(--white)}
+  th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:#faf8f4;font-size:12.5px;white-space:nowrap}
+  .r{color:var(--r);font-weight:600;white-space:nowrap}
+  .y{color:var(--y);white-space:nowrap}
+  .g{color:var(--g);white-space:nowrap}
+  .ok{color:var(--g);font-weight:600}
+  .no{color:var(--r);font-weight:600}
+  .part{color:var(--y);font-weight:600}
+  .note{border-left:2px solid var(--accent);background:var(--white);padding:14px 18px;margin:16px 0;font-size:14px}
+  .callout{background:#fdf6f5;border:1px solid #f0d7d4;padding:14px 18px;margin:16px 0;font-size:14px}
+  .callout b{color:#8d2b22}
+  .small{font-size:12.5px;color:var(--muted)}
+  .verdict{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0}
+  .verdict div{border:1px solid var(--line);background:var(--white);padding:16px}
+  .verdict b{display:block;font-size:26px;letter-spacing:-.02em;margin-bottom:4px}
+  .verdict span{font-size:11.5px;letter-spacing:.06em;color:var(--muted)}
+  hr{border:0;border-top:1px solid var(--line2);margin:32px 0}
+  @media print{.doc{max-width:none;padding:0}body{background:#fff}h2{page-break-after:avoid}table,.note,.callout{page-break-inside:avoid}@page{margin:16mm}}
+</style>
+</head>
+<body>
+<div class="doc">
+
+<div class="cover">
+  <p class="cover__kicker">Review · 产品视角审核意见</p>
+  <h1>对功能需求说明书 / 系统设计说明书 / 原型的审核意见
+    <small>审核对象：WK-FRD-001 v1.0、WK-SDD-001 v1.0、线框原型 v1.0 · 对照基准：atoleajewelry.com</small>
+  </h1>
+  <div class="meta">
+    <div>审核方式</div><div>抓取参考站首页 / 集合页 / 商品页三层实际结构逐项比对</div>
+    <div>审核视角</div><div>产品（不是技术自评）</div>
+    <div>审核日期</div><div>2026-11-12</div>
+    <div>结论</div><div>不通过，需出 v1.1 后再评审</div>
+  </div>
+</div>
+
+<h2 id="v"><span class="n">0</span>总体结论</h2>
+
+<p>三份材料<b>方法论是对的</b>：需求有编号、有优先级、有验收标准；技术方案给了选项对比；原型能点、标注能对上需求。作为"能拿去开发"的文档，基础是够的。</p>
+
+<p>但作为"<b>照参考站做</b>"的文档，它有一个结构性缺陷：<b>没有区分"参考站确实有的"和"我们自己加的"</b>。两者混在同一张需求表里，导致你无法判断哪些是复刻、哪些是我的主张。这个缺陷在下面第 1 节会逐条显形。</p>
+
+<div class="verdict">
+  <div><b class="part">7 / 10</b><span>FRD 完整度</span></div>
+  <div><b class="no">5 / 10</b><span>与参考站一致性</span></div>
+  <div><b class="part">7.5 / 10</b><span>SDD 可用性</span></div>
+</div>
+
+<div class="callout">
+  <b>一句话结论：</b>导航、集合体系、页面骨架是照参考站做的，这部分成立；但商品卡、商品页卖点结构、首页区块顺序、公告栏形态这四处<b>与参考站明显不一致</b>，且漏掉了参考站 6 个关键机制（卡片直接加购、满额赠品、终身颜色保证、出生石月度、多币种、真实评价系统）。原型需要改 4 处结构，FRD 需要补 6 条功能、改 8 条描述。
+</div>
+
+<h2 id="cmp"><span class="n">1</span>与参考站的逐项对照</h2>
+
+<p class="small">下表"参考站实际"一列全部来自 2026-11-12 抓取的页面结构与文案，不是凭印象。</p>
+
+<table>
+  <tr><th>项目</th><th>参考站实际</th><th>我们文档里写的</th><th>判定</th></tr>
+  <tr><td>一级导航</td><td>Best Sellers / Custom / SALE / • New / Necklaces / RINGS / Pearls / Earrings / Bracelets / Anklets / GIFTS（11 项）</td><td>同样 11 项，顺序一致</td><td class="ok">一致</td></tr>
+  <tr><td>mega menu 分组</td><td>6 组：collections、Shop by Style、Stones、Metals、Ocean and Meaning、Gifts and Occasions</td><td>"按主题/对象二次分组"，未列具体分组</td><td class="part">部分：方向对，未落到可开发粒度</td></tr>
+  <tr><td>集合轴</td><td>品类 + 风格（Dainty/Chunky/Layered/Choker）+ 材质（18k/14k/Silver）+ 宝石（Opal/Emerald/Garnet）+ 题材 + 送礼对象 + 榜单</td><td>品类 + 主题 + 送礼对象 + 榜单（4 轴）</td><td class="no">缺 3 轴：风格、材质、宝石</td></tr>
+  <tr><td>顶部公告栏</td><td>滚动跑马灯，多条促销链接（BEST SELLERS / ADVENT CALENDAR / NEW / FALL COLLECTION / BLACK FRIDAY / UP TO 70% OFF / CUSTOM）</td><td>FR-S-004："单条文案，后台可开关"</td><td class="no">不一致（形态完全不同）</td></tr>
+  <tr><td>首页区块构成</td><td>Slideshow → Best Sellers（眉标 AS SEEN ON TIKTOK）→ The new drops are in → The numbers speak（7M+ 件 / 1.6M+ 客 / 4.7 Trustpilot + 4 条短评）→ 创始人故事 → 页脚图标区 → 订阅</td><td>Hero → USP 四栏 → 榜单 → 题材磁贴 → 品牌故事 → 定制 → 评价墙 → Journal → 订阅</td><td class="no">顺序与构成都不同：多出题材磁贴/Journal，少了数字背书与创始人故事，USP 位置错位</td></tr>
+  <tr><td>USP 四栏位置</td><td>在页脚上方（text-with-icons），不在 hero 下方</td><td>紧接 Hero 之后（FR-S-011）</td><td class="no">位置不一致</td></tr>
+  <tr><td>商品卡字段</td><td>图 + 角标 + 标题 + 现价 + 原价 + <b>SAVE $14</b> + <b>颜色变体（Gold/Silver/14K）</b> + <b>Add to cart 按钮</b></td><td>图 + 悬停换图 + 标签 + 标题 + 价格 + 划线价 + 可选色点</td><td class="no">缺"卡片直接加购"与"卡片内切换变体"；折扣表达方式不同</td></tr>
+  <tr><td>商品卡角标</td><td>5 种：SALE、BEST SELLER、NEW、LOW STOCK、Customizable</td><td>3 种：New、Sale、仅剩 N 件</td><td class="part">缺 BEST SELLER、Customizable</td></tr>
+  <tr><td>折扣表达</td><td>金额（SAVE $14 / SAVE $31）</td><td>百分比（原型写 Save 20%）</td><td class="no">不一致</td></tr>
+  <tr><td>商品网格列数</td><td>桌面 4 列、移动 2 列（断点 700px，中间不插 3 列）</td><td>4 / 3 / 2 三档</td><td class="part">多了一档，非致命但属自创</td></tr>
+  <tr><td>商品页图库</td><td>轮播 21 张（含大量实拍/UGC），无缩略图列</td><td>主图 + 缩略图列，要求 ≥3 张</td><td class="no">形态与内容量都不一致</td></tr>
+  <tr><td>商品页卖点</td><td>价格下方<b>平铺 4 条加粗卖点</b>（Lifetime Color Guarantee / Waterproof & Sensitive Skin / 用户引语+包装 / Imagined in France）</td><td>用"手风琴 4 项"承载材质/尺寸/配送/退换（FR-S-035）</td><td class="no">结构错位：参考站把信任点前置，我们把它们藏进折叠</td></tr>
+  <tr><td>加购按钮</td><td><code>ADD TO CART $75.00</code>，价格写在按钮里</td><td>数量步进 + "加入购物袋"（价格在独立区块）</td><td class="part">可接受，但应知道与原站不同</td></tr>
+  <tr><td>核心信任承诺</td><td><b>Lifetime Color Guarantee</b>（终身不褪色，坏了免费换）+ 全球免邮 + 100 万客户</td><td>30 天退换 + 满 $75 免邮</td><td class="no">漏掉最核心的一条：终身颜色保证</td></tr>
+  <tr><td>满额赠品</td><td>有：满 €140 送 Free Mystery Earrings（带进度与自动加购逻辑）</td><td>完全没有</td><td class="no">缺失</td></tr>
+  <tr><td>出生石月度机制</td><td>导航内嵌 "November · Citrine / Birthstone of the month"</td><td>无</td><td class="no">缺失（这是复购驱动的核心玩法）</td></tr>
+  <tr><td>多币种 / 地域定价</td><td>有：首页抓取为 €51,95，集合页为 $75，按地区切币种</td><td>FR-BR-04：仅 USD，不做换算</td><td class="part">我们的主动取舍，但文档没写明"参考站有、我们不做"</td></tr>
+  <tr><td>愿望单 / 积分</td><td>页面存在 wishlist 与 rewards 相关脚本</td><td>无</td><td class="part">主动取舍，未标注</td></tr>
+  <tr><td>评价系统</td><td>Trustpilot 4.7 分 + 站内带 Verified 标记的评价</td><td>自建评价墙 6 条</td><td class="part">形态不同：原站接第三方，我们自建</td></tr>
+  <tr><td>集合页筛选 / 排序</td><td><b>抓取未见到筛选与排序控件</b>（可能懒加载，未确认）</td><td>FR-S-021/022 完整筛选 + 5 种排序</td><td class="part">属我们自加，必须标注为增强而非复刻</td></tr>
+  <tr><td>分页</td><td>集合页一次性列出 30+ 商品，未见分页控件</td><td>每页 24 件 + 页码</td><td class="part">自创，需说明理由</td></tr>
+  <tr><td>价格带</td><td>实测 $58–$143（含 14K Gold 溢价款）</td><td>定位 $35–$85</td><td class="part">与参考站错位，需确认是否有意</td></tr>
+</table>
+
+<div class="note"><b>这张表说明什么：</b>导航和集合体系是被认真复刻的，这是最值钱的部分；但从"商品卡往下"开始，文档更多是我按经验补的合理设计，而不是参考站的还原。问题不在"补"，而在于<b>没告诉你哪些是补的</b>。</div>
+
+<h2 id="frd"><span class="n">2</span>FRD 的问题清单</h2>
+
+<h3>2.1 必须补的功能（参考站有、我们漏了）</h3>
+<table>
+  <tr><th>#</th><th>缺口</th><th>为什么要补</th><th>优先级</th></tr>
+  <tr><td>1</td><td><b>商品卡直接加购 + 卡片内切换颜色</b></td><td>集合页 30 件商品，每件都要点进详情才能买，转化会明显掉。参考站每张卡都有 Add to cart 与颜色切换</td><td class="r">🔴 高</td></tr>
+  <tr><td>2</td><td><b>满额赠品机制</b>（满 X 送赠品，带进度提示与自动加购）</td><td>客单价直接杠杆。参考站满 €140 送神秘耳环，是它客单价高于同类的关键手段之一</td><td class="r">🔴 高</td></tr>
+  <tr><td>3</td><td><b>终身颜色保证</b>（Lifetime Color Guarantee）</td><td>这是参考站的第一卖点，也是不锈钢饰品相对银饰的最大武器。我们的文档只写了 30 天退换，等于放弃了最强差异化</td><td class="r">🔴 高</td></tr>
+  <tr><td>4</td><td><b>商品页卖点前置区</b>（价格下方 4 条信任点，非折叠）</td><td>参考站把最强信息放在加购按钮上方；我们把它们塞进手风琴，用户看不到</td><td class="r">🔴 高</td></tr>
+  <tr><td>5</td><td><b>集合三轴：风格 / 材质 / 宝石</b></td><td>参考站的 mega menu 有一半流量走 "Dainty / Chunky / Layered / 18k Gold / Opal" 这些轴，我们只有品类+题材，会丢掉大量长尾搜索</td><td class="r">🔴 高</td></tr>
+  <tr><td>6</td><td><b>出生石 / 月份主题</b></td><td>天然复购机制：每月主推一颗石头，配合生日场景。参考站导航里常驻</td><td class="y">🟡 中</td></tr>
+  <tr><td>7</td><td>公告栏改为跑马灯多条目（可带链接）</td><td>促销期要同时挂多个活动，单条文案不够用</td><td class="y">🟡 中</td></tr>
+</table>
+
+<h3>2.2 文档内部矛盾（自相冲突，必须修）</h3>
+<table>
+  <tr><th>#</th><th>矛盾点</th><th>说明</th></tr>
+  <tr><td>1</td><td>费用参数变更 vs 历史订单不变</td><td>FR-A-013 承诺"费率改动后历史订单不变"，但 Setting 是单行表、订单只存商品的 costSnap，<b>没存当时的费率快照</b>。照现在的设计，改一次税率，历史订单的毛利会被一起改掉。<b>这是会算错账的硬伤。</b></td></tr>
+  <tr><td>2</td><td>定制流程 vs 后台模块</td><td>FR-S-051 说定制需求提交后"后台生成定制需求单"，但第 4 节页面清单和第 6 节后台需求里<b>没有这个模块</b>。功能悬空。</td></tr>
+  <tr><td>3</td><td>库存"占用 30 分钟" vs 数据模型</td><td>BR-05 提到下单占用库存，但商品/变体表没有 <code>reserved</code> 字段，库存管理需求（FR-A-009）也没提占用。规则无法落地。</td></tr>
+  <tr><td>4</td><td>到货提醒 vs 后台</td><td>FR-S-033 允许缺货时收集邮箱，但后台没有任何列表能看这些邮箱，功能半边。</td></tr>
+  <tr><td>5</td><td>下单客户 vs 角色表</td><td>角色表列了"下单客户"，但没有账户体系，客户无法登录任何页面，这个角色名不成立。</td></tr>
+</table>
+
+<h3>2.3 缺失的常规模块（对正式项目而言不该缺）</h3>
+<ul>
+  <li><b>退货申请流程</b>：有政策页，没有"我要退货"的入口与表单，也没有后台的退货单（RMA）。备注：参考站是 <code>/pages/returns-exchanges</code> 页面 + 邮件。</li>
+  <li><b>礼品相关</b>：礼品包装选项、礼品留言卡、礼品卡（gift card）。饰品品类这三样几乎必备。</li>
+  <li><b>尺寸指南的交互形态</b>：写了内容页，没定义是弹窗、独立页还是商品页内嵌。</li>
+  <li><b>邮件清单</b>：只写了"发确认邮件"，缺发货、退款、到货提醒、弃购挽回四类模板的定义与触发条件。</li>
+  <li><b>埋点需求</b>：一条都没有。没有 <code>view_item / add_to_cart / begin_checkout / purchase</code>，上线后无法判断哪一步在漏。</li>
+  <li><b>图片资产规范</b>：张数、比例、命名、是否用 UGC，都没写。这直接决定上线时间。</li>
+  <li><b>数据删除通道</b>：有 Cookie 同意，但 GDPR 的"删除我的数据"没有后台操作入口。</li>
+</ul>
+
+<h2 id="sdd"><span class="n">3</span>SDD 的问题清单</h2>
+<table>
+  <tr><th>#</th><th>问题</th><th>影响</th><th>建议</th></tr>
+  <tr><td>1</td><td>缺"需求 → 模块"追溯矩阵</td><td>72 条需求无法核对是否都有归属，容易漏做</td><td>加一张 47 行 × 9 模块的矩阵，或至少标出每个模块承接哪些 FR</td></tr>
+  <tr><td>2</td><td>费率快照问题（同 FRD 2.2-1）</td><td>毛利核算会被历史改动污染</td><td>订单表加 <code>costSnapshotJson</code>，下单时把 6 项费率一起冻结</td></tr>
+  <tr><td>3</td><td>库存并发只写了"事务内扣减"</td><td>并发下单仍可能超卖</td><td>明确用条件更新（<code>UPDATE ... WHERE stock &gt;= qty</code>）或行锁，并写清失败回滚路径</td></tr>
+  <tr><td>4</td><td>缺定时任务清单</td><td>关单、对账、低库存提醒、弃购邮件都靠定时任务，文档没列</td><td>补一张任务表：名称 / 频率 / 失败处理</td></tr>
+  <tr><td>5</td><td>缺邮件模板与触发点定义</td><td>开发时无人知道要发几封、什么时候发</td><td>补 6 个模板 × 触发条件 × 变量表</td></tr>
+  <tr><td>6</td><td>缺埋点事件定义</td><td>上线即盲飞</td><td>补 GA4 电商事件表（事件 / 触发时机 / 参数）</td></tr>
+  <tr><td>7</td><td>多币种被排除但未写扩展预留</td><td>未来进加拿大/英国要重做价格层</td><td>即使 v1 只 USD，也应在价格表预留 <code>currency</code> 字段</td></tr>
+  <tr><td>8</td><td>没有 UGC/评价的数据模型</td><td>评价墙与商品页评分没有落库位置</td><td>补 Review 表（或明确接第三方）</td></tr>
+  <tr><td>9</td><td>备份只写"每日全量 + 30 天"</td><td>"有没有验证过能恢复"没写</td><td>加一条：每季度做一次恢复演练并记录</td></tr>
+  <tr><td>10</td><td>未写明 staging 数据从哪来</td><td>验收时用真实数据还是造数据不清晰</td><td>明确：脱敏快照 + 固定种子数据两套</td></tr>
+</table>
+
+<h2 id="proto"><span class="n">4</span>原型的问题（只看结构，不看视觉）</h2>
+<table>
+  <tr><th>#</th><th>问题</th><th>改法</th></tr>
+  <tr><td>1</td><td>首页把 USP 四栏放在 Hero 正下方，与参考站不一致</td><td>USP 移到页脚上方；Hero 下方改为 Best Sellers 横滑</td></tr>
+  <tr><td>2</td><td>首页缺"数字背书"区块（销量 / 客户数 / 平台评分）与创始人故事</td><td>替补：Best Sellers 之后放 three-numbers + 4 条短评；创始人故事放在倒数第二屏</td></tr>
+  <tr><td>3</td><td>商品卡没有"直接加购"与"卡片内切换颜色"</td><td>卡片底部补 Add to cart 小按钮 + 颜色文字切换</td></tr>
+  <tr><td>4</td><td>商品页把卖点放进手风琴</td><td>价格下方补 4 条加粗信任点（终身颜色保证 / 防水低敏 / 用户引语 / 设计地），手风琴只放规格与物流</td></tr>
+  <tr><td>5</td><td>缺少"满额赠品"在购物车抽屉里的进度条</td><td>抽屉里在免邮条下方加赠品条：再买 $X 送神秘耳环</td></tr>
+  <tr><td>6</td><td>公告栏是单行静态文案</td><td>改为滚动跑马灯，多条目可点</td></tr>
+  <tr><td>7</td><td>后台缺"定制需求单"与"到货提醒名单"两屏</td><td>各补一屏，或在说明里明确 v1 不做并给出替代方案（邮件人工处理）</td></tr>
+</table>
+
+<h2 id="decide"><span class="n">5</span>需要你拍板的 6 件事</h2>
+<p>这些不是我能替你定的，直接决定 v1.1 长什么样。</p>
+<table>
+  <tr><th>#</th><th>决策</th><th>选项 A</th><th>选项 B</th><th>我的倾向</th></tr>
+  <tr><td>1</td><td>价格带</td><td>跟着参考站 $58–$143（含 14K 溢价）</td><td>守 $35–$85（我们原定位）</td><td>A 更接近被验证过的市场，但要看你的供应链成本</td></tr>
+  <tr><td>2</td><td>终身颜色保证</td><td>真承诺（坏了免费换，计入退货计提）</td><td>只写"长期不掉色"，不做承诺</td><td>A，这是不锈钢品类的核心武器，但要把成本算进毛利</td></tr>
+  <tr><td>3</td><td>商品卡直接加购</td><td>做（需要处理变体默认值）</td><td>不做，必须进详情</td><td>A</td></tr>
+  <tr><td>4</td><td>满额赠品</td><td>做（增 SKU、增后台规则）</td><td>不做，先跑基础链路</td><td>A，但可作为 v1.1</td></tr>
+  <tr><td>5</td><td>集合三轴</td><td>补风格/材质/宝石，导航变深</td><td>只保留品类+题材，导航更轻</td><td>A，参考站一半长尾流量来自这三轴</td></tr>
+  <tr><td>6</td><td>评价系统</td><td>接第三方（Trustpilot / Judge.me）</td><td>自建评价，后台审核</td><td>B 起步，量起来再接第三方</td></tr>
+</table>
+
+<h2 id="next"><span class="n">6</span>修改优先级</h2>
+<table>
+  <tr><th>档</th><th>内容</th><th>预计影响</th></tr>
+  <tr><td class="r">P0</td><td>补 6 个缺失功能、修 5 处内部矛盾、原型改 7 处结构</td><td>不改就无法进入开发，尤其费率快照会算错账</td></tr>
+  <tr><td class="y">P1</td><td>SDD 补追溯矩阵、邮件模板、埋点、定时任务</td><td>影响开发排期与上线后可优化性</td></tr>
+  <tr><td class="g">P2</td><td>退货 RMA、礼品卡、愿望单、积分</td><td>可放到 v1.1 / v2</td></tr>
+</table>
+
+<div class="note"><b>下一步：</b>你确认第 5 节的 6 个决策后，我出 <b>v1.1</b>：FRD 补 6 条 + 改 8 条、SDD 补 4 张表、原型改 7 处结构。改完再评审一轮，通过后才动代码。</div>
+
+<hr>
+<p class="small">— 评审意见 v1.0 · 对照数据抓取自 atoleajewelry.com（2026-11-12）· 未确认项已在文中标注"未确认" —</p>
+
+</div>
+</body>
+</html>

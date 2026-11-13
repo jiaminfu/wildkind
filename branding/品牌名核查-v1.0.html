@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>品牌名核查报告 · WK-BR-002 v1.0</title>
+<style>
+  :root{
+    --sea:#1B3A34; --cream:#FAF6EF; --sand:#E7DAC8;
+    --ink:#16130F; --ink2:#2E2A25; --muted:#6E675E; --line:#E2DCD2;
+    --clay:#B4472F; --olive:#4A6B4A; --brass:#B08A56;
+    --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);color:var(--ink2);font:14px/1.7 var(--sans);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 32px 80px}
+  header{padding:56px 0 28px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
+  h1{font-family:var(--serif);font-size:44px;line-height:1.1;margin:12px 0 14px;color:var(--ink);letter-spacing:-.01em}
+  .lede{font-size:15px;color:var(--muted);max-width:64ch;margin:0}
+  .meta{margin-top:18px;font-size:12px;color:var(--muted);display:flex;gap:22px;flex-wrap:wrap}
+  h2{font-family:var(--serif);font-size:26px;color:var(--ink);margin:52px 0 6px;letter-spacing:0}
+  h3{font-size:14px;font-weight:600;color:var(--ink);margin:26px 0 8px;letter-spacing:.02em}
+  p{margin:0 0 12px}
+  .sub{font-size:13px;color:var(--muted);margin-bottom:18px}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0 6px}
+  th{text-align:left;padding:10px 12px;background:#F2EBDF;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);font-weight:600;white-space:nowrap}
+  td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  .rank{font-family:var(--serif);font-size:17px;color:var(--sea)}
+  .name{font-weight:600;color:var(--ink);letter-spacing:.04em}
+  .yes{color:var(--olive);font-weight:600}
+  .no{color:var(--clay);font-weight:600}
+  .maybe{color:#8A6318;font-weight:600}
+  .mono{font-family:ui-monospace,Consolas,monospace;font-size:12px}
+
+  .pick{background:#fff;border:1px solid var(--line);border-left:3px solid var(--sea);padding:22px 24px;margin:22px 0}
+  .pick h3{margin-top:0;font-size:20px;font-family:var(--serif);font-weight:400}
+  .pick .why{font-size:13.5px;color:var(--ink2);margin-bottom:0}
+  .warn{background:rgba(180,71,47,.05);border:1px solid rgba(180,71,47,.24);border-left:3px solid var(--clay);padding:18px 22px;margin:20px 0;font-size:13.5px}
+  .warn b{color:var(--clay)}
+
+  .cand{border:1px solid var(--line);background:#fff;margin-bottom:16px}
+  .cand__hd{display:flex;align-items:baseline;gap:14px;padding:15px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .cand__name{font-family:var(--serif);font-size:22px;letter-spacing:.1em;color:var(--ink)}
+  .tag{font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border:1px solid var(--line);color:var(--muted)}
+  .tag.go{background:var(--sea);color:var(--cream);border-color:var(--sea)}
+  .tag.stop{background:rgba(180,71,47,.1);color:var(--clay);border-color:rgba(180,71,47,.3)}
+  .cand__bd{padding:16px 20px;font-size:13px;line-height:1.75}
+  .cand__bd .k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px;margin-top:12px}
+  .cand__bd .k:first-child{margin-top:0}
+  .cand__bd code{background:#F2EBDF;padding:1px 5px;font-size:12px;border-radius:2px}
+
+  ul{padding-left:18px;margin:8px 0 14px}
+  li{margin-bottom:6px;font-size:13.5px}
+  .small{font-size:12px;color:var(--muted)}
+  footer{margin-top:60px;padding-top:22px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+  @media(max-width:720px){
+    .wrap{padding:0 20px 60px}
+    h1{font-size:32px}
+    table{font-size:12px}
+    th,td{padding:8px 8px}
+    .hide-sm{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">WK-BR-002 · 品牌名可用性核查</div>
+  <h1>六个候选，只有一个<br>商标和域名同时干净</h1>
+  <p class="lede">核查对象：SEREIA、MAREA、TIDEGLASS、NAIADE、EVERWAVE、SELKIE。判定标准是「能不能真的用这个名字做生意」，不是「听起来好不好听」。</p>
+  <div class="meta">
+    <span>核查日期：2026-11-13</span>
+    <span>数据源：USPTO 公开商标库 · IANA RDAP 全球域名注册库</span>
+    <span>版本：v1.0</span>
+  </div>
+</header>
+
+<h2>0. 一句话结论</h2>
+<div class="pick">
+  <h3>TIDEGLASS —— 商标空白，三个域名可买，故事与产品自洽</h3>
+  <p class="why">唯一一个「USPTO 珠宝类 <b>零记录</b>」且「<code>tideglassjewelry.com</code> / <code>tideglass.shop</code> / <code>tideglass.store</code> 全部可注册」的候选。海玻璃本身就是「被海浪打磨几十年仍透光」的东西——正好是 316L + PVD「不褪色」的实体隐喻。<br>
+  <span class="small">代价：9 个字母、3 个音节，冷僻词，需要一句解释成本。</span></p>
+</div>
+
+<div class="warn">
+  <b>SEREIA 必须暂停。</b>USPTO 里已有一件 <b>Class 14（珠宝）</b> 的「SEREIA OFFICIAL」在审申请，商品描述逐条写着 <i>Earrings; Jewelry; Bracelets; Jewelry rings; Necklaces</i> —— 与你完全同品类。另有 6 件 2026 年提交的「SEREIA」化妆品申请，说明这个词正在被大量抢注。继续用，等于把品牌建在别人的地盘上。
+</div>
+
+<h2>1. 六维对照表</h2>
+<p class="sub">商标项只看一个标准：美国 Class 14（珠宝钟表）是否存在「同名或高度近似 + 存活」的记录。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:34px">#</th>
+      <th>候选</th>
+      <th>USPTO 珠宝类</th>
+      <th>主域名 .com</th>
+      <th class="hide-sm">可用组合</th>
+      <th>判定</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="rank">1</td>
+      <td><span class="name">TIDEGLASS</span></td>
+      <td class="yes">干净</td>
+      <td class="no">已占（2025-11 · Automattic）</td>
+      <td class="hide-sm mono">tideglassjewelry.com<br>tideglass.shop · .store</td>
+      <td class="yes">可用</td>
+    </tr>
+    <tr>
+      <td class="rank">2</td>
+      <td><span class="name">NAIADE</span></td>
+      <td class="yes">干净</td>
+      <td class="no">已占（2001）</td>
+      <td class="hide-sm mono">naiadejewelry.com<br>getnaiade.com · naiadestudio.com</td>
+      <td class="maybe">可用，读音有风险</td>
+    </tr>
+    <tr>
+      <td class="rank">3</td>
+      <td><span class="name">EVERWAVE</span></td>
+      <td class="yes">干净</td>
+      <td class="no">已占（2002）</td>
+      <td class="hide-sm mono">everwavejewelry.com<br>everwave.shop · .store</td>
+      <td class="maybe">可用，但词太平</td>
+    </tr>
+    <tr>
+      <td class="rank">4</td>
+      <td><span class="name">SELKIE</span></td>
+      <td class="maybe">无 Class 14，但服装类被占</td>
+      <td class="no">已占（1998）</td>
+      <td class="hide-sm mono">selkie.store<br>wearselkie.com</td>
+      <td class="maybe">品牌认知已被占</td>
+    </tr>
+    <tr>
+      <td class="rank">5</td>
+      <td><span class="name">SEREIA</span></td>
+      <td class="no">有在审同名 Class 14</td>
+      <td class="no">已占（2002）</td>
+      <td class="hide-sm mono">sereiajewelry.com<br>wearsereia.com</td>
+      <td class="no">高风险</td>
+    </tr>
+    <tr>
+      <td class="rank">6</td>
+      <td><span class="name">MAREA</span></td>
+      <td class="no">有已注册同名 Class 14</td>
+      <td class="no">已占（1997）</td>
+      <td class="hide-sm mono">—（三条主力组合全被占）</td>
+      <td class="no">出局</td>
+    </tr>
+  </tbody>
+</table>
+<p class="small">"已占" 指该域名已有注册人；括号内为首次注册年份，用于判断对方是长期持有还是近期抢注。</p>
+
+<h2>2. 逐个候选的证据</h2>
+
+<div class="cand">
+  <div class="cand__hd">
+    <span class="cand__name">TIDEGLASS</span>
+    <span class="tag go">建议采用</span>
+    <span class="tag">商标干净</span>
+  </div>
+  <div class="cand__bd">
+    <span class="k">商标核查</span>
+    以 <code>tideglass</code> 与 <code>tide glass</code> 两种拼写在 USPTO 公开库检索，<b>没有任何同名记录</b>。相邻词（TIDELINE、TIDEGRAPH、TIDE TIMER）全部是潮汐钟表/航海图类，与珠宝不构成混淆。这是六个候选里唯一「完全没有历史包袱」的词。
+    <span class="k">域名核查</span>
+    <code>tideglass.com</code> 于 2025-11-16 被 Automattic（WordPress 母公司）注册，属防御性持有可能，买断需议价。<code>tideglassjewelry.com</code>、<code>tideglass.shop</code>、<code>tideglass.store</code> 三个均<b>未注册</b>，可立即按原价拿下。
+    <span class="k">品牌判断</span>
+    海玻璃是被海水磨了几十年、边缘变圆、表面起雾，但内部始终有光的东西。用它做「不褪色的钢」，比任何海洋词都更准确——因为它在讲同一件事：<b>时间只改变表面，不改本质。</b>
+  </div>
+</div>
+
+<div class="cand">
+  <div class="cand__hd">
+    <span class="cand__name">NAIADE</span>
+    <span class="tag">域名最优</span>
+    <span class="tag">商标干净</span>
+  </div>
+  <div class="cand__bd">
+    <span class="k">商标核查</span>
+    无 Class 14 记录。现存记录为：香水（1988）、家纺（2024-09）、泳装 NAIADE THE LABEL（2025-05）。泳装与饰品同属女性穿戴，属「相邻但不冲突」。
+    <span class="k">域名核查</span>
+    <code>naiade.com</code>（2001）、<code>naiade.shop</code>、<code>naiade.store</code> 已被占，但 <code>naiadejewelry.com</code>、<code>getnaiade.com</code>、<code>naiadestudio.com</code> <b>三个 .com 全部可用</b>——六个候选里域名可操作空间最大。
+    <span class="k">为什么不推荐</span>
+    读音是硬伤。<code>-ade</code> 在英语里会被读成「奈阿德」，正确读音 /naˈjɑːd/ 需要额外教学。一个需要教用户怎么念的品牌名，每投一次广告都在漏钱。
+  </div>
+</div>
+
+<div class="cand">
+  <div class="cand__hd">
+    <span class="cand__name">EVERWAVE</span>
+    <span class="tag">可用但平庸</span>
+  </div>
+  <div class="cand__bd">
+    <span class="k">商标核查</span>
+    无 Class 14。现存：护发液（1978）、旗杆（2013）、净水滤芯（2017）、数字艺术品市场（2022）。类别都不冲突。
+    <span class="k">域名核查</span>
+    <code>everwave.com</code> 2002 年被占；<code>everwavejewelry.com</code>、<code>everwave.shop</code>、<code>everwave.store</code> 可用。
+    <span class="k">判断</span>
+    ever + wave 是「两个实词硬拼」，在英文商标法里属于弱显著性强组合，注册能过但保护范围窄——别人加个前缀做 EVERWAVE CO. 你拦不住。另外它念起来像运动饮料或冲浪服，不像饰品。
+  </div>
+</div>
+
+<div class="cand">
+  <div class="cand__hd">
+    <span class="cand__name">SELKIE</span>
+    <span class="tag">认知已被占</span>
+  </div>
+  <div class="cand__bd">
+    <span class="k">商标核查</span>
+    Class 14 无记录，但 <b>Class 25 有「SELKIE」由 BIG HEART USA LLC 持有</b>（2016 年注册，2024 年又加注一批连衣裙、泳装、沙滩罩衫）。Selkie 在美国是一个有知名度的连衣裙品牌，社媒上有稳定声量。
+    <span class="k">域名核查</span>
+    <code>selkie.com</code>（1998）、<code>selkiejewelry.com</code>（2015）、<code>selkie.shop</code> 全被占；仅 <code>selkie.store</code>、<code>wearselkie.com</code> 可用。
+    <span class="k">判断</span>
+    法律上你或许能在珠宝类注册成功，但营销上你是在给别人的品牌做免费广告——搜 Selkie 的人找的是裙子。这就是「品类污染」，商标过了也没用。
+  </div>
+</div>
+
+<div class="cand">
+  <div class="cand__hd">
+    <span class="cand__name">SEREIA</span>
+    <span class="tag stop">高风险 · 建议放弃</span>
+  </div>
+  <div class="cand__bd">
+    <span class="k">致命证据</span>
+    USPTO 序列号 <code>98755473</code>「SEREIA OFFICIAL」，申请人 SEREIA OFFICIAL LLC，2024-09-17 提交，Class 14，商品描述含 <i>Earrings; Jewelry; Bracelets; Jewellery chains; Jewelry rings; Necklaces; Pendants as jewelry</i>。当前状态 630（新申请，尚未分配给审查员）——<b>仍属存活申请，会构成实质障碍</b>。
+    <span class="k">拥挤度</span>
+    另有 5 件 2026 年提交的「SEREIA」化妆品类申请（SEREIA、SEREIA BEAUTY、SEREIA K-LIFT ×2），申请人多为中国主体。这个词正在被批量抢注，即使 Class 14 侥幸绕过，品牌辨识度也会被稀释。
+    <span class="k">域名核查</span>
+    <code>sereia.com</code> 2002 年即被注册（GoDaddy 代管，2027 到期），属长期持有，买断价预计四位数美元。<code>sereiajewelry.com</code>、<code>wearsereia.com</code> 可用。
+    <span class="k">如果要坚持用</span>
+    必须做两件事：① 委托商标代理人做 <b>USPTO + EUIPO + UKIPO 三地 Class 14 正式检索报告</b>；② 评估「SEREIA OFFICIAL」的异议/撤销可行性。两项成本通常在 $1,500–3,000 之间，且不保证通过。
+  </div>
+</div>
+
+<div class="cand">
+  <div class="cand__hd">
+    <span class="cand__name">MAREA</span>
+    <span class="tag stop">出局</span>
+  </div>
+  <div class="cand__bd">
+    <span class="k">致命证据</span>
+    USPTO 序列号 <code>99009231</code>「MAREA」，申请人 Pure Joy Home LLC，2025-01-17 提交，商品描述就一个词：<i>Jewelry</i>。同一持有人 2023 年还注册了 MAREA 连衣裙、帽子、沙滩罩衫——这是一个完整的海边女装品牌矩阵。
+    <span class="k">域名核查</span>
+    这是六个候选里最糟的：<code>marea.com</code>（1997）、<code>mareajewelry.com</code>（2024）、<code>wearmarea.com</code>（2026-09）、<code>marea.shop</code>、<code>marea.store</code> <b>全部被占</b>。连退路都没留。
+    <span class="k">判断</span>
+    商标与域名双杀。无论从哪个角度看都不该选。
+  </div>
+</div>
+
+<h2>3. 域名核查全量明细</h2>
+<p class="sub">判定方式：直接查询 IANA 全球 RDAP 注册库（不是 DNS 解析，未注册与未解析是两件事）。</p>
+<table>
+  <thead><tr><th>候选</th><th>域名</th><th>状态</th><th class="hide-sm">首次注册 / 持有人线索</th></tr></thead>
+  <tbody>
+    <tr><td rowspan="4" class="name">SEREIA</td><td class="mono">sereia.com</td><td class="no">已占</td><td class="hide-sm">2002-01-09 · GoDaddy</td></tr>
+    <tr><td class="mono">sereiajewelry.com</td><td class="yes">可注册</td><td class="hide-sm">—</td></tr>
+    <tr><td class="mono">wearsereia.com</td><td class="yes">可注册</td><td class="hide-sm">—</td></tr>
+    <tr><td class="mono">sereia.shop / .store</td><td class="no">已占</td><td class="hide-sm">2026 年注册</td></tr>
+
+    <tr><td rowspan="3" class="name">MAREA</td><td class="mono">marea.com</td><td class="no">已占</td><td class="hide-sm">1997-12-01 · Arsys（西班牙）</td></tr>
+    <tr><td class="mono">mareajewelry.com</td><td class="no">已占</td><td class="hide-sm">2024-04-11 · IONOS</td></tr>
+    <tr><td class="mono">wearmarea.com</td><td class="no">已占</td><td class="hide-sm">2026-09-01 · 近期抢注</td></tr>
+
+    <tr><td rowspan="4" class="name">TIDEGLASS</td><td class="mono">tideglass.com</td><td class="no">已占</td><td class="hide-sm">2025-11-16 · Automattic</td></tr>
+    <tr><td class="mono">tideglassjewelry.com</td><td class="yes">可注册</td><td class="hide-sm">—</td></tr>
+    <tr><td class="mono">tideglass.shop</td><td class="yes">可注册</td><td class="hide-sm">—</td></tr>
+    <tr><td class="mono">tideglass.store</td><td class="yes">可注册</td><td class="hide-sm">—</td></tr>
+
+    <tr><td rowspan="4" class="name">NAIADE</td><td class="mono">naiade.com</td><td class="no">已占</td><td class="hide-sm">2001-07-16 · GoDaddy</td></tr>
+    <tr><td class="mono">naiadejewelry.com</td><td class="yes">可注册</td><td class="hide-sm">—</td></tr>
+    <tr><td class="mono">getnaiade.com</td><td class="yes">可注册</td><td class="hide-sm">—</td></tr>
+    <tr><td class="mono">naiadestudio.com</td><td class="yes">可注册</td><td class="hide-sm">—</td></tr>
+
+    <tr><td rowspan="3" class="name">EVERWAVE</td><td class="mono">everwave.com</td><td class="no">已占</td><td class="hide-sm">2002-10-09 · Network Solutions</td></tr>
+    <tr><td class="mono">everwavejewelry.com</td><td class="yes">可注册</td><td class="hide-sm">—</td></tr>
+    <tr><td class="mono">everwave.shop / .store</td><td class="yes">可注册</td><td class="hide-sm">—</td></tr>
+
+    <tr><td rowspan="3" class="name">SELKIE</td><td class="mono">selkie.com</td><td class="no">已占</td><td class="hide-sm">1998-11-28 · NameSilo</td></tr>
+    <tr><td class="mono">selkiejewelry.com</td><td class="no">已占</td><td class="hide-sm">2015-03-19</td></tr>
+    <tr><td class="mono">selkie.store / wearselkie.com</td><td class="yes">可注册</td><td class="hide-sm">—</td></tr>
+  </tbody>
+</table>
+
+<h2>4. 如果你选 TIDEGLASS，接下来 72 小时</h2>
+<ul>
+  <li><b>立刻锁定</b>：<code>tideglassjewelry.com</code> + <code>tideglass.shop</code>，一次买 3 年，约 $60。另外注册 <code>tideglass.co</code> 做跳转。</li>
+  <li><b>社媒 handle 同步</b>：Instagram / TikTok / Pinterest 三平台同名，当天开号，不需要内容，先占位。</li>
+  <li><b>商标申请</b>：USPTO Class 14 + 35，TEAS Plus 申请费约 $250/类，代理费约 $500–900。建议同时报 UKIPO（£205 首类）。</li>
+  <li><b>原型改一处</b>：品牌常量集中在 <code>assets/js/ui.js</code> 的 <code>brand__word</code> 与各页文案，改起来是 20 分钟的事，不影响任何功能。</li>
+</ul>
+
+<h2>5. 本次核查的边界</h2>
+<p>必须说清楚，避免把这份报告当成法律意见：</p>
+<ul>
+  <li>覆盖 <b>USPTO（美国）</b> 公开商标库与 <b>IANA RDAP（全球域名）</b>。美国是你的主力市场，这里是主战场。</li>
+  <li><b>未覆盖</b> EUIPO（欧盟）、UKIPO（英国）、CIPO（加拿大）的官方注册库——这三家不提供免费公开 API，需付费检索工具或委托代理。</li>
+  <li>商标「检索干净」不等于「一定注册成功」，审查员仍可能基于近似判定驳回；域名「可注册」不等于「适合长期持有」，需确认不是溢价域名。</li>
+  <li>建议在正式申请前，把这份表交给商标代理人做一次正式检索（Clearance Search），费用通常在 $300–600，是这笔生意里最便宜的保险。</li>
+</ul>
+
+<footer>
+  WK-BR-002 v1.0 · 2026-11-13 · 数据可复现：<span class="mono">node tools/domain-check.js</span>（RDAP 直查）· 商标记录可在 trademarks.justia.com 按序列号核对
+</footer>
+
+</div>
+</body>
+</html>

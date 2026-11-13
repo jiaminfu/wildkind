@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SEREIA 品牌方案 · BR-001 v1.0（评审稿）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16130F; --sea:#1B3A34; --brass:#B08A56; --sand:#E7DAC8;
+  --cream:#FAF6EF; --sage:#8A9A8B; --clay:#D9B6A3;
+  --muted:#6E675E; --line:#E2DCD2; --paper:#FFFDF9;
+  --p1:#B4472F; --p2:#B08A56; --p3:#6E8A6E;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font:15px/1.75 "Figtree",-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{display:grid; grid-template-columns:268px minmax(0,1fr); max-width:1440px; margin:0 auto}
+/* ---------- TOC ---------- */
+.toc{
+  position:sticky; top:0; height:100vh; overflow-y:auto;
+  padding:38px 22px 40px 30px; border-right:1px solid var(--line);
+  background:linear-gradient(180deg,#FBF8F2,#FFFDF9);
+}
+.toc__brand{font-family:"Instrument Serif",Georgia,serif; font-size:19px; letter-spacing:.26em; margin-bottom:2px}
+.toc__sub{font-size:10.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin-bottom:26px}
+.toc a{display:block; padding:5px 0 5px 0; color:#4A453F; text-decoration:none; font-size:13px; line-height:1.45; border-left:2px solid transparent; padding-left:11px; margin-left:-13px}
+.toc a:hover{color:var(--sea); border-left-color:var(--brass); background:#F6F1E8}
+.toc a.lv1{font-weight:600; margin-top:14px; color:var(--ink); letter-spacing:.01em}
+.toc a.lv2{font-size:12.2px; color:var(--muted); padding-left:22px}
+.toc__foot{margin-top:30px; padding-top:16px; border-top:1px solid var(--line); font-size:11px; color:var(--muted); line-height:1.7}
+/* ---------- content ---------- */
+main{padding:0 0 100px}
+section{padding:0 64px}
+/* cover */
+.cover{
+  min-height:92vh; display:flex; flex-direction:column; justify-content:center;
+  padding:80px 64px 70px; background:var(--sea); color:var(--cream); position:relative; overflow:hidden;
+}
+.cover::after{
+  content:""; position:absolute; right:-140px; bottom:-180px; width:560px; height:560px;
+  border-radius:50%; border:1px solid rgba(231,218,200,.18);
+  box-shadow:0 0 0 60px rgba(231,218,200,.04), 0 0 0 130px rgba(231,218,200,.03);
+}
+.cover__kicker{font-size:11px; letter-spacing:.32em; text-transform:uppercase; color:var(--sand); opacity:.8; margin-bottom:26px}
+.cover h1{
+  font-family:"Instrument Serif",Georgia,"Times New Roman",serif; font-weight:400;
+  font-size:clamp(46px,7vw,86px); line-height:1; margin:0 0 6px; letter-spacing:.13em;
+}
+.cover h1 small{display:block; font-size:15px; letter-spacing:.05em; margin-top:22px; color:var(--sand); font-family:"Figtree",-apple-system,sans-serif; line-height:1.7; max-width:520px}
+.cover__line{width:64px; height:2px; background:var(--brass); margin:34px 0 30px}
+.cover .meta{display:grid; grid-template-columns:104px 1fr; gap:9px 18px; font-size:12.5px; max-width:560px; position:relative; z-index:2}
+.cover .meta div:nth-child(odd){color:rgba(250,246,239,.5); letter-spacing:.08em; font-size:11px; padding-top:2px}
+.cover .meta div:nth-child(even){color:var(--cream)}
+.badge{display:inline-block; padding:1px 8px; border-radius:2px; font-size:10.5px; letter-spacing:.1em; background:rgba(176,138,86,.9); color:#fff; vertical-align:1px}
+/* headings */
+h2{
+  font-family:"Instrument Serif",Georgia,serif; font-weight:400; font-size:30px; letter-spacing:.02em;
+  margin:0 0 4px; padding-top:66px; line-height:1.3;
+}
+h2 .n{display:inline-block; font-size:12px; letter-spacing:.2em; color:var(--brass); vertical-align:12px; margin-right:12px; font-family:"Figtree",-apple-system,sans-serif}
+h2 + .sub{color:var(--muted); font-size:13.5px; margin:0 0 26px; padding-bottom:18px; border-bottom:1px solid var(--line)}
+h3{font-size:17px; letter-spacing:.01em; margin:38px 0 12px; font-weight:600}
+h3 .tagm{font-weight:400; font-size:11px; letter-spacing:.1em; color:var(--brass); margin-left:9px; vertical-align:2px}
+h4{font-size:14px; margin:22px 0 8px; letter-spacing:.04em; text-transform:uppercase; color:var(--sea)}
+p{margin:0 0 14px; color:#2E2A25}
+.lede{font-size:16.5px; line-height:1.8; color:#231F1A}
+.small{font-size:12.5px; color:var(--muted); line-height:1.7}
+ul,ol{margin:0 0 16px; padding-left:22px}
+li{margin-bottom:7px; color:#2E2A25}
+li::marker{color:var(--brass)}
+b,strong{font-weight:600; color:var(--ink)}
+code{font-family:ui-monospace,"SFMono-Regular",Consolas,monospace; font-size:.88em; background:#F4EFE5; padding:1px 5px; border-radius:2px; color:#5A4A33}
+a{color:var(--sea)}
+/* tables */
+table{width:100%; border-collapse:collapse; margin:18px 0 24px; font-size:13px; line-height:1.65}
+th{text-align:left; padding:10px 12px; background:#F4EFE5; font-weight:600; font-size:11.5px; letter-spacing:.07em; text-transform:uppercase; color:#4A443B; border-bottom:1px solid var(--line)}
+td{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.id{font-family:ui-monospace,Consolas,monospace; font-size:11.5px; color:var(--sea); white-space:nowrap; font-weight:600}
+tbody tr:hover{background:#FCFAF5}
+.p1{color:var(--p1)} .p2{color:var(--p2)} .p3{color:var(--p3)}
+/* boxes */
+.note{border-left:3px solid var(--brass); background:#FAF5EB; padding:16px 20px; margin:20px 0; font-size:13.5px; line-height:1.75}
+.note b{color:#7A5A2E}
+.warn{border-left:3px solid var(--p1); background:#FBF0EC; padding:16px 20px; margin:20px 0; font-size:13.5px; line-height:1.75}
+.warn b{color:#9C3A25}
+.ok{border-left:3px solid var(--sea); background:#F1F5F2; padding:16px 20px; margin:20px 0; font-size:13.5px; line-height:1.75}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:22px}
+.grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:18px}
+.grid4{display:grid; grid-template-columns:repeat(4,1fr); gap:14px}
+@media(max-width:1000px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+/* logo boards */
+.board{border:1px solid var(--line); border-radius:3px; margin:16px 0}
+.board__label{padding:9px 14px; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--line); background:#FBF8F2}
+.board__stage{padding:52px 32px; display:flex; align-items:center; justify-content:center; gap:0; min-height:220px}
+.board__stage.dark{background:var(--sea); color:var(--cream)}
+.board__stage.ink{background:var(--ink); color:var(--cream)}
+.board__stage.sand{background:var(--sand); color:var(--sea)}
+/* lockup */
+.lockup{display:flex; align-items:center; gap:20px}
+.lockup .mark{width:76px; height:76px; flex:none}
+.lockup .wm{font-family:"Instrument Serif",Georgia,"Times New Roman",serif; font-size:40px; letter-spacing:.24em; line-height:1; text-indent:.24em}
+.lockup.sm .mark{width:52px;height:52px}
+.lockup.sm .wm{font-size:27px}
+.stacklock{display:flex; flex-direction:column; align-items:center; gap:16px}
+.stacklock .mark{width:82px;height:82px}
+.stacklock .wm{font-family:Georgia,serif; font-size:33px; letter-spacing:.3em; text-indent:.3em}
+.markonly{width:104px;height:104px}
+.markonly.s{width:64px;height:64px}
+.wordonly{font-family:Georgia,serif; font-size:38px; letter-spacing:.26em; text-indent:.26em}
+/* color */
+.swatches{display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin:20px 0}
+.sw{border:1px solid var(--line); border-radius:2px; overflow:hidden}
+.sw__chip{height:104px}
+.sw__info{padding:10px 11px; font-size:11px; line-height:1.6; background:#fff}
+.sw__name{font-weight:600; font-size:12px; display:block; margin-bottom:2px}
+.sw__hex{font-family:ui-monospace,Consolas,monospace; color:var(--muted); font-size:10.5px}
+.ratio{height:16px; display:flex; margin:18px 0 6px; border-radius:1px; overflow:hidden}
+.ratio i{display:block}
+/* type spec */
+.typespec{border-top:1px solid var(--line); padding:18px 0; display:grid; grid-template-columns:130px 1fr; gap:18px; align-items:baseline}
+.typespec .lab{font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding-top:8px}
+.t-display{font-family:Georgia,serif; font-size:52px; letter-spacing:.05em; line-height:1.05}
+.t-h1{font-family:Georgia,serif; font-size:34px; letter-spacing:.03em; line-height:1.15}
+.t-h2{font-family:Georgia,serif; font-size:24px; letter-spacing:.04em}
+.t-eyebrow{font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--muted)}
+.t-body{font-size:15px; line-height:1.75; max-width:560px}
+/* misuse */
+.misuse{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:18px 0}
+.mis{position:relative; border:1px solid var(--line); padding:30px 16px; text-align:center; background:#fff; min-height:118px; display:flex; align-items:center; justify-content:center}
+.mis::after{content:"✕"; position:absolute; top:6px; right:9px; color:var(--p1); font-size:12px; opacity:.75}
+.mis__cap{position:absolute; bottom:6px; left:0; right:0; font-size:10px; color:var(--muted); letter-spacing:.02em}
+/* mockups */
+.mock{background:#fff; border:1px solid var(--line); border-radius:2px; overflow:hidden}
+.mock__bar{background:var(--sea); color:var(--cream); padding:14px 18px; display:flex; align-items:center; justify-content:space-between; font-size:9px; letter-spacing:.14em; text-transform:uppercase}
+.mock__bar .lmk{width:26px;height:26px}
+.mock__bar .word{font-family:Georgia,serif; font-size:14px; letter-spacing:.3em; text-indent:.3em}
+.mock__nav{display:flex; gap:11px; color:rgba(250,246,239,.72); font-size:8px}
+.card-mock{background:var(--cream); border:1px solid var(--sand); padding:26px 24px; text-align:center; position:relative}
+.card-mock .halo{position:absolute; inset:9px; border:1px solid rgba(27,58,52,.16); pointer-events:none}
+.card-mock .lmk{width:42px;height:42px;margin:0 auto 12px; color:var(--sea)}
+.card-mock .cw{font-family:Georgia,serif; font-size:19px; letter-spacing:.28em; text-indent:.28em; color:var(--sea)}
+.card-mock .cs{font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#8A7C64; margin-top:9px}
+.tag-mock{width:112px; height:168px; background:var(--sea); color:var(--sand); display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:16px 10px; border-radius:2px}
+.tag-mock .tw{font-family:Georgia,serif; font-size:13px; letter-spacing:.24em; text-indent:.24em; text-align:center}
+.tag-mock .th{width:1px;height:26px;background:rgba(231,218,200,.4)}
+.tag-mock .ts{font-size:6.5px; letter-spacing:.16em; text-transform:uppercase; opacity:.66; text-align:center; line-height:1.7}
+.avatar{width:96px;height:96px;border-radius:50%;background:var(--sea);display:flex;align-items:center;justify-content:center;color:var(--sand)}
+.avatar .markonly{width:52px;height:52px}
+.mailhead{background:var(--cream); padding:22px; text-align:center; border-bottom:1px solid var(--sand)}
+.mailhead .mark{width:38px;height:38px;color:var(--sea);margin:0 auto 8px}
+.mailhead .wm{font-family:Georgia,serif;font-size:16px;letter-spacing:.3em;text-indent:.3em;color:var(--sea)}
+/* name candidates */
+.cand{border:1px solid var(--line); padding:0; margin:0 0 14px; background:#fff}
+.cand__hd{display:flex; align-items:baseline; gap:14px; padding:16px 20px 12px; border-bottom:1px solid var(--line); flex-wrap:wrap}
+.cand__name{font-family:Georgia,serif; font-size:27px; letter-spacing:.15em; color:var(--sea)}
+.cand__ph{font-size:12px; color:var(--muted); font-family:ui-monospace,Consolas,monospace}
+.cand__tag{font-size:10px; letter-spacing:.12em; text-transform:uppercase; padding:2px 8px; border-radius:2px; background:#F4EFE5; color:#6B5B45}
+.cand__tag.pick{background:var(--sea); color:var(--cream)}
+.cand__bd{display:grid; grid-template-columns:1fr 1fr; gap:0}
+.cand__bd>div{padding:13px 20px; font-size:12.8px; line-height:1.7}
+.cand__bd>div:first-child{border-right:1px solid var(--line)}
+.cand__bd h5{margin:0 0 4px; font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); font-weight:600}
+@media(max-width:1000px){.cand__bd{grid-template-columns:1fr}}
+@media(max-width:1000px){
+  .wrap{grid-template-columns:1fr}
+  .toc{display:none}
+  section{padding:0 24px}
+  .cover{padding:70px 24px 60px}
+  .swatches{grid-template-columns:1fr 1fr}
+  .misuse{grid-template-columns:1fr 1fr}
+}
+hr{border:0; border-top:1px solid var(--line); margin:44px 0}
+.foot{padding:40px 64px; border-top:1px solid var(--line); color:var(--muted); font-size:12px}
+@media print{
+  .toc{display:none} .wrap{grid-template-columns:1fr} .cover{min-height:auto; padding:60px 40px}
+  h2{page-break-before:auto} section{padding:0 40px} .board{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<aside class="toc">
+  <div class="toc__brand">SEREIA</div>
+  <div class="toc__sub">Brand Guidelines</div>
+  <a href="#s0" class="lv1">0 · 一页结论</a>
+  <a href="#s1" class="lv1">1 · 命名</a>
+  <a href="#s1-1" class="lv2">1.1 命名标准</a>
+  <a href="#s1-2" class="lv2">1.2 六个候选</a>
+  <a href="#s1-3" class="lv2">1.3 推荐与理由</a>
+  <a href="#s1-4" class="lv2">1.4 商标与域名尽调</a>
+  <a href="#s2" class="lv1">2 · 品牌核心</a>
+  <a href="#s2-1" class="lv2">2.1 定位陈述</a>
+  <a href="#s2-2" class="lv2">2.2 人群画像</a>
+  <a href="#s2-3" class="lv2">2.3 承诺与证据</a>
+  <a href="#s2-4" class="lv2">2.4 差异坐标</a>
+  <a href="#s2-5" class="lv2">2.5 语气与文案</a>
+  <a href="#s3" class="lv1">3 · 视觉识别</a>
+  <a href="#s3-1" class="lv2">3.1 LOGO 主标</a>
+  <a href="#s3-2" class="lv2">3.2 三个方向</a>
+  <a href="#s3-3" class="lv2">3.3 组合规范</a>
+  <a href="#s3-4" class="lv2">3.4 间距与最小尺寸</a>
+  <a href="#s3-5" class="lv2">3.5 错误用法</a>
+  <a href="#s3-6" class="lv2">3.6 色彩系统</a>
+  <a href="#s3-7" class="lv2">3.7 字体系统</a>
+  <a href="#s3-8" class="lv2">3.8 图形语言</a>
+  <a href="#s3-9" class="lv2">3.9 摄影风格</a>
+  <a href="#s4" class="lv1">4 · 应用</a>
+  <a href="#s4-1" class="lv2">4.1 网站页头</a>
+  <a href="#s4-2" class="lv2">4.2 包装与吊牌</a>
+  <a href="#s4-3" class="lv2">4.3 社媒与邮件</a>
+  <a href="#s5" class="lv1">5 · 上线清单</a>
+  <a href="#s6" class="lv1">6 · 待你拍板</a>
+  <div class="toc__foot">BR-001 · v1.0 评审稿<br>2026-11-13</div>
+</aside>
+
+<main>
+
+<!-- ================= COVER ================= -->
+<div class="cover">
+  <div class="cover__kicker">Brand Identity · Naming · Visual System</div>
+  <h1>SEREIA
+    <small>不锈钢饰品的品牌识别体系：一个名字、一套标记、一套色彩与语言，用来支撑 $58–$143 价格带与「终身颜色保证」这条承诺。</small>
+  </h1>
+  <div class="cover__line"></div>
+  <div class="meta">
+    <div>文档编号</div><div>WK-BR-001</div>
+    <div>版本</div><div>v1.0 评审稿 &nbsp;<span class="badge">待拍板</span></div>
+    <div>日期</div><div>2026-11-13</div>
+    <div>上游依据</div><div>市场调研结论 · FRD v1.1 · 参考站 atoleajewelry.com</div>
+    <div>适用市场</div><div>美国（主力）· 加拿大 · 英国</div>
+    <div>本轮交付</div><div>命名方案 + LOGO 矢量 + 视觉规范 + 应用示意（不含落地印刷文件）</div>
+  </div>
+</div>
+
+<!-- ================= 0 ================= -->
+<section id="s0">
+<h2><span class="n">00</span>一页结论</h2>
+<p class="sub">如果只看一页，看这一页。</p>
+
+<p class="lede">推荐品牌名 <b>SEREIA</b>（读作 se-RAY-ah），葡萄牙语「美人鱼」。品牌信条 <b>Salt &amp; Steel</b>，主标语 <b>Made for salt water.</b></p>
+
+<div class="grid3">
+  <div class="note"><b>为什么是这个名字</b><br>6 个字母、两秒念对、有海域联想但不直白；造词感与参考站同频，却避开了「Ocean / Wave / Tide」这类 SEO 红海词。</div>
+  <div class="note"><b>它解决了什么问题</b><br>$58 起的价格带需要有「品牌感」支撑。一个能讲故事的词 + 一枚可缩到 16px 的标记，比打折更能撑住溢价。</div>
+  <div class="note"><b>它承担什么风险</b><br>葡语常用词，巴西可能有同名主体。必须先做 Class 14 商标检索，通过才定稿，不通过就走备选 B（MAREA）。</div>
+</div>
+
+<h3>三个必须由你决定的点</h3>
+<table>
+  <tr><th style="width:56px">#</th><th style="width:34%">决策</th><th>选项与我的建议</th></tr>
+  <tr><td class="id">B1</td><td>品牌名用哪个</td><td>A. <b>SEREIA</b>（推荐）　B. MAREA　C. TIDEGLASS　D. 你自己另有想法<br><span class="small">建议 A，商标检索不通过则退 B。</span></td></tr>
+  <tr><td class="id">B2</td><td>主标记用哪个方向</td><td>A. 潮环 Tide Ring（推荐，任意尺寸可辨）　B. 扇贝 Shell Fan（独特但缩小会糊）　C. S 字母组合<br><span class="small">建议 A 做主标，B 降级为辅助图形用于包装与背景纹理。</span></td></tr>
+  <tr><td class="id">B3</td><td>品牌色要不要离开参考站的中性调</td><td>A. 保持暖白 + 墨黑（最像 Atolea）　B. 加深海绿 + 铜金（推荐）<br><span class="small">建议 B。中性调做不出品牌记忆点；深海绿在饰品品类里罕见，且与「海水」叙事自洽。</span></td></tr>
+</table>
+
+<div class="warn"><b>一句提醒：</b>品牌方案里所有 LOGO 我都做成了矢量（SVG），可以无损放大到广告牌、也能缩到浏览器标签页。但<b>字标部分目前用的是系统衬线字体渲染</b>，正式上线前必须让设计师把字母转成曲线路径（转曲），否则换台电脑字距就会变。</div>
+</section>
+
+<!-- ================= 1 NAMING ================= -->
+<section id="s1">
+<h2><span class="n">01</span>命名</h2>
+<p class="sub">先定标准，再筛候选，最后给推荐。顺序不能倒，否则就是在几十个「听起来不错」的词里凭感觉抓一个。</p>
+
+<h3 id="s1-1">1.1 命名标准<span class="tagm">先立规则</span></h3>
+<p>跨境 DTC 饰品品牌的名字要同时过五关，任何一关不过都会在后期变成成本：</p>
+<table>
+  <tr><th style="width:52px">#</th><th style="width:20%">标准</th><th>具体要求</th><th style="width:26%">不过关的后果</th></tr>
+  <tr><td class="id">N1</td><td>一次念对</td><td>英语母语者看到拼写能读出来，听到读音能拼回来。不超过 3 个音节、不超过 8 个字母。</td><td>客服每天纠正发音，口碑传播失效</td></tr>
+  <tr><td class="id">N2</td><td>可注册</td><td>不是通用词、不是纯描述词；USPTO Class 14（珠宝）无近似在先商标。</td><td>做起来被诉侵权，被迫改名＝品牌资产归零</td></tr>
+  <tr><td class="id">N3</td><td>域名可得</td><td><code>.com</code> 或「品牌 + jewelry」组合可得，价格在 $3,000 以内。</td><td>只能挂 <code>.shop</code>，邮件进入垃圾箱概率上升</td></tr>
+  <tr><td class="id">N4</td><td>与品类有暗线</td><td>与水、光、恒久、自然之一有关联，但不直白（不要 Ocean / Wave / Beach）。</td><td>直白词 SEO 打不动，且显廉价</td></tr>
+  <tr><td class="id">N5</td><td>撑得住价格</td><td>念出来要像 $58–$143 的东西，不能像 $9.9 的快时尚。</td><td>价格带上移后转化崩掉</td></tr>
+</table>
+
+<h3 id="s1-2">1.2 六个候选<span class="tagm">按 N1–N5 打分后保留</span></h3>
+<p class="small">下表是我从 40 多个方向里筛出的 6 个。评分满分 5 分，总分 25。</p>
+
+<div class="cand">
+  <div class="cand__hd">
+    <span class="cand__name">SEREIA</span>
+    <span class="cand__ph">/seˈreɪ.ə/ · se-RAY-ah</span>
+    <span class="cand__tag pick">推荐</span>
+    <span class="cand__tag">24 / 25</span>
+  </div>
+  <div class="cand__bd">
+    <div><h5>含义与来源</h5>葡萄牙语「美人鱼」。同源自古希腊 <i>Seirḗn</i>（塞壬），是「用歌声留住水手」的那一类存在。它不是直白的海洋词，而是一个有画面的角色。</div>
+    <div><h5>为什么选它</h5>6 个字母、两个音节、拼读零歧义；元音交替（e-e-i-a）念起来有潮汐起伏感；词形独特，商标冲突概率低于常见词；与「可戴着下海」的产品事实天然自洽。<br><span class="small" style="color:#B4472F">风险：巴西有同名泳装/饰品主体，必须做检索。</span></div>
+  </div>
+</div>
+
+<div class="cand">
+  <div class="cand__hd">
+    <span class="cand__name">MAREA</span>
+    <span class="cand__ph">/məˈreɪ.ə/ · mah-RAY-ah</span>
+    <span class="cand__tag">备选 B</span>
+    <span class="cand__tag">22 / 25</span>
+  </div>
+  <div class="cand__bd">
+    <div><h5>含义与来源</h5>意大利语与西班牙语「潮汐」，源自拉丁语 <i>mare</i>（海）。</div>
+    <div><h5>评价</h5>极短、好念、含义正面。但 Marea 是菲亚特一款车型名，且时尚领域已有使用，<code>.com</code> 几乎必然被占。作为 SEREIA 检索不通过时的第一备选。</div>
+  </div>
+</div>
+
+<div class="cand">
+  <div class="cand__hd">
+    <span class="cand__name">TIDEGLASS</span>
+    <span class="cand__ph">/ˈtaɪd.ɡlæs/ · TIDE-glas</span>
+    <span class="cand__tag">备选 C</span>
+    <span class="cand__tag">21 / 25</span>
+  </div>
+  <div class="cand__bd">
+    <div><h5>含义与来源</h5>海玻璃：被海浪打磨几十年的碎玻璃，边缘变圆、表面起雾，但内部始终有光。</div>
+    <div><h5>评价</h5>这是我个人最喜欢的故事——它几乎就是「不褪色的不锈钢」的隐喻：时间只改变表面，不夺走本质。缺点是三个音节、9 个字母，且偏冷僻，需要额外解释成本。</div>
+  </div>
+</div>
+
+<div class="cand">
+  <div class="cand__hd">
+    <span class="cand__name">NAIADE</span>
+    <span class="cand__ph">/naˈjɑːd/ · nah-YAHD</span>
+    <span class="cand__tag">淘汰</span>
+    <span class="cand__tag">18 / 25</span>
+  </div>
+  <div class="cand__bd">
+    <div><h5>含义与来源</h5>法语「水仙女」，源自希腊神话中的 Naiad（掌管淡水泉源的宁芙）。</div>
+    <div><h5>淘汰原因</h5>拼写与读音对英语用户不友好（-ade 会被读成「奈阿德」）；法国有同名泳池设备品牌，品类氛围被污染。</div>
+  </div>
+</div>
+
+<div class="cand">
+  <div class="cand__hd">
+    <span class="cand__name">EVERWAVE</span>
+    <span class="cand__ph">/ˈev.ər.weɪv/ · EH-ver-wave</span>
+    <span class="cand__tag">淘汰</span>
+    <span class="cand__tag">17 / 25</span>
+  </div>
+  <div class="cand__bd">
+    <div><h5>含义与来源</h5>造词，ever（永远）+ wave（浪）。直译就是「永不停止的浪」。</div>
+    <div><h5>淘汰原因</h5>太直白，一眼看懂也就一眼忘掉；两个实词拼接在英文商标里属于弱显著性强组合，注册难度高；念起来像运动饮料。</div>
+  </div>
+</div>
+
+<div class="cand">
+  <div class="cand__hd">
+    <span class="cand__name">SELKIE</span>
+    <span class="cand__ph">/ˈsel.ki/ · SEL-kee</span>
+    <span class="cand__tag">淘汰</span>
+    <span class="cand__tag">16 / 25</span>
+  </div>
+  <div class="cand__bd">
+    <div><h5>含义与来源</h5>苏格兰与爱尔兰神话中的海豹精灵：白天是海豹，夜里脱下皮变成人。</div>
+    <div><h5>淘汰原因</h5>故事极好，但 <b>Selkie</b> 已是一个知名度较高的美国连衣裙品牌，品类相邻（都是女性服饰配件），冲突风险最高。忍痛放弃。</div>
+  </div>
+</div>
+
+<h3 id="s1-3">1.3 推荐：SEREIA</h3>
+<p class="lede">一句话说清它是什么：<b>SEREIA 是一个「海边的女孩不需要摘下首饰」的品牌。</b></p>
+
+<h4>名字怎么用</h4>
+<table>
+  <tr><th style="width:22%">场景</th><th>写法</th><th style="width:26%">说明</th></tr>
+  <tr><td>正式全称</td><td><b>SEREIA</b></td><td>全大写，永不加 s，永不用小写开头</td></tr>
+  <tr><td>口语／域名</td><td>Sereia</td><td>句中出现时首字母大写即可</td></tr>
+  <tr><td>带品类</td><td>Sereia Jewelry</td><td>仅用于域名、发票抬头、平台店铺名</td></tr>
+  <tr><td>中文内部叫法</td><td>塞瑞亚（暂定）</td><td>仅内部沟通与中文素材使用，不对外</td></tr>
+  <tr><td>错误写法</td><td style="color:#B4472F">Sereia's · SEREIA JEWELRY CO. · Sereia&nbsp;jewelry</td><td>所有格、加后缀、混大小写都会稀释标记</td></tr>
+</table>
+
+<h4>品牌信条与标语</h4>
+<table>
+  <tr><th style="width:20%">层级</th><th style="width:34%">文案</th><th>使用位置</th></tr>
+  <tr><td>信条（内部）</td><td><b>Salt &amp; Steel</b>　盐与钢</td><td>不对外做广告语，用于包装内页、吊牌背面、团队内部对齐</td></tr>
+  <tr><td>主标语（对外）</td><td><b>Made for salt water.</b></td><td>首页 Hero 副标、包装卡、邮件签名</td></tr>
+  <tr><td>支撑句</td><td>316L steel. PVD colour. Colour guaranteed for life.</td><td>商品页卖点条、Meta description</td></tr>
+  <tr><td>情绪句</td><td>Swim in it. Sleep in it. Forget it's there.</td><td>社媒文案、场景图配文</td></tr>
+</table>
+
+<div class="note"><b>为什么主标语不是「Waterproof Jewelry」：</b>防水是品类的基础门槛，所有同行都在说，说了等于没说；<b>Made for salt water</b> 把场景推到极限（海水是最腐蚀的日常环境），一句话同时完成了「差异化」和「可信度」两件事，而且它是个短句，能印在 3cm 宽的包装卡上。</div>
+
+<h3 id="s1-4">1.4 商标与域名尽调<span class="tagm">这是定稿前的硬门槛</span></h3>
+<p>我不能替你做法律检索，但可以把检索路径和判定标准写清楚。以下动作建议在<b>三天内</b>并行完成，任何一项红灯就退到备选 B。</p>
+<table>
+  <tr><th style="width:56px">#</th><th style="width:26%">动作</th><th>怎么查 / 判定标准</th></tr>
+  <tr><td class="id">C1</td><td>USPTO 商标检索</td><td>在 <code>tmsearch.uspto.gov</code> 搜 SEREIA，限定 <b>Class 14</b>（珠宝）与 <b>Class 35</b>（零售服务）。判定：无「相同或高度近似 + 同类别 + 存活状态」的记录即通过。</td></tr>
+  <tr><td class="id">C2</td><td>EUIPO / UKIPO 检索</td><td>英国是目标市场，需单独查 UKIPO；欧盟可一并查。判定标准同 C1。</td></tr>
+  <tr><td class="id">C3</td><td>域名</td><td>优先 <code>sereia.com</code>；退而求其次 <code>sereiajewelry.com</code>、<code>wearsereia.com</code>、<code>sereia.co</code>。判定：<b>能买断</b>，不要租。</td></tr>
+  <tr><td class="id">C4</td><td>社媒 handle</td><td>Instagram / TikTok / Pinterest 三处 @sereia 或 @sereiajewelry 至少一处可用，且三处名称一致。Pinterest 对饰品引流权重高，别漏。</td></tr>
+  <tr><td class="id">C5</td><td>Google 结果污染</td><td>搜 SEREIA，看首页是否被其他行业大品牌占据。若前三页全是别家，说明这个词已被占用为品牌符号，慎用。</td></tr>
+</table>
+
+<div class="warn"><b>如果 C1 或 C2 不通过：</b>不要抱有「先做起来再说」的侥幸。饰品类目被投诉侵权的典型后果是平台店被封 + 独立站支付通道被冻结，损失远大于改名成本。<b>退备选 B（MAREA），我会在 24 小时内出对应 LOGO 与文案替换。</b></div>
+</section>
+
+<!-- ================= 2 CORE ================= -->
+<section id="s2">
+<h2><span class="n">02</span>品牌核心</h2>
+<p class="sub">名字是壳，这一段是核。所有文案、图片、页面顺序最终都要服从这一段。</p>
+
+<h3 id="s2-1">2.1 定位陈述</h3>
+<div class="ok" style="font-size:15px; line-height:1.9">
+<b>对于</b> 22–38 岁、住在沿海城市、每周至少下水一次的北美女性，<br>
+<b>她们</b> 已经放弃买便宜饰品（戴两周就发黑），又不愿意为 14K 金支付 $300+，<br>
+<b>SEREIA 是</b> 一个只用 316L 不锈钢 + PVD 镀层、并承诺「颜色终身保证」的饰品品牌，<br>
+<b>因为</b> 我们相信饰品应该在游泳、洗澡、睡觉时都不用摘下，<br>
+<b>而不是</b> 像快时尚饰品那样，需要被小心翼翼地供起来。
+</div>
+
+<h4>三个「不」</h4>
+<ul>
+  <li><b>不做「防水」作为卖点</b>——防水是入场券。我们说「颜色终身保证」，这是承诺级别，不是参数级别。</li>
+  <li><b>不做「平替」叙事</b>——不说「14K 金的平价替代」。我们是另一种材质路线，不是廉价版本。</li>
+  <li><b>不做「少女感」</b>——不用粉色、不用爱心、不用「cute」。波希米亚是成年女性的自由感，不是可爱。</li>
+</ul>
+
+<h3 id="s2-2">2.2 人群画像</h3>
+<table>
+  <tr><th style="width:16%">画像</th><th style="width:18%">典型身份</th><th>她在意什么</th><th style="width:24%">什么样的内容能打动她</th></tr>
+  <tr><td><b>海边日常派</b><br><span class="small">占目标 45%</span></td><td>28 岁，加州/佛罗里达，瑜伽教练或自由职业</td><td>「戴上就不用管」——洗澡、游泳、健身都不摘。讨厌摘来摘去的麻烦。</td><td>湿发、泳衣、海水里的手部特写；「我戴了 8 个月没摘过」的真实口述</td></tr>
+  <tr><td><b>礼物决策者</b><br><span class="small">占 30%</span></td><td>34 岁，给闺蜜/女儿/妈妈买礼物</td><td>怕买错尺寸、怕显廉价、怕对方过敏。要能直接寄到对方手上。</td><td>礼盒开箱、卡片寄语、金属过敏者的证言、「送出去有面子」的质感特写</td></tr>
+  <tr><td><b>叠戴玩家</b><br><span class="small">占 25%</span></td><td>24 岁，TikTok 重度用户，喜欢 layering</td><td>款式要能叠、颜色要统一、单条不能太贵（要买 3–5 条一起戴）。</td><td>叠戴教程短视频、同色系整套搭配、$58 单品的「五条一起戴」效果</td></tr>
+</table>
+
+<h3 id="s2-3">2.3 品牌承诺与三层证据</h3>
+<p>承诺不能只有一句话，必须有可验证的证据链，否则就是空话。我们把「颜色终身保证」拆成三层：</p>
+<table>
+  <tr><th style="width:14%">层级</th><th style="width:24%">内容</th><th>怎么让人信</th></tr>
+  <tr><td><b>事实层</b></td><td>316L 外科手术级不锈钢 + PVD 真空镀层</td><td>商品页列出材质参数（厚度、镀层微米数）；不说「高级不锈钢」这种模糊词</td></tr>
+  <tr><td><b>行为层</b></td><td>终身免费换新一次，运费各半，旧件不退回</td><td>把条款写在商品页价格下方（不是埋在 FAQ）；换新入口在订单查询页直接可见</td></tr>
+  <tr><td><b>证据层</b></td><td>真实用户的长期佩戴记录</td><td>评价里强制显示「购买距今 N 个月」；每月发一条「戴了 X 个月后」的对比图</td></tr>
+</table>
+<div class="note"><b>财务上它站得住吗：</b>按 FRD v1.1 的模型，计提营收 2% 作颜色保证准备金。年销 2 万件、换新率 5% 时成本约占营收 1.6%，可覆盖；若换新率升到 15%，成本升至 4.8%，毛利被吃掉近一半。<b>所以这条承诺的前提是 PVD 工艺稳定</b>——入库抽检与留样必须做，否则承诺会从资产变成负债。</div>
+
+<h3 id="s2-4">2.4 差异坐标</h3>
+<p>横轴是价格，纵轴是「材质路线」——这是这个品类真正的分水岭，比风格轴更能解释用户为什么买。</p>
+<table>
+  <tr><th style="width:20%">品牌</th><th style="width:14%">价格带</th><th style="width:18%">材质路线</th><th>它占据的心智</th></tr>
+  <tr><td><b>SEREIA</b></td><td>$58–$143</td><td>不锈钢 + PVD，终身颜色保证</td><td><b>海水里的日常首饰</b>——不用摘的那一条</td></tr>
+  <tr><td>Atolea</td><td>$58–$143</td><td>不锈钢 + PVD</td><td>同样的材质路线，但讲的是「欧洲海边度假」</td></tr>
+  <tr><td>Pura Vida</td><td>$20–$60</td><td>合金 + 编织，公益联名</td><td>便宜、有意义、可送人，但不耐用</td></tr>
+  <tr><td>Mejuri</td><td>$80–$400</td><td>14K 金 / 纯银</td><td>轻奢日常，可传承</td></tr>
+  <tr><td>Shein / Temu 白牌</td><td>$3–$15</td><td>铜 + 电镀</td><td>便宜、快、戴两次就黑</td></tr>
+</table>
+<p class="small">空白位在哪：<b>Atolea 之下无人认真做、Mejuri 之上我们够不着</b>。我们和 Atolea 在同一格，所以差异必须落在「承诺强度」与「叙事角度」上，而不是价格。</p>
+
+<h3 id="s2-5">2.5 语气与文案</h3>
+<div class="grid2">
+  <div>
+    <h4 style="color:#1B3A34">这样说</h4>
+    <ul style="font-size:13.5px">
+      <li>具体、可验证：「316L steel, 0.8 micron PVD」</li>
+      <li>第一人称、克制：「We'd rather you keep it than return it.」</li>
+      <li>用动作替代形容词：「Swim in it.」而不是「It's waterproof!」</li>
+      <li>允许不完美：「It will pick up fine scratches. That's steel being honest.」</li>
+      <li>句子短。一行不超过 12 个词。</li>
+    </ul>
+  </div>
+  <div>
+    <h4 style="color:#B4472F">不这样说</h4>
+    <ul style="font-size:13.5px">
+      <li>堆感叹号：「Gorgeous!!! You'll LOVE it!!!」</li>
+      <li>无证据的绝对化：「永远不褪色、永不变形、永不磨损」</li>
+      <li>制造焦虑：「再不买就没货了（其实库存 300）」</li>
+      <li>品类黑话：「ins风」「高级感」「氛围感」</li>
+      <li>少女化称呼：「小仙女」「宝宝们」</li>
+    </ul>
+  </div>
+</div>
+<div class="ok"><b>一条可执行的检验方法：</b>写完任何一段文案，问自己「这句话能不能被同行原样抄走？」如果答案是「能」，就重写。能被抄走的文案不是品牌资产。</div>
+</section>
+
+<!-- ================= 3 VISUAL ================= -->
+<section id="s3">
+<h2><span class="n">03</span>视觉识别</h2>
+<p class="sub">标记、色彩、字体、图形、摄影。这五项定下来，后面所有页面都只是排列组合。</p>
+
+<h3 id="s3-1">3.1 LOGO 主标</h3>
+<p>主标记叫 <b>Tide Ring（潮环）</b>：一个圆环，环内上方一枚小点（月），下方两道浪。含义是<b>月牵引潮汐，潮汐磨不掉颜色</b>——正好是这个品类最需要讲的事。</p>
+
+<div class="board">
+  <div class="board__label">主组合 · 横版 / Primary Lockup</div>
+  <div class="board__stage" style="color:#1B3A34; background:#FAF6EF">
+    <div class="lockup">
+      <svg class="mark" viewBox="0 0 120 120" fill="none" aria-label="SEREIA mark">
+        <circle cx="60" cy="60" r="51" stroke="currentColor" stroke-width="3"/>
+        <circle cx="60" cy="35" r="3.2" fill="currentColor"/>
+        <path d="M25 70C35 54 47 54 57 62C67 70 81 70 95 53" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+        <path d="M25 86C35 70 47 70 57 78C67 86 81 86 95 69" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".5"/>
+      </svg>
+      <div class="wm">SEREIA</div>
+    </div>
+  </div>
+</div>
+
+<div class="board">
+  <div class="board__label">反白版 · 用于深海绿与墨黑底 / Reversed</div>
+  <div class="board__stage dark">
+    <div class="lockup">
+      <svg class="mark" viewBox="0 0 120 120" fill="none">
+        <circle cx="60" cy="60" r="51" stroke="currentColor" stroke-width="3"/>
+        <circle cx="60" cy="35" r="3.2" fill="currentColor"/>
+        <path d="M25 70C35 54 47 54 57 62C67 70 81 70 95 53" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+        <path d="M25 86C35 70 47 70 57 78C67 86 81 86 95 69" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".5"/>
+      </svg>
+      <div class="wm">SEREIA</div>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+<b>字标交付说明。</b>上方 SEREIA 以 Instrument Serif 实时渲染，仅用于本次评审看气质 —— <b>它不是可交付的字标文件</b>。正式上线前必须做转曲：由设计师把字母转成矢量路径，交付 AI / SVG / PDF 与 16 / 32 / 180 / 400 / 1200px 的 PNG，并加锁定字距 0.24em。<br>
+若本机未联网加载 Google Fonts，字标会回退到 Georgia，字形会偏宽、笔画对比更弱 —— 这是回退字体的表现，不是设计稿本身。
+</div>
+
+<h3 id="s3-2">3.2 三个方向<span class="tagm">供你选择，我推荐 A</span></h3>
+<div class="grid3">
+  <div class="board" style="margin:0">
+    <div class="board__label" style="color:#1B3A34;font-weight:600">A · 潮环（推荐）</div>
+    <div class="board__stage" style="min-height:170px;color:#1B3A34">
+      <svg class="markonly" viewBox="0 0 120 120" fill="none">
+        <circle cx="60" cy="60" r="51" stroke="currentColor" stroke-width="3"/>
+        <circle cx="60" cy="35" r="3.2" fill="currentColor"/>
+        <path d="M25 70C35 54 47 54 57 62C67 70 81 70 95 53" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+        <path d="M25 86C35 70 47 70 57 78C67 86 81 86 95 69" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".5"/>
+      </svg>
+    </div>
+    <div style="padding:12px 16px; font-size:12px; color:#4A453F; border-top:1px solid #E2DCD2">结构最简，缩到 16px 仍可辨认。可压印、可刺绣、可做金属牌。</div>
+  </div>
+
+  <div class="board" style="margin:0">
+    <div class="board__label">B · 扇贝</div>
+    <div class="board__stage" style="min-height:170px;color:#1B3A34">
+      <svg class="markonly" viewBox="0 0 120 120" fill="none" stroke-linecap="round">
+        <path d="M11.5 111 A56 56 0 0 1 108.5 111" stroke="currentColor" stroke-width="3"/>
+        <path d="M23.6 104 A42 42 0 0 1 96.4 104" stroke="currentColor" stroke-width="2.4"/>
+        <path d="M35.8 97 A28 28 0 0 1 84.2 97" stroke="currentColor" stroke-width="2.4"/>
+        <line x1="8" y1="111" x2="112" y2="111" stroke="currentColor" stroke-width="3"/>
+      </svg>
+    </div>
+    <div style="padding:12px 16px; font-size:12px; color:#4A453F; border-top:1px solid #E2DCD2">与贝壳、珍珠题材同源，最贴合产品。但线条密集，缩小后糊成一团。</div>
+  </div>
+
+  <div class="board" style="margin:0">
+    <div class="board__label">C · S 字母组合</div>
+    <div class="board__stage" style="min-height:170px;color:#1B3A34">
+      <svg class="markonly" viewBox="0 0 120 120" fill="none">
+        <path d="M80 40C80 24 42 20 40 44C38 64 82 54 82 76C82 98 44 100 40 84" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div style="padding:12px 16px; font-size:12px; color:#4A453F; border-top:1px solid #E2DCD2">字母本身即标记，识别最快。但太像时尚品牌通用做法，缺乏专属记忆。</div>
+  </div>
+</div>
+<div class="note"><b>我的建议：</b>A 做主标（所有需要清晰可辨的场合：页头、favicon、吊牌、水印）；<b>B 不废弃，降级为辅助图形</b>——用于包装盒的内衬纹理、社媒九宫格背景、以及「SEREIA」字标上方的装饰弧线。这样两个方向都留下了。</div>
+
+<h3 id="s3-3">3.3 组合规范</h3>
+<div class="grid2">
+  <div class="board" style="margin:0">
+    <div class="board__label">竖版 · 用于方形版面</div>
+    <div class="board__stage" style="min-height:230px; background:#FAF6EF; color:#1B3A34">
+      <div class="stacklock">
+        <svg class="mark" viewBox="0 0 120 120" fill="none">
+          <circle cx="60" cy="60" r="51" stroke="currentColor" stroke-width="3"/>
+          <circle cx="60" cy="35" r="3.2" fill="currentColor"/>
+          <path d="M25 70C35 54 47 54 57 62C67 70 81 70 95 53" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+          <path d="M25 86C35 70 47 70 57 78C67 86 81 86 95 69" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".5"/>
+        </svg>
+        <div class="wm">SEREIA</div>
+      </div>
+    </div>
+  </div>
+  <div class="board" style="margin:0">
+    <div class="board__label">纯标记 / 纯字标</div>
+    <div class="board__stage" style="min-height:230px; background:#FAF6EF; color:#1B3A34; flex-direction:column; gap:22px">
+      <svg class="markonly s" viewBox="0 0 120 120" fill="none">
+        <circle cx="60" cy="60" r="51" stroke="currentColor" stroke-width="3.4"/>
+        <circle cx="60" cy="35" r="3.2" fill="currentColor"/>
+        <path d="M25 70C35 54 47 54 57 62C67 70 81 70 95 53" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+      <div class="wordonly">SEREIA</div>
+    </div>
+  </div>
+</div>
+<table>
+  <tr><th style="width:18%">版本</th><th style="width:30%">使用场合</th><th>禁止场合</th></tr>
+  <tr><td>横版主组合</td><td>网站页头、邮件头、发票、名片、包装外层</td><td>宽度小于 110px 时（改用纯标记）</td></tr>
+  <tr><td>竖版组合</td><td>方形版面：Instagram 头像旁、包装卡正面、手提袋</td><td>横向窄条版面</td></tr>
+  <tr><td>纯标记</td><td>favicon、吊牌压印、饰品扣片、水印、社媒头像</td><td>需要完整品牌名可读的首次接触场景</td></tr>
+  <tr><td>纯字标</td><td>页面底部版权行、联名署名、长文案中提及</td><td>作为独立主视觉</td></tr>
+</table>
+
+<h3 id="s3-4">3.4 安全间距与最小尺寸</h3>
+<div class="board">
+  <div class="board__label">安全间距 · 以字标高度 H 为单位，四周留白 ≥ 0.5H</div>
+  <div class="board__stage" style="background:#FAF6EF; color:#1B3A34; position:relative; min-height:200px">
+    <div style="border:1px dashed #B08A56; padding:26px 30px; display:inline-block">
+      <div class="lockup sm">
+        <svg class="mark" viewBox="0 0 120 120" fill="none">
+          <circle cx="60" cy="60" r="51" stroke="currentColor" stroke-width="3"/>
+          <circle cx="60" cy="35" r="3.2" fill="currentColor"/>
+          <path d="M25 70C35 54 47 54 57 62C67 70 81 70 95 53" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+          <path d="M25 86C35 70 47 70 57 78C67 86 81 86 95 69" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".5"/>
+        </svg>
+        <div class="wm">SEREIA</div>
+      </div>
+    </div>
+    <span style="position:absolute; bottom:8px; left:50%; transform:translateX(-50%); font-size:10px; color:#8A7C64; letter-spacing:.1em">DASHED AREA = CLEAR SPACE</span>
+  </div>
+</div>
+<table>
+  <tr><th style="width:26%">载体</th><th style="width:24%">最小尺寸</th><th>说明</th></tr>
+  <tr><td>屏幕（横版）</td><td>宽 110px</td><td>再小则改用纯标记</td></tr>
+  <tr><td>印刷（横版）</td><td>宽 30mm</td><td>低于此尺寸字距会糊</td></tr>
+  <tr><td>纯标记（屏幕）</td><td>16 × 16px</td><td>favicon 下限，圆环线宽不得低于 1px</td></tr>
+  <tr><td>纯标记（压印/雕刻）</td><td>5 × 5mm</td><td>金属牌、吊牌、扣片</td></tr>
+</table>
+
+<h3 id="s3-5">3.5 错误用法</h3>
+<div class="misuse">
+  <div class="mis"><span style="font-family:Georgia,serif; letter-spacing:.24em; font-size:15px; transform:scaleX(1.5); display:inline-block">SEREIA</span><span class="mis__cap">横向拉伸变形</span></div>
+  <div class="mis"><span style="font-family:Georgia,serif; letter-spacing:.24em; font-size:15px; color:#B4472F">SEREIA</span><span class="mis__cap">改用品牌色以外的颜色</span></div>
+  <div class="mis" style="background:linear-gradient(135deg,#D9B6A3,#8A9A8B)"><span style="font-family:Georgia,serif; letter-spacing:.24em; font-size:15px; color:#fff">SEREIA</span><span class="mis__cap">放在杂乱图片上</span></div>
+  <div class="mis"><span style="font-family:Georgia,serif; letter-spacing:.24em; font-size:15px; box-shadow:3px 3px 0 #B08A56; padding:2px 4px">SEREIA</span><span class="mis__cap">加阴影 / 描边 / 发光</span></div>
+  <div class="mis"><span style="font-family:"Times New Roman",serif; letter-spacing:.02em; font-size:15px">SEREIA</span><span class="mis__cap">换字体或压缩字距</span></div>
+  <div class="mis"><span style="font-family:Georgia,serif; letter-spacing:.24em; font-size:15px; transform:rotate(-12deg); display:inline-block">SEREIA</span><span class="mis__cap">任意角度旋转</span></div>
+</div>
+
+<h3 id="s3-6">3.6 色彩系统</h3>
+<p>五个主色，按 60-25-10-5 的比例使用。深海绿是记忆点，暖白是呼吸，铜金只做点缀——<b>铜金一旦面积超过 10%，整个品牌会滑向「土豪金」</b>。</p>
+
+<div class="swatches">
+  <div class="sw"><div class="sw__chip" style="background:#1B3A34"></div><div class="sw__info"><span class="sw__name">Deep Sea</span><span class="sw__hex">#1B3A34</span><br>深海绿 · 主色<br>页头/按钮/文字</div></div>
+  <div class="sw"><div class="sw__chip" style="background:#FAF6EF; border-bottom:1px solid #E2DCD2"></div><div class="sw__info"><span class="sw__name">Shell White</span><span class="sw__hex">#FAF6EF</span><br>暖白 · 基底<br>背景 60%</div></div>
+  <div class="sw"><div class="sw__chip" style="background:#E7DAC8"></div><div class="sw__info"><span class="sw__name">Wet Sand</span><span class="sw__hex">#E7DAC8</span><br>沙色 · 区块底<br>卡片/分区</div></div>
+  <div class="sw"><div class="sw__chip" style="background:#B08A56"></div><div class="sw__info"><span class="sw__name">Brass</span><span class="sw__hex">#B08A56</span><br>铜金 · 点缀<br>线条/标签 ≤10%</div></div>
+  <div class="sw"><div class="sw__chip" style="background:#16130F"></div><div class="sw__info"><span class="sw__name">Ink</span><span class="sw__hex">#16130F</span><br>墨黑 · 正文<br>不用纯黑 #000</div></div>
+</div>
+
+<div class="ratio">
+  <i style="background:#FAF6EF; flex:60; border-right:1px solid #E2DCD2"></i>
+  <i style="background:#1B3A34; flex:22"></i>
+  <i style="background:#E7DAC8; flex:10"></i>
+  <i style="background:#B08A56; flex:5"></i>
+  <i style="background:#16130F; flex:3"></i>
+</div>
+<p class="small" style="margin-top:4px">使用比例：暖白 60% · 深海绿 22% · 沙色 10% · 铜金 5% · 墨黑 3%（仅文字与描边）</p>
+
+<h4>功能色（不参与品牌表达）</h4>
+<table>
+  <tr><th style="width:16%">用途</th><th style="width:16%">HEX</th><th>说明</th></tr>
+  <tr><td>促销 / 折扣</td><td><code>#B4472F</code></td><td>陶土红。用在「SAVE $14」、划线价旁。不用鲜红 #FF0000</td></tr>
+  <tr><td>成功 / 有货</td><td><code>#4A6B4A</code></td><td>深橄榄绿，避免与主色深海绿混淆</td></tr>
+  <tr><td>警示 / 低库存</td><td><code>#C08A2E</code></td><td>琥珀色。仅后台使用</td></tr>
+  <tr><td>错误</td><td><code>#9C3A25</code></td><td>表单校验失败</td></tr>
+</table>
+
+<div class="warn"><b>对比度硬约束：</b>深海绿 <code>#1B3A34</code> 配暖白 <code>#FAF6EF</code> 的对比度为 11.4:1，安全；但<b>铜金 <code>#B08A56</code> 配暖白只有 2.6:1，绝对不能用来放正文或小字</b>——只能做线条、图标、大字号装饰。这条规则在 FR-S-055（可访问性）里有对应验收项。</div>
+
+<h3 id="s3-7">3.7 字体系统</h3>
+<div class="typespec">
+  <div class="lab">Display<br>展示级</div>
+  <div><div class="t-display">Made for salt water</div><span class="small">衬线 · 52–86px · 字距 +0.04em · 仅用于首页 Hero 与专题页大标题</span></div>
+</div>
+<div class="typespec">
+  <div class="lab">Heading<br>标题</div>
+  <div><div class="t-h1">The Tide Ring Necklace</div><span class="small">衬线 · 28–36px · 商品名与区块标题</span></div>
+</div>
+<div class="typespec">
+  <div class="lab">Eyebrow<br>眉标</div>
+  <div><div class="t-eyebrow">As seen on TikTok</div><span class="small">无衬线 · 11px · 字距 +0.28em · 全大写 · 用于每个区块上方</span></div>
+</div>
+<div class="typespec">
+  <div class="lab">Body<br>正文</div>
+  <div><div class="t-body">A fox caught mid-step, cut from a single sheet of steel so the negative space draws the ear and the tail.</div><span class="small">无衬线 · 15–16px · 行高 1.75 · 单行不超过 72 字符</span></div>
+</div>
+
+<table>
+  <tr><th style="width:22%">层级</th><th style="width:26%">字体</th><th>规格</th></tr>
+  <tr><td>展示 / 标题</td><td><b>Instrument Serif</b><br><span class="small">备选：Fraunces、Canela</span></td><td>400 常规，不用粗体。全大写时字距 +0.12em；句中大小写混合时 +0.02em。开源可商用。</td></tr>
+  <tr><td>正文 / UI</td><td><b>Figtree</b><br><span class="small">备选：Inter、Satoshi</span></td><td>400 / 500 / 600 三档。与参考站同款，免费可商用，字符集覆盖英法。</td></tr>
+  <tr><td>数字 / 表格</td><td>Figtree tabular</td><td>财务数据用 <code>font-variant-numeric: tabular-nums</code>，保证金额列对齐</td></tr>
+</table>
+<div class="note"><b>为什么标题用衬线、正文用无衬线：</b>衬线承担「有历史感的贵气」，撑住 $58–$143 的价格带；无衬线承担「现代、清晰、可快速扫读」，保证手机上信息密度。<b>反过来用（标题无衬线、正文衬线）会让整站看起来像 2010 年的电商模板。</b></div>
+
+<h3 id="s3-8">3.8 图形语言</h3>
+<p>从主标记里抽出两条元素做延展，保证所有物料都「长在同一棵树上」：</p>
+<div class="grid2">
+  <div class="board" style="margin:0">
+    <div class="board__label">浪线 · Wave Rule</div>
+    <div class="board__stage" style="min-height:130px; background:#FAF6EF; color:#B08A56; flex-direction:column; gap:14px">
+      <svg width="240" height="26" viewBox="0 0 240 26" fill="none">
+        <path d="M0 18C20 4 40 4 60 13C80 22 100 22 120 13C140 4 160 4 180 13C200 22 220 22 240 13" stroke="currentColor" stroke-width="1.4"/>
+      </svg>
+      <svg width="240" height="26" viewBox="0 0 240 26" fill="none" opacity=".45">
+        <path d="M0 18C20 4 40 4 60 13C80 22 100 22 120 13C140 4 160 4 180 13C200 22 220 22 240 13" stroke="currentColor" stroke-width="1"/>
+      </svg>
+    </div>
+    <div style="padding:12px 16px; font-size:12px; color:#4A453F; border-top:1px solid #E2DCD2">用于区块分隔、邮件底部、包装内页。线宽固定 1px / 1.4px，不可加粗。</div>
+  </div>
+  <div class="board" style="margin:0">
+    <div class="board__label">扇贝弧 · Shell Arc</div>
+    <div class="board__stage" style="min-height:130px; background:#1B3A34; color:#E7DAC8">
+      <svg width="150" height="80" viewBox="0 0 150 80" fill="none" stroke-linecap="round">
+        <path d="M15 76 A60 60 0 0 1 135 76" stroke="currentColor" stroke-width="1.2" opacity=".9"/>
+        <path d="M29 76 A46 46 0 0 1 121 76" stroke="currentColor" stroke-width="1" opacity=".6"/>
+        <path d="M43 76 A32 32 0 0 1 107 76" stroke="currentColor" stroke-width="1" opacity=".35"/>
+      </svg>
+    </div>
+    <div style="padding:12px 16px; font-size:12px; color:#4A453F; border-top:1px solid #E2DCD2">用于包装内衬、社媒背景、卡片底纹。三层弧线，透明度依次递减。</div>
+  </div>
+</div>
+
+<h3 id="s3-9">3.9 摄影风格</h3>
+<table>
+  <tr><th style="width:20%">维度</th><th>规范</th></tr>
+  <tr><td>光线</td><td>硬光、侧逆光为主，允许真实阴影。不做柔光箱式的均质平光——那会让不锈钢看起来像塑料。</td></tr>
+  <tr><td>背景</td><td>三类：① 纯色暖白/沙色（商品主图）；② 真实场景（皮肤、亚麻、湿沙、海水）；③ 硬质石材（做质感对比）。不用渐变背景。</td></tr>
+  <tr><td>人物</td><td>只拍局部：手、锁骨、耳、脚踝、湿发。不拍正脸——正脸会把品牌绑定到某个人，且跨种族市场适配性差。</td></tr>
+  <tr><td>色调</td><td>低饱和、暖偏冷白平衡。整体在 HSL 上压 8–12% 饱和度。禁止高对比滤镜和胶片模拟。</td></tr>
+  <tr><td>构图</td><td>商品图统一 4:5，主体占画面 55–65%，留白不对称。场景图允许 3:2 与 1:1。</td></tr>
+  <tr><td>后期</td><td>只做曝光、白平衡、污点修复。不磨皮、不去除金属划痕——划痕是「钢的诚实」。</td></tr>
+</table>
+</section>
+
+<!-- ================= 4 APPLICATION ================= -->
+<section id="s4">
+<h2><span class="n">04</span>应用</h2>
+<p class="sub">规范不落到具体物料上就等于没有规范。</p>
+
+<h3 id="s4-1">4.1 网站页头</h3>
+<div class="mock">
+  <div class="mock__bar">
+    <div class="mock__nav"><span>Best Sellers</span><span>Custom</span><span>Sale</span><span>New</span><span>Necklaces</span><span>Rings</span></div>
+    <div style="display:flex; align-items:center; gap:9px">
+      <svg class="lmk" viewBox="0 0 120 120" fill="none" style="color:#E7DAC8">
+        <circle cx="60" cy="60" r="51" stroke="currentColor" stroke-width="4"/>
+        <circle cx="60" cy="35" r="4" fill="currentColor"/>
+        <path d="M25 70C35 54 47 54 57 62C67 70 81 70 95 53" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+      <span class="word">SEREIA</span>
+    </div>
+    <div class="mock__nav"><span>Search</span><span>Bag (0)</span></div>
+  </div>
+  <div style="padding:26px 20px; background:#FAF6EF; display:flex; gap:18px; align-items:center">
+    <div style="flex:1">
+      <div class="t-eyebrow" style="font-size:9px">Salt &amp; Steel</div>
+      <div style="font-family:Georgia,serif; font-size:26px; line-height:1.15; margin:8px 0 6px; color:#16130F">Made for<br>salt water.</div>
+      <div style="font-size:11px; color:#6E675E; max-width:220px; line-height:1.7">316L steel. PVD colour. Guaranteed for life — swim, shower, sleep in it.</div>
+    </div>
+    <div style="width:44%; aspect-ratio:4/5; background:#E7DAC8; display:flex; align-items:center; justify-content:center; font-size:9px; letter-spacing:.16em; color:#8A7C64">PRODUCT IMAGE</div>
+  </div>
+</div>
+<p class="small">页头用<b>反白横版组合</b>（深海绿底 + 沙色标记）。导航字号 9.5–10px、字距 +0.06em，11 项在 1440px 下一行排开不压 logo。</p>
+
+<h3 id="s4-2">4.2 包装与吊牌</h3>
+<div class="grid3" style="align-items:start">
+  <div>
+    <div class="card-mock">
+      <div class="halo"></div>
+      <svg class="lmk" viewBox="0 0 120 120" fill="none">
+        <circle cx="60" cy="60" r="51" stroke="currentColor" stroke-width="3"/>
+        <circle cx="60" cy="35" r="3.2" fill="currentColor"/>
+        <path d="M25 70C35 54 47 54 57 62C67 70 81 70 95 53" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+        <path d="M25 86C35 70 47 70 57 78C67 86 81 86 95 69" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".5"/>
+      </svg>
+      <div class="cw">SEREIA</div>
+      <div class="cs">Salt &amp; Steel</div>
+    </div>
+    <p class="small" style="text-align:center">包装卡 · 90×54mm · 暖白 350g 棉纸</p>
+  </div>
+  <div style="display:flex; justify-content:center">
+    <div>
+      <div class="tag-mock">
+        <div class="tw">SEREIA</div>
+        <svg width="34" height="18" viewBox="0 0 34 18" fill="none" style="color:#E7DAC8; opacity:.55">
+          <path d="M1 13C4 6 8 6 12 10C16 14 22 14 26 10C29 7 32 7 33 9" stroke="currentColor" stroke-width="1"/>
+        </svg>
+        <div class="th"></div>
+        <div class="ts">316L STEEL<br>PVD COLOUR<br>MADE FOR SALT WATER</div>
+      </div>
+      <p class="small" style="text-align:center; margin-top:8px">吊牌 · 28×42mm</p>
+    </div>
+  </div>
+  <div>
+    <div style="background:#E7DAC8; padding:22px; min-height:168px; display:flex; flex-direction:column; justify-content:space-between">
+      <svg width="70" height="34" viewBox="0 0 70 34" fill="none" style="color:#1B3A34; opacity:.16">
+        <path d="M2 30 A38 38 0 0 1 68 30" stroke="currentColor" stroke-width="1"/>
+        <path d="M10 30 A30 30 0 0 1 60 30" stroke="currentColor" stroke-width="1"/>
+        <path d="M18 30 A22 22 0 0 1 52 30" stroke="currentColor" stroke-width="1"/>
+      </svg>
+      <div style="font-size:10.5px; line-height:1.8; color:#1B3A34">
+        Keep it on.<br>
+        <span style="opacity:.65">If the colour ever fades, we'll replace it once — you cover half the shipping.</span>
+      </div>
+    </div>
+    <p class="small" style="text-align:center">包装内页 · 承诺卡文案</p>
+  </div>
+</div>
+
+<h3 id="s4-3">4.3 社媒与邮件</h3>
+<div class="grid3" style="align-items:start">
+  <div style="text-align:center">
+    <div class="avatar" style="margin:0 auto">
+      <svg class="markonly" viewBox="0 0 120 120" fill="none">
+        <circle cx="60" cy="60" r="51" stroke="currentColor" stroke-width="4"/>
+        <circle cx="60" cy="35" r="4" fill="currentColor"/>
+        <path d="M25 70C35 54 47 54 57 62C67 70 81 70 95 53" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+        <path d="M25 86C35 70 47 70 57 78C67 86 81 86 95 69" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" opacity=".5"/>
+      </svg>
+    </div>
+    <p class="small" style="margin-top:10px">社媒头像 · 仅纯标记</p>
+  </div>
+  <div>
+    <div class="mailhead">
+      <svg class="mark" viewBox="0 0 120 120" fill="none">
+        <circle cx="60" cy="60" r="51" stroke="currentColor" stroke-width="3"/>
+        <circle cx="60" cy="35" r="3.2" fill="currentColor"/>
+        <path d="M25 70C35 54 47 54 57 62C67 70 81 70 95 53" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+        <path d="M25 86C35 70 47 70 57 78C67 86 81 86 95 69" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".5"/>
+      </svg>
+      <div class="wm">SEREIA</div>
+    </div>
+    <p class="small" style="text-align:center; margin-top:8px">邮件头 · 高 96px</p>
+  </div>
+  <div>
+    <div style="background:#1B3A34; color:#FAF6EF; padding:24px 20px; min-height:130px; display:flex; flex-direction:column; justify-content:center">
+      <div style="font-family:Georgia,serif; font-size:19px; line-height:1.3">Swim in it.<br>Sleep in it.</div>
+      <div style="font-size:9.5px; letter-spacing:.14em; opacity:.6; margin-top:10px">@SEREIAJEWELRY</div>
+    </div>
+    <p class="small" style="text-align:center; margin-top:8px">社媒图文模板</p>
+  </div>
+</div>
+</section>
+
+<!-- ================= 5 ================= -->
+<section id="s5">
+<h2><span class="n">05</span>上线清单</h2>
+<p class="sub">从这份文档到真实可用的品牌资产，还差这些动作。按顺序做，前项未完成不要跳后项。</p>
+<table>
+  <tr><th style="width:48px">#</th><th style="width:26%">动作</th><th>产出 / 判定标准</th><th style="width:14%">依赖</th></tr>
+  <tr><td class="id">1</td><td>商标检索（C1–C2）</td><td>USPTO + UKIPO 的 Class 14 检索报告，绿灯才继续</td><td class="p1">🔴 阻塞</td></tr>
+  <tr><td class="id">2</td><td>域名与 handle 锁定</td><td>.com 买断 3 年，三平台同名 handle 注册</td><td class="p1">🔴 阻塞</td></tr>
+  <tr><td class="id">3</td><td>字标转曲</td><td>设计师把 SEREIA 转成路径，交付 AI/SVG/PDF 与 PNG 各尺寸</td><td class="p2">🟡 上线前</td></tr>
+  <tr><td class="id">4</td><td>字体授权确认</td><td>Instrument Serif（OFL）、Figtree（OFL）商用许可存档</td><td class="p2">🟡 上线前</td></tr>
+  <tr><td class="id">5</td><td>视觉资产包</td><td>favicon 16/32、Apple Touch 180、OG 图 1200×630、头像 400×400</td><td class="p2">🟡 上线前</td></tr>
+  <tr><td class="id">6</td><td>包装打样</td><td>包装卡 + 吊牌 + 承诺卡三件套，先打 20 套验证工艺</td><td class="p2">🟡 首批货前</td></tr>
+  <tr><td class="id">7</td><td>摄影样片</td><td>按 3.9 规范拍 3 款商品 × 5 张，确认风格后才批量</td><td class="p1">🔴 阻塞</td></tr>
+  <tr><td class="id">8</td><td>品牌页文案</td><td>About 页 300–400 词，讲「为什么是钢不是金」</td><td class="p3">🟢 可后置</td></tr>
+</table>
+</section>
+
+<!-- ================= 6 ================= -->
+<section id="s6">
+<h2><span class="n">06</span>待你拍板</h2>
+<p class="sub">这六条定了，品牌方案就能进 v1.1 定稿；不定的话后面所有物料都在飘。</p>
+<table>
+  <tr><th style="width:48px">#</th><th style="width:24%">问题</th><th>选项</th><th style="width:22%">我的建议</th></tr>
+  <tr><td class="id">B1</td><td>品牌名</td><td>SEREIA / MAREA / TIDEGLASS / 你自己另想</td><td>SEREIA，检索不过则 MAREA</td></tr>
+  <tr><td class="id">B2</td><td>主标记方向</td><td>A 潮环 / B 扇贝 / C 字母 S</td><td>A 做主标，B 降为辅助图形</td></tr>
+  <tr><td class="id">B3</td><td>是否采用深海绿</td><td>保持中性暖白 / 加深海绿 + 铜金</td><td>加。中性调做不出记忆点</td></tr>
+  <tr><td class="id">B4</td><td>主标语</td><td>Made for salt water. / Colour that outlasts the tide. / 你自己写</td><td>前者，短且能印在 3cm 卡片上</td></tr>
+  <tr><td class="id">B5</td><td>终身颜色保证的对外措辞</td><td>「终身保证」/「10 年保证」/「长期抗褪色」</td><td>终身，但条款写清「免费换新一次」</td></tr>
+  <tr><td class="id">B6</td><td>中文名是否需要</td><td>需要（用于国内素材与团队沟通）/ 不需要</td><td>暂不需要，内部口头用「塞瑞亚」即可</td></tr>
+</table>
+
+<div class="ok" style="margin-top:28px">
+<b>下一步：</b>你确认 B1–B3 之后，我会做两件事——① 把品牌名、配色、字体全部灌进可交互原型（现在原型里用的就是 SEREIA 这套）；② 出 logo 的完整资产包清单给设计师打样。若 B1 改选 MAREA 或别的名字，原型里只需要改一处品牌常量，其余不用动。
+</div>
+</section>
+
+<div class="foot">
+  — 文档结束 · WK-BR-001 v1.0 评审稿 · 命名与标记为提案，商标检索通过后方可定稿 —
+</div>
+
+</main>
+</div>
+</body>
+</html>

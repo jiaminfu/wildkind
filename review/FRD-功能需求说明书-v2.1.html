@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>功能需求说明书 · TG-FRD-001 v2.1（评审稿）</title>
+<style>
+  :root{
+    --ink:#1c1c1c; --ink2:#3d3a36; --muted:#6d6862; --line:#e2ddd5; --line2:#efeae3;
+    --bone:#f8f7f2; --cream:#f3e8de; --white:#fff; --accent:#8a6a40;
+    --r:#b3261e; --y:#b06f00; --g:#2f7a1f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font:15px/1.75 -apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    color:var(--ink); background:var(--bone);
+  }
+  .layout{display:grid; grid-template-columns:250px minmax(0,1fr); align-items:start}
+  /* ---------- toc ---------- */
+  .toc{position:sticky; top:0; height:100vh; overflow:auto; border-right:1px solid var(--line); background:var(--white)}
+  .toc__in{padding:28px 20px 40px}
+  .toc__t{font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin:0 0 14px}
+  .toc a{display:block; padding:5px 0; font-size:13px; color:var(--ink2); text-decoration:none; border-bottom:1px solid transparent}
+  .toc a:hover{color:var(--accent)}
+  .toc a.sub{padding-left:12px; font-size:12.5px; color:var(--muted)}
+  /* ---------- page ---------- */
+  .doc{max-width:920px; padding:56px 60px 120px; background:var(--bone)}
+  /* cover */
+  .cover{border:1px solid var(--line); background:var(--white); padding:56px 48px; margin-bottom:44px}
+  .cover__kicker{font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); margin:0 0 22px}
+  .cover h1{font-size:40px; line-height:1.12; letter-spacing:-.02em; margin:0 0 14px; font-weight:600}
+  .cover h1 small{display:block; font-size:17px; font-weight:400; color:var(--muted); letter-spacing:0; margin-top:12px}
+  .meta{display:grid; grid-template-columns:repeat(2,1fr); gap:0; margin-top:34px; border-top:1px solid var(--line2)}
+  .meta div{padding:12px 0; border-bottom:1px solid var(--line2); font-size:13.5px}
+  .meta div:nth-child(odd){color:var(--muted)}
+  .badge{display:inline-block; font-size:11px; letter-spacing:.1em; padding:3px 9px; background:var(--cream); color:#7a5a30}
+  h2{font-size:24px; margin:64px 0 8px; letter-spacing:-.01em; font-weight:600; padding-top:18px; border-top:1px solid var(--line)}
+  h2 .n{color:var(--accent); font-weight:400; margin-right:10px}
+  h3{font-size:17px; margin:34px 0 10px; font-weight:600}
+  h4{font-size:14px; margin:22px 0 6px; font-weight:600; letter-spacing:.02em}
+  p{margin:10px 0}
+  ul,ol{margin:10px 0; padding-left:22px}
+  li{margin:5px 0}
+  code{background:var(--cream); padding:1px 6px; font-size:13px; font-family:ui-monospace,Menlo,Consolas,monospace}
+  .lede{font-size:16px; color:var(--ink2)}
+  .note{border-left:2px solid var(--accent); background:var(--white); padding:14px 18px; margin:18px 0; font-size:14px}
+  .note b{color:var(--accent)}
+  table{width:100%; border-collapse:collapse; margin:16px 0 22px; font-size:13.5px; background:var(--white)}
+  th,td{border:1px solid var(--line); padding:9px 12px; text-align:left; vertical-align:top}
+  th{background:#faf8f4; font-weight:600; font-size:12.5px; letter-spacing:.03em; white-space:nowrap}
+  td.id{white-space:nowrap; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px; color:var(--ink2)}
+  .p1{color:var(--r); white-space:nowrap; font-weight:600}
+  .p2{color:var(--y); white-space:nowrap}
+  .p3{color:var(--g); white-space:nowrap}
+  .tag{display:inline-block; font-size:11px; padding:1px 7px; border:1px solid var(--line); color:var(--muted); margin-left:6px; vertical-align:1px}
+  .flow{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:18px 0; font-size:13px}
+  .flow span{border:1px solid var(--line); background:var(--white); padding:6px 12px}
+  .flow i{color:var(--muted); font-style:normal}
+  hr{border:0; border-top:1px solid var(--line2); margin:36px 0}
+  .small{font-size:12.5px; color:var(--muted)}
+  @media print{
+    .toc{display:none}
+    .layout{display:block}
+    body{background:#fff}
+    .doc{max-width:none; padding:0; background:#fff}
+    h2{page-break-after:avoid; page-break-before:auto}
+    table,.note,.cover{page-break-inside:avoid}
+    @page{margin:18mm}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside class="toc"><div class="toc__in">
+  <p class="toc__t">目录</p>
+  <a href="#s1">1 项目概述</a>
+  <a href="#s2">2 范围边界</a>
+  <a href="#s3">3 用户角色与权限</a>
+  <a href="#s4">4 信息架构</a>
+  <a href="#s5">5 前台功能需求</a>
+  <a href="#s5-1" class="sub">5.1 全局框架</a>
+  <a href="#s5-2" class="sub">5.2 首页</a>
+  <a href="#s5-3" class="sub">5.3 集合与搜索</a>
+  <a href="#s5-4" class="sub">5.4 商品详情</a>
+  <a href="#s5-5" class="sub">5.5 交易链路</a>
+  <a href="#s5-6" class="sub">5.6 内容与辅助</a>
+  <a href="#s5-7" class="sub">5.7 营销呈现（新增）</a>
+  <a href="#s5-8" class="sub">5.8 评价与晒单（新增）</a>
+  <a href="#s5-9" class="sub">5.9 账户中心（v2.0 新增）</a>
+  <a href="#s5-10" class="sub">5.10 生命周期与自动化（v2.1 新增）</a>
+  <a href="#s6">6 后台功能需求</a>
+  <a href="#s6-1" class="sub">6.1 交易与商品</a>
+  <a href="#s6-2" class="sub">6.2 营销中心（新增）</a>
+  <a href="#s6-3" class="sub">6.3 评价与定制（新增）</a>
+  <a href="#s6-4" class="sub">6.4 运营效率（v2.1 新增）</a>
+  <a href="#s7">7 业务规则</a>
+  <a href="#s8">8 订单状态机</a>
+  <a href="#s9">9 非功能需求</a>
+  <a href="#s10">10 验收清单</a>
+  <a href="#s11">11 待确认问题</a>
+  <a href="#s12">12 决策记录与变更</a>
+</div></aside>
+
+<main class="doc">
+
+<div class="cover">
+  <p class="cover__kicker">TIDEGLASS · Cross-border Jewellery DTC</p>
+  <h1>功能需求说明书
+    <small>Functional Requirements Document · 跨境饰品独立站（前台 + 后台）</small>
+  </h1>
+  <div class="meta">
+    <div>文档编号</div><div>TG-FRD-001</div>
+    <div>版本</div><div>v2.1 评审稿（<span class="badge">含运营意见落地</span>）</div>
+    <div>编写日期</div><div>2026-11-12</div>
+    <div>上一版</div><div>v1.1（评审稿）</div>
+    <div>依据</div><div>参考站结构拆解（atoleajewelry.com）+ 既有市场调研 + v1.0 评审意见</div>
+    <div>适用范围</div><div>网站前台（消费者侧）与后台（商家侧）</div>
+    <div>本轮交付</div><div>仅文档与原型，不含开发实现</div>
+  </div>
+  <div class="note" style="margin-top:26px"><b>v2.0 变更摘要</b>：把文档拉回与原型一致。核心一处是<b>范围变更</b>——v1.1 写「不做用户注册与登录」，而原型已实现完整账户中心（8 页）并跑通购买链路，v2.0 正式纳入账户体系，同时保留访客下单。另修订：品牌统一为 TIDEGLASS、后台账号由单密码改为同账号体系 + 权限位、补齐 7 条原型已实现但文档缺失的需求、9 条文档先行需求标注覆盖状态。详见 12.6。</div>
+  <div class="note" style="margin-top:14px"><b>v1.1 变更摘要</b>：价格带对齐参考站（$58–$143）；终身颜色保证改为真承诺；新增<b>营销中心</b>后台模块（优惠券 / 补贴 / 满额赠品）与对应前台呈现；商品卡支持直接加购；评价系统改为自建 + 后台审核；集合三轴明确不做。共 <b>新增 52 条需求、修订 21 条、删除 3 条</b>，逐条列在第 12 节。</div>
+</div>
+
+<h2 id="s1"><span class="n">1</span>项目概述</h2>
+
+<h3>1.1 背景</h3>
+<p class="lede">面向北美市场的不锈钢饰品 DTC 独立站。产品为 316L 不锈钢 + PVD 镀层，主打"低敏、可长期佩戴、可碰水、<b>终身不掉色</b>"，价格带 <b>$58–$143</b>（对齐参考站，其中 14K 镀金与珍珠款落在 $120 以上），首批 100 款 SKU。渠道策略是<b>用主题化集合替代导航深度</b>：一件商品同时挂进品类、题材、送礼对象、榜单等多个集合，让用户从任意入口都能落到商品。</p>
+
+<h3>1.2 本轮目标</h3>
+<ol>
+  <li>把参考站（Atolea Jewelry）的信息架构、页面构成、交互模式<b>完整还原</b>，作为我们自己的基线；凡是<b>主动偏离</b>的地方必须显式标注理由，不与复刻项混写。</li>
+  <li>明确前台与后台的<b>功能边界、字段、状态、业务规则</b>，作为开发与验收的唯一依据。</li>
+  <li>用线框原型把结构先确定下来，<b>避免在视觉与代码上返工</b>。</li>
+</ol>
+
+<h3>1.3 阅读方式</h3>
+<p>每条需求有唯一编号（<code>FR-S-xxx</code> 前台 / <code>FR-A-xxx</code> 后台），带优先级与验收标准。<b>优先级标注：🔴 高（MVP 必须）/ 🟡 中（首版应有）/ 🟢 低（可后置）</b>。凡标注"<span class="tag">待确认</span>"的条目，需你确认后才进入设计。</p>
+<div class="note"><b>来源标注规则（v1.1 新增）</b>：需求描述末尾的 <span class="tag">复刻</span> 表示参考站确有该形态、我们按原样实现；<span class="tag">增强</span> 表示参考站没有或未确认、我建议增加；<span class="tag">偏离</span> 表示参考站有但我们主动不做，需在第 12 节记录理由。这样你可以直接判断哪些能砍。</div>
+
+<h2 id="s2"><span class="n">2</span>范围边界</h2>
+
+<h3>2.1 本期包含</h3>
+<ul>
+  <li>前台：首页、集合页、商品详情、搜索、购物车、结算、订单完成、订单查询、评价提交、内容页、404，以及<b>账户中心</b>（登录 / 注册 / 概览 / 订单 / 地址簿 / 心愿单 / 设置，见 5.9）。</li>
+  <li>后台：登录、概览、订单、商品、库存、集合、客户、内容、<b>营销中心</b>、<b>评价管理</b>、<b>定制需求单</b>、设置。</li>
+  <li>交易：Stripe 支付、订单邮件、库存扣减、退款登记。</li>
+  <li>营销：优惠券、限时补贴（自动折扣）、满额赠品、免邮门槛；均由后台配置，前台动态呈现。</li>
+  <li>售后：终身颜色保证换新（真承诺）、30 天无理由退换、评价审核。</li>
+</ul>
+
+<h3>2.2 本期明确不做</h3>
+<ul>
+  <li><b>账户体系做，访客下单也保留</b>——二者并存：不注册可直接下单，注册后订单自动归入账户。<span class="tag">v2.0 修订</span> 理由见 5.9 开头：账户支撑复购与订单归属，但不该成为成交流程的门槛。</li>
+  <li>第三方社交登录（Google / Apple / Facebook SSO）不做，首版仅邮箱 + 密码。<span class="tag">偏离</span></li>
+  <li>多语言（首版仅英文）。<b>多币种同样不做</b>——参考站按地区自动切币（我抓取其商品页显示 €51,95、集合页显示 $75），我们主动简化为全站 USD，属明确偏离。 <span class="tag">偏离</span></li>
+  <li><b>集合三轴（风格 / 材质 / 宝石）不做</b>，仅保留品类轴 + 题材轴 + 送礼对象轴。理由：三轴会让 mega menu 从两层变三层、导航显著变深，与"用集合替代深度"的建站策略冲突；长尾关键词改由落地页与 SEO 文案承接。<span class="tag">偏离</span></li>
+  <li>会员积分、拼团、直播、社区、分销裂变。</li>
+  <li>第三方评价插件（Trustpilot / Judge.me / Loox）——改为<b>自建评价系统</b>，后台人工审核。</li>
+  <li>自建仓配系统（对接第三方海外仓，仅做发货回填）。</li>
+  <li>站内 AI 客服（首版用邮件 + FAQ）。</li>
+</ul>
+
+<div class="note"><b>关于"结构完全一样"：</b>参考站的一级导航 11 项、mega menu 分组、商品卡信息密度、集合页筛选维度，我们都按原结构复刻；但<b>文案、图片、配色</b>会替换成我们自己的品牌资产，不涉及版权素材。v1.1 起，每条需求都标了来源（复刻 / 增强 / 偏离），不再混写。</div>
+
+<h2 id="s3"><span class="n">3</span>用户角色与权限</h2>
+<table>
+  <tr><th>角色</th><th>说明</th><th>可见范围</th><th>关键操作</th></tr>
+  <tr><td>访客</td><td>未登录，预计占流量 60–75%</td><td>全部前台公开页</td><td>浏览、搜索、加购、用券、结算（访客模式）、凭订单号 + 邮箱查单与评价</td></tr>
+  <tr><td>注册客户</td><td>已登录（<code>role = customer</code>）</td><td>前台公开页 + 账户中心</td><td>上述全部 + 订单历史、地址簿、心愿单、再次购买、改资料</td></tr>
+  <tr><td>运营 staff</td><td>你本人 / 助理（<code>role = staff</code>）</td><td>后台除设置与客户导出的模块</td><td>商品上下架、改价、订单发货、库存调整、营销配置、评价审核与删除、内容维护</td></tr>
+  <tr><td>店主 owner</td><td>你本人（<code>role = owner</code>）</td><td>后台全部模块</td><td>上述全部 + 设置与费用参数、账号与权限管理、客户数据导出、退款审批</td></tr>
+</table>
+<p class="small"><b>v2.0 改动</b>：v1.1 写「单角色全权限，不做权限矩阵」，前提是没有账户体系。现在前台有了账户，后台若仍是"任意邮箱 + 一个写死的密码"，等于把改价、删评价、导出客户的权限对外敞开。因此改为<b>同一账号体系 + 权限位</b>：用户表加 <code>role</code>，后台登录复用前台会话只校验 role，敏感操作（改价、删评价、导出客户、退款）单独校验权限位并写操作日志（FR-A-016）。店主可用同一个账号在前台下单测试、在后台管理，不需要维护两套密码。</p>
+
+<h2 id="s4"><span class="n">4</span>信息架构</h2>
+
+<h3>4.1 一级导航（11 项，与参考站一致）</h3>
+<div class="flow">
+  <span>Best Sellers</span><i>·</i><span>Custom</span><i>·</i><span>SALE</span><i>·</i><span>• New</span><i>·</i>
+  <span>Necklaces</span><i>·</i><span>Rings</span><i>·</i><span>Pearls</span><i>·</i><span>Earrings</span><i>·</i>
+  <span>Bracelets</span><i>·</i><span>Anklets</span><i>·</i><span>GIFTS</span>
+</div>
+<p>导航项<b>不是</b>树状层级，而是"入口集合"：点击后进入集合页。mega menu 里按主题/对象二次分组，形成横向铺开而非纵向下钻。</p>
+
+<h3>4.2 页面清单</h3>
+<table>
+  <tr><th>编号</th><th>页面</th><th>路径（建议）</th><th>优先级</th><th>说明</th></tr>
+  <tr><td class="id">S-01</td><td>首页</td><td><code>/</code></td><td class="p1">🔴</td><td>9 个区块，见 5.2</td></tr>
+  <tr><td class="id">S-02</td><td>集合页</td><td><code>/collections/{handle}</code></td><td class="p1">🔴</td><td>筛选 + 排序 + 商品网格</td></tr>
+  <tr><td class="id">S-03</td><td>商品详情</td><td><code>/products/{handle}</code></td><td class="p1">🔴</td><td>图库 + 变体 + 加购</td></tr>
+  <tr><td class="id">S-04</td><td>搜索结果</td><td><code>/search?q=</code></td><td class="p1">🔴</td><td>复用集合页网格</td></tr>
+  <tr><td class="id">S-05</td><td>购物车</td><td>抽屉 + <code>/cart</code></td><td class="p1">🔴</td><td>抽屉为主，独立页兜底</td></tr>
+  <tr><td class="id">S-06</td><td>结算</td><td><code>/checkout</code></td><td class="p1">🔴</td><td>单页分步，Stripe 内嵌</td></tr>
+  <tr><td class="id">S-07</td><td>订单完成</td><td><code>/orders/{no}/confirm</code></td><td class="p1">🔴</td><td>下单成功落地页</td></tr>
+  <tr><td class="id">S-08</td><td>订单查询</td><td><code>/orders/lookup</code></td><td class="p1">🔴</td><td>访客模式：订单号 + 邮箱</td></tr>
+  <tr><td class="id">S-09</td><td>定制流程</td><td><code>/pages/custom</code></td><td class="p2">🟡</td><td>表单 + 人工报价</td></tr>
+  <tr><td class="id">S-10</td><td>内容页（8 个）</td><td><code>/pages/{slug}</code></td><td class="p1">🔴</td><td>About / Materials / Care / Shipping / Returns / FAQ / Size Guide / Contact</td></tr>
+  <tr><td class="id">S-11</td><td>404 / 异常</td><td>—</td><td class="p2">🟡</td><td>含返回首页与推荐商品</td></tr>
+  <tr><td class="id">S-12</td><td>评价提交</td><td><code>/reviews/write?order=</code></td><td class="p2">🟡</td><td>凭订单号 + 邮箱进入，无需账户 <span class="tag">新增</span></td></tr>
+  <tr><td class="id">S-13</td><td>登录</td><td><code>/account/login</code></td><td class="p1">🔴</td><td>邮箱 + 密码，支持 <code>?next=</code> 回跳 <span class="tag">v2.0 新增</span></td></tr>
+  <tr><td class="id">S-14</td><td>注册</td><td><code>/account/register</code></td><td class="p1">🔴</td><td>姓名 + 邮箱 + 密码，成功后自动登录 <span class="tag">v2.0 新增</span></td></tr>
+  <tr><td class="id">S-15</td><td>账户概览</td><td><code>/account</code></td><td class="p1">🔴</td><td>订单数 / 在途 / 心愿单 + 最近一单进度 <span class="tag">v2.0 新增</span></td></tr>
+  <tr><td class="id">S-16</td><td>订单列表</td><td><code>/account/orders</code></td><td class="p1">🔴</td><td>倒序，含状态与缩略图 <span class="tag">v2.0 新增</span></td></tr>
+  <tr><td class="id">S-17</td><td>订单详情</td><td><code>/account/orders/{no}</code></td><td class="p1">🔴</td><td>明细 / 金额构成 / 地址 / 物流 / 时间线 <span class="tag">v2.0 新增</span></td></tr>
+  <tr><td class="id">S-18</td><td>地址簿</td><td><code>/account/addresses</code></td><td class="p2">🟡</td><td>增删改 + 设默认 <span class="tag">v2.0 新增</span></td></tr>
+  <tr><td class="id">S-19</td><td>心愿单</td><td><code>/account/wishlist</code></td><td class="p2">🟡</td><td>收藏商品，可移除可加购 <span class="tag">v2.0 新增</span></td></tr>
+  <tr><td class="id">S-20</td><td>账户设置</td><td><code>/account/settings</code></td><td class="p2">🟡</td><td>改资料 / 改密码 / 注销 <span class="tag">v2.0 新增</span></td></tr>
+  <tr><td class="id">A-01</td><td>后台登录</td><td><code>/admin/login</code></td><td class="p1">🔴</td><td>邮箱 + 密码</td></tr>
+  <tr><td class="id">A-02</td><td>概览</td><td><code>/admin</code></td><td class="p1">🔴</td><td>核心指标 + 趋势</td></tr>
+  <tr><td class="id">A-03</td><td>订单</td><td><code>/admin/orders</code></td><td class="p1">🔴</td><td>列表 + 详情 + 状态流转</td></tr>
+  <tr><td class="id">A-04</td><td>商品</td><td><code>/admin/products</code></td><td class="p1">🔴</td><td>列表 + 编辑</td></tr>
+  <tr><td class="id">A-05</td><td>库存</td><td><code>/admin/inventory</code></td><td class="p1">🔴</td><td>SKU 粒度 + 预警</td></tr>
+  <tr><td class="id">A-06</td><td>集合</td><td><code>/admin/collections</code></td><td class="p2">🟡</td><td>规则与排序</td></tr>
+  <tr><td class="id">A-07</td><td>客户</td><td><code>/admin/customers</code></td><td class="p2">🟡</td><td>由订单聚合</td></tr>
+  <tr><td class="id">A-08</td><td>内容</td><td><code>/admin/content</code></td><td class="p2">🟡</td><td>首页区块与内容页</td></tr>
+  <tr><td class="id">A-09</td><td>设置</td><td><code>/admin/settings</code></td><td class="p1">🔴</td><td>品牌 / 费用 / 仓库</td></tr>
+  <tr><td class="id">A-10</td><td class="p1">营销中心</td><td><code>/admin/marketing</code></td><td class="p1">🔴</td><td>优惠券 / 补贴 / 满额赠品 / 免邮门槛 <span class="tag">新增</span></td></tr>
+  <tr><td class="id">A-11</td><td>评价管理</td><td><code>/admin/reviews</code></td><td class="p1">🔴</td><td>审核队列 + 已发布 + 删除 <span class="tag">新增</span></td></tr>
+  <tr><td class="id">A-12</td><td>定制需求单</td><td><code>/admin/custom</code></td><td class="p2">🟡</td><td>前台定制表单的落地端 <span class="tag">新增</span></td></tr>
+</table>
+
+<h2 id="s5"><span class="n">5</span>前台功能需求</h2>
+
+<h3 id="s5-1">5.1 全局框架</h3>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-S-001</td><td>页头：左侧汉堡（仅移动端）+ 11 项一级导航，品牌 logo 居中，右侧搜索 / 账户 / 购物袋三个图标 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>1440px 下 11 项不换行、不压 logo；1024px 下收起为汉堡</td></tr>
+  <tr><td class="id">FR-S-002</td><td>mega menu：鼠标悬停一级项展开二级分组，含图片位与"查看全部"入口 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>展开无跳动，键盘 Tab 可遍历，Esc 关闭</td></tr>
+  <tr><td class="id">FR-S-003</td><td>页头吸顶：滚动超过一屏后导航条吸附顶部，高度收窄 <span class="tag">增强</span></td><td class="p2">🟡</td><td>吸顶时 logo 与购物袋仍可见</td></tr>
+  <tr><td class="id">FR-S-004</td><td class="p1">顶部公告栏：<b>多条文案循环滚动（跑马灯）</b>，每条可带链接与倒计时，后台可配置条数、顺序、开关 <span class="tag">复刻·v1.0 写错</span></td><td class="p1">🔴</td><td>参考站为 7 条循环滚动；每条均可点击跳转；移动端不换行、自动降速；后台关闭后前台立即消失</td></tr>
+  <tr><td class="id">FR-S-005</td><td>搜索：点击图标展开浮层，输入即时联想（标题 / 集合 / 题材），回车进结果页 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>输入 2 字符后 300ms 出现联想；无结果有空态</td></tr>
+  <tr><td class="id">FR-S-006</td><td>购物袋图标显示件数角标，点击打开购物车抽屉 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>加购后角标即时 +1，无需刷新</td></tr>
+  <tr><td class="id">FR-S-007</td><td>页脚：四栏（Shop / Help / About / 订阅）+ 社媒图标 + 支付方式图标 + 版权与政策链接 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>政策链接可达，移动端折叠为手风琴</td></tr>
+  <tr><td class="id">FR-S-008</td><td>响应式：≥1280 桌面 / 768–1279 平板 / &lt;768 移动，三个断点布局均不出现横向滚动 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>390 / 768 / 1440 三档实测无横向溢出</td></tr>
+  <tr><td class="id">FR-S-009</td><td class="p1">服务承诺条：<b>页脚上方</b>四栏图标区（不是 Hero 下方），文案随"终身颜色保证"更新 <span class="tag">复刻·v1.0 位置错</span></td><td class="p1">🔴</td><td>参考站该区块在页脚正上方；四栏在移动端 2×2</td></tr>
+  <tr><td class="id">FR-S-010</td><td>全站货币：固定 USD，不显示币种切换器；页面内所有价格前缀 <code>$</code> <span class="tag">偏离</span></td><td class="p1">🔴</td><td>不出现 € 或地区自动切换；不误导为多币种</td></tr>
+</table>
+
+<h3 id="s5-2">5.2 首页 S-01</h3>
+<p class="small">v1.1 按参考站实际区块顺序重排。参考站为：Slideshow → Best Sellers（眉标 AS SEEN ON TIKTOK）→ 新品 → 数字背书（7M+ 件 / 1.6M+ 客 / 4.7 分）→ 创始人故事 → 服务承诺条 → 页脚。v1.0 的"Hero → USP → 榜单 → 题材磁贴 → 评价墙 → Journal"顺序与参考站不符，已修正。</p>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-S-020</td><td class="p1">首屏 Slideshow：<b>2–3 张可轮播</b>（不是单张 Hero），每张含眉标 / 主标题 / 正文 / 两个 CTA；自动播放可关 <span class="tag">复刻·v1.0 写错</span></td><td class="p1">🔴</td><td>后台可增删张数与顺序；移动端上下堆叠、按钮占满宽；不自动播放时提供左右箭头</td></tr>
+  <tr><td class="id">FR-S-021</td><td>Best Sellers 横滑区：展示 8 款，<b>眉标固定为社媒背书文案</b>（如 AS SEEN ON TIKTOK），左右箭头 + 拖拽 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>取后台"Best Sellers"集合；滑动无卡顿；眉标可在后台改</td></tr>
+  <tr><td class="id">FR-S-022</td><td>New Arrivals 区：展示 8 款，卡片与 Best Sellers 同构 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>取"• New"集合，按上架时间倒序</td></tr>
+  <tr><td class="id">FR-S-023</td><td class="p1">数字背书条：三组大数字（累计销量 / 客户数 / 平均评分），数字<b>由后台填写真实值</b>，不硬编码 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>数值可在后台改；评分取自已审核评价的均值；空数据时整块隐藏</td></tr>
+  <tr><td class="id">FR-S-024</td><td>创始人故事区块：左图右文，一段品牌主张 + 一个次级 CTA <span class="tag">复刻</span></td><td class="p2">🟡</td><td>图片与文案可后台替换</td></tr>
+  <tr><td class="id">FR-S-025</td><td>题材磁贴：4 个大图入口（Ocean / Woodland / Celestial / Floral） <span class="tag">复刻</span></td><td class="p1">🔴</td><td>点击进对应集合页</td></tr>
+  <tr><td class="id">FR-S-026</td><td>定制入口：3–4 个可定制的款，带"可定制"标记 <span class="tag">复刻</span></td><td class="p2">🟡</td><td>点击进定制流程 S-09</td></tr>
+  <tr><td class="id">FR-S-027</td><td class="p1">出生石月度区块：当月在售的诞生石款组合（如 NOVEMBER · CITRINE），导航内也可常驻入口 <span class="tag">复刻·v1.0 漏</span></td><td class="p2">🟡</td><td>按月份自动切换；每月 1 号零人工干预生效；跨月提前 7 天预热</td></tr>
+  <tr><td class="id">FR-S-028</td><td>评价墙：≥6 条<b>已审核通过</b>的评价，含星级、姓名缩写、购买款、可选晒图 <span class="tag">增强</span></td><td class="p2">🟡</td><td>只取 status=published 的评价；不足 6 条时按实际数量展示，为 0 时整块隐藏</td></tr>
+  <tr><td class="id">FR-S-029</td><td>Journal：3 篇文章卡片（图 + 标题 + 摘要） <span class="tag">复刻</span></td><td class="p3">🟢</td><td>点击进文章页</td></tr>
+  <tr><td class="id">FR-S-030</td><td>订阅框：邮箱校验、防重复提交、成功后原地提示 <span class="tag">复刻</span></td><td class="p2">🟡</td><td>非法邮箱有行内报错；重复邮箱提示已订阅</td></tr>
+  <tr><td class="id">FR-S-031</td><td>服务承诺条位于页脚正上方（见 FR-S-009），不在首页中部 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>与页脚间距 ≤ 0，视觉上属页脚区</td></tr>
+</table>
+<div class="note"><b>可砍项</b>：若首屏转化数据不好，优先砍 FR-S-029（Journal）与 FR-S-026（定制入口），不影响主链路。数字背书条（FR-S-023）不建议砍——它是参考站首页最强的信任锚点。</div>
+
+<h3 id="s5-3">5.3 集合与搜索 S-02 / S-04</h3>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-S-040</td><td>集合页头部：面包屑 + 集合名 + 一句描述 + 商品数量 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>描述为空时不占位</td></tr>
+  <tr><td class="id">FR-S-041</td><td>筛选：金属色（金 / 银 / 双色）、价格区间、库存状态（仅看有货） <span class="tag">增强（参考站实现未确认）</span></td><td class="p1">🔴</td><td>多选生效，URL 可分享，刷新后保留</td></tr>
+  <tr><td class="id">FR-S-042</td><td>排序：推荐 / 最新 / 销量 / 价格升 / 价格降 <span class="tag">增强（参考站实现未确认）</span></td><td class="p1">🔴</td><td>切换后不整页跳动，滚动位置保持</td></tr>
+  <tr><td class="id">FR-S-043</td><td>商品网格：桌面 4 列 / 平板 3 列 / 移动 2 列 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>图片统一 4:5，不拉伸</td></tr>
+  <tr><td class="id">FR-S-044</td><td class="p1">商品卡字段（对齐参考站，共 6 项）：主图 + 悬停换次图、角标（NEW / SALE / 仅剩 N 件）、标题、<b>现价 + 划线价 + SAVE $X 金额型折扣</b>、<b>颜色变体色点（卡内可切换，不跳页）</b>、<b>Add to cart 按钮</b> <span class="tag">复刻·v1.0 缺 4 项</span></td><td class="p1">🔴</td><td>折扣显示<b>具体金额</b>而非百分比；色点切换后图片与小计同步变；角标不超过 2 个</td></tr>
+  <tr><td class="id">FR-S-045</td><td class="p1">商品卡直接加购：无需进详情页，点击 Add to cart 即以默认变体加购，按钮变"Added ✓"并在 2 秒后复原；若有多色未选，默认取第一个在库色 <span class="tag">复刻·v1.0 缺</span></td><td class="p1">🔴</td><td>集合页 24 件商品可全部一件直购；加购后抽屉不强制弹出（与详情页行为区分），仅角标 +1 并提示"View bag"</td></tr>
+  <tr><td class="id">FR-S-046</td><td>分页：每页 24 件，采用页码（SEO 友好） <span class="tag">已确认</span></td><td class="p2">🟡</td><td><code>?page=2</code> 可直接访问，canonical 正确</td></tr>
+  <tr><td class="id">FR-S-047</td><td>空态：无商品时显示说明 + 推荐集合，不留白屏 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>筛选无结果时也给出"清除筛选"</td></tr>
+  <tr><td class="id">FR-S-048</td><td>搜索结果页复用网格，顶部显示关键词与命中数；0 结果给替代推荐 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>搜索"star"能命中题材与标题</td></tr>
+  <tr><td class="id">FR-S-049</td><td>集合不提供"风格 / 材质 / 宝石"三轴筛选与导航分组 <span class="tag">偏离</span></td><td class="p1">🔴</td><td>mega menu 保持两层，不出现第三层下钻</td></tr>
+</table>
+<div class="note"><b>FR-S-045 的取舍说明</b>：参考站集合页是"卡片内直接加购"，v1.0 漏掉了这条，导致 30 件商品必须全部进详情页才能买，实测会让集合页转化率掉一档。这是 v1.1 优先级最高的一处补漏。</div>
+
+<h3 id="s5-4">5.4 商品详情 S-03</h3>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-S-050</td><td>图库：主图轮播 + 缩略图条（桌面两图并排，移动单图滑动）；<b>结构上不限制张数</b>，首版每款 ≥6 张 <span class="tag">复刻·v1.0 写 ≥3 张过少</span></td><td class="p1">🔴</td><td>参考站单款 21 张；点击缩略图切换，支持手势滑动与键盘方向键</td></tr>
+  <tr><td class="id">FR-S-051</td><td>信息区：标题、评分与评价数（链到评价区）、价格（含划线价） <span class="tag">复刻</span></td><td class="p1">🔴</td><td>无评价时不显示评分行，不虚构</td></tr>
+  <tr><td class="id">FR-S-052</td><td class="p1">价格下方<b>平铺 4 条加粗卖点</b>（不折叠）：Lifetime Color Guarantee / Waterproof &amp; Tarnish-Free / Hypoallergenic 316L / Free Shipping over $95 <span class="tag">复刻·v1.0 错放进手风琴</span></td><td class="p1">🔴</td><td>首条必须是终身颜色保证；字号 ≥13px，与正文有明显层级差异</td></tr>
+  <tr><td class="id">FR-S-053</td><td>变体选择：金属色（金 / 银）、尺寸（项链长度 / 戒指号 / 手链长度，按品类出现）；不可选组合置灰并说明 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>选中态清晰，切换后价格、库存、图片同步</td></tr>
+  <tr><td class="id">FR-S-054</td><td>库存提示：可售显示"现货"，≤5 件显示"仅剩 N 件"，0 件显示"到货提醒" <span class="tag">增强</span></td><td class="p2">🟡</td><td>到货提醒收集邮箱并写入后台待通知名单</td></tr>
+  <tr><td class="id">FR-S-055</td><td>加购：数量步进（1–10）+ 加入购物袋，成功后抽屉自动打开 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>加购后角标与抽屉同步，库存不足时拦截</td></tr>
+  <tr><td class="id">FR-S-056</td><td>手风琴：材质与工艺 / 尺寸与佩戴 / 配送与关税 / 退换与终身颜色保证 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>默认全部收起，首项可配置默认展开</td></tr>
+  <tr><td class="id">FR-S-057</td><td>评价区：展示已审核评价（星级分布 + 列表 + 晒图），支持按星级筛选；底部给"写评价"入口 <span class="tag">增强</span></td><td class="p2">🟡</td><td>仅展示 published；空态显示"成为第一个评价的人"</td></tr>
+  <tr><td class="id">FR-S-058</td><td>关联推荐：同集合 4 款（优先同题材） <span class="tag">复刻</span></td><td class="p2">🟡</td><td>不推荐当前商品本身</td></tr>
+  <tr><td class="id">FR-S-059</td><td>结构化数据：Product / Offer / AggregateRating，用于 Google 富摘要 <span class="tag">增强</span></td><td class="p2">🟡</td><td>Rich Results 测试无错误；评分来源为已发布评价</td></tr>
+</table>
+<div class="note"><b>为什么把卖点从手风琴挪出来</b>：参考站在价格正下方用四条加粗短句把"终身不掉色"顶到第一视觉位，这是我们相对低价硅胶/合金饰品最硬的差异点。折进手风琴等于把最有力的武器藏起来，v1.1 改正。</div>
+
+<h3 id="s5-5">5.5 交易链路 S-05 / S-06 / S-07 / S-08</h3>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-S-070</td><td>购物车抽屉：商品行（图 / 名 / 变体 / 数量 / 小计）、改数量、删除、小计；<b>顶部含赠品进度条，中部含赠品行，底部含优惠码入口</b> <span class="tag">复刻</span></td><td class="p1">🔴</td><td>改数量即时重算，不整页刷新；赠品行不可改数量</td></tr>
+  <tr><td class="id">FR-S-071</td><td>免邮进度条：提示"再买 $X 免运费"，达标后替换为恭喜文案 <span class="tag">复刻</span></td><td class="p2">🟡</td><td>门槛值取后台设置；与赠品进度条并列时上下排列不重叠</td></tr>
+  <tr><td class="id">FR-S-072</td><td>购物车持久化：Cookie / 本地存储保留 30 天，换页不丢 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>关闭浏览器重开仍在</td></tr>
+  <tr><td class="id">FR-S-073</td><td>结算页：联系邮箱 → 收货地址 → 配送方式 → 支付，单页分步；右侧常驻订单摘要 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>任一步校验失败定位到字段并说明原因</td></tr>
+  <tr><td class="id">FR-S-074</td><td>访客结算：无需注册即可下单，仅需邮箱 + 地址 <span class="tag">已确认</span></td><td class="p1">🔴</td><td>下单成功即创建客户档案（以邮箱为主键）</td></tr>
+  <tr><td class="id">FR-S-075</td><td>配送方式：标准（满 $95 免费 / 门槛以下 $6.9，7–12 天）与加急（$18，3–5 天） <span class="tag">复刻</span></td><td class="p1">🔴</td><td>切换后总额实时更新</td></tr>
+  <tr><td class="id">FR-S-076</td><td>支付：Stripe 内嵌表单（卡号 / 有效期 / CVC），支持 Apple Pay / Google Pay <span class="tag">复刻</span></td><td class="p1">🔴</td><td>支付失败给出可行动提示，可重试</td></tr>
+  <tr><td class="id">FR-S-077</td><td>下单成功后：生成订单号，进入 S-07，同时发送确认邮件 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>邮件 1 分钟内送达；重复回调不重复建单</td></tr>
+  <tr><td class="id">FR-S-078</td><td>订单查询：输入订单号 + 下单邮箱，匹配后展示状态、明细、物流号 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>邮箱不匹配时统一提示"未找到"，不泄露订单存在性</td></tr>
+  <tr><td class="id">FR-S-079</td><td>防重复提交：下单按钮点击后置灰并显示处理中 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>连点 5 次只产生 1 笔订单</td></tr>
+</table>
+
+<h3 id="s5-6">5.6 内容与辅助 S-09 / S-10 / S-11 / S-12</h3>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-S-090</td><td>8 个内容页：About / Materials / Care / Shipping / Returns / FAQ / Size Guide / Contact，左侧目录 + 正文 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>正文可由后台富文本维护</td></tr>
+  <tr><td class="id">FR-S-091</td><td class="p1">可打印/可归档的政策页：Returns 页必须完整写明<b>30 天退换 + 终身颜色保证</b>的边界（什么情况免费换、什么情况不换、运费谁承担、处理时长） <span class="tag">增强</span></td><td class="p1">🔴</td><td>页面可被客服直接引用；条文与 BR-11、BR-15 完全一致</td></tr>
+  <tr><td class="id">FR-S-092</td><td>定制流程：选款 → 上传参考图 → 填写文字 / 数量 / 期望交期 → 提交，<b>写入后台 A-12 定制需求单</b> <span class="tag">复刻</span></td><td class="p2">🟡</td><td>提交后邮件回执；后台 A-12 可见待处理列表（v1.0 此处悬空，已补 A-12）</td></tr>
+  <tr><td class="id">FR-S-093</td><td>404：说明 + 返回首页 + 3 款推荐商品 <span class="tag">增强</span></td><td class="p2">🟡</td><td>不出现空白页</td></tr>
+  <tr><td class="id">FR-S-094</td><td>SEO：每页独立 title / description / canonical、sitemap.xml、robots.txt <span class="tag">增强</span></td><td class="p1">🔴</td><td>集合页与商品页均可被索引</td></tr>
+  <tr><td class="id">FR-S-095</td><td>合规：Cookie 同意条（可拒绝非必要）、隐私政策、条款、退换政策可达 <span class="tag">增强</span></td><td class="p1">🔴</td><td>拒绝后不加载分析脚本</td></tr>
+  <tr><td class="id">FR-S-096</td><td>可访问性：正文对比度 ≥ 4.5:1、图片 alt、焦点可见、键盘可完成加购 <span class="tag">增强</span></td><td class="p2">🟡</td><td>Tab 走完全流程不断链</td></tr>
+  <tr><td class="id">FR-S-097</td><td>性能预算：LCP ≤ 2.5s（4G）、CLS ≤ 0.1、首屏图片 WebP/AVIF <span class="tag">增强</span></td><td class="p1">🔴</td><td>Lighthouse 移动端 ≥ 85</td></tr>
+  <tr><td class="id">FR-S-098</td><td>评价提交页 S-12：凭订单号 + 邮箱进入，可打分（1–5）、写正文、上传 ≤3 张图；提交后进入待审核 <span class="tag">增强</span></td><td class="p2">🟡</td><td>每个订单每个商品仅可评价一次；提交后前台立即显示"审核中"提示，不直接展示</td></tr>
+</table>
+
+<h3 id="s5-7">5.7 营销呈现（新增）</h3>
+<p class="small">这一节回答"优惠券、补贴、满额赠品是不是后台控制"。<b>是，但后台只是配置端，前台必须有一套对应的呈现与计算组件</b>，两者成对才能用。v1.0 只有一条"折扣码（待确认）"，等于两端都缺。后台配置端见 6.2。</p>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-S-110</td><td class="p1">优惠码输入：购物车抽屉底部与结算页摘要各一个入口，输入后<b>服务端校验</b>并实时返回结果 <span class="tag">增强</span></td><td class="p1">🔴</td><td>四种结果分别有明确文案：生效（显示减了多少）/ 不存在 / 已过期 / 不满足门槛（显示还差多少）</td></tr>
+  <tr><td class="id">FR-S-111</td><td>优惠码生效后：摘要区独立一行显示 <code>Discount −$X</code>，可一键移除；换码时旧的先失效 <span class="tag">增强</span></td><td class="p1">🔴</td><td>减额计入应付总额；移除后金额立即还原</td></tr>
+  <tr><td class="id">FR-S-112</td><td class="p1">自动折扣（补贴）呈现：后台设定时段与折扣后，前台无需输码自动生效，商品卡与详情页显示 <code>SAVE $X</code> 角标，摘要区显示 <code>Promotion −$X</code> <span class="tag">增强</span></td><td class="p1">🔴</td><td>活动开始/结束按服务器时间精确到分钟；结束后价格自动还原，不出现负价</td></tr>
+  <tr><td class="id">FR-S-113</td><td class="p1">满额赠品进度条：购物车与结算页顶部显示"再买 $X 即可获赠 {赠品名}"，达标后变"🎁 {赠品名} 已加入购物车" <span class="tag">复刻</span></td><td class="p1">🔴</td><td>参考站为满 €140 送 Mystery Earrings；进度条按<b>折后商品小计</b>计算，不含运费与税费</td></tr>
+  <tr><td class="id">FR-S-114</td><td class="p1">赠品自动加车：达标瞬间自动插入一行赠品（价格 $0、标 GIFT、不可改数量、不可单独删除，只能通过降额移除） <span class="tag">复刻</span></td><td class="p1">🔴</td><td>赠品不占库存销售计数但需扣减实物库存；低于门槛时自动移除并提示</td></tr>
+  <tr><td class="id">FR-S-115</td><td>赠品库存不足时：主商品仍可正常下单，赠品行显示"赠品已赠完"，不阻断结算 <span class="tag">增强</span></td><td class="p2">🟡</td><td>绝不因赠品缺货导致用户无法付款</td></tr>
+  <tr><td class="id">FR-S-116</td><td class="p1">优惠叠加规则的前台提示：当用户已享受自动折扣又输入优惠码时，摘要区明确展示两者关系（可叠加 / 已取较优 / 不可叠加） <span class="tag">增强</span></td><td class="p1">🔴</td><td>不允许"看起来能用但结算时静默失效"；规则见 BR-17</td></tr>
+  <tr><td class="id">FR-S-117</td><td>活动角标：参与活动的商品在集合页显示 SALE / LIMITED 角标，最多 2 个，优先级 SALE &gt; LIMITED &gt; NEW <span class="tag">复刻</span></td><td class="p2">🟡</td><td>角标与后台活动状态一致，活动结束后 1 分钟内消失</td></tr>
+  <tr><td class="id">FR-S-118</td><td>倒计时：限时活动在公告栏或活动页显示剩余时间 <span class="tag">增强</span></td><td class="p3">🟢</td><td>倒计时以服务器时间为准，改本地时间无效</td></tr>
+  <tr><td class="id">FR-S-119</td><td>不提供多币种切换、地区价格差异、会员价 <span class="tag">偏离</span></td><td class="p1">🔴</td><td>所有用户看到同一价格</td></tr>
+</table>
+
+<h3 id="s5-8">5.8 评价与晒单（新增）</h3>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-S-130</td><td>仅<b>已收货客户</b>可评价；入口来自订单完成邮件与订单查询页 <span class="tag">增强</span></td><td class="p2">🟡</td><td>未下单邮箱尝试提交时提示"未找到可评价的订单"</td></tr>
+  <tr><td class="id">FR-S-131</td><td>评价内容：星级（必填）、标题（选填）、正文（≥10 字符）、晒图 ≤3 张、身高/佩戴场景（选填） <span class="tag">增强</span></td><td class="p2">🟡</td><td>图片限 jpg/png/webp，单张 ≤5MB</td></tr>
+  <tr><td class="id">FR-S-132</td><td class="p1">提交后的展示规则：一律进入<b>待审核</b>，前台不显示；审核通过后才计入评分与评价数 <span class="tag">增强</span></td><td class="p1">🔴</td><td>提交页明确告知"审核通过后展示"，避免用户以为丢失</td></tr>
+  <tr><td class="id">FR-S-133</td><td>评价区排序：默认"最有帮助"（含图优先 + 高星优先），可切"最新" <span class="tag">增强</span></td><td class="p3">🟢</td><td>排序不改变已发布集合</td></tr>
+  <tr><td class="id">FR-S-134</td><td class="p1">一星/二星评价不允许隐藏（只能删除违规内容，且删除需填原因） <span class="tag">增强</span></td><td class="p1">🔴</td><td>见 BR-19：低分不能因为"分数不好看"而删除，只能因违规删除并留痕</td></tr>
+  <tr><td class="id">FR-S-135</td><td>商品页评分 = 已发布评价的算术平均，保留 1 位小数；评价数 = 已发布条数 <span class="tag">增强</span></td><td class="p1">🔴</td><td>与商品结构化数据中的 AggregateRating 完全一致</td></tr>
+</table>
+
+<h3 id="s5-9">5.9 账户中心 S-13 ~ S-20（v2.0 新增）</h3>
+<p class="small">这一节是 v2.0 唯一一处<b>范围翻案</b>，先说清楚为什么翻：v1.1 判断"首版不做账户"是为了让成交流程最短，这个判断在当时成立；但原型做出来之后暴露了两件访客模式做不到的事——<b>订单归属</b>（客户换个设备就查不到自己的单）与<b>复购路径</b>（心愿单、地址复用、再次购买全都没有落点）。饰品的复购周期是 3–6 个月，没有账户等于每次复购都要重新拉新。所以改为：<b>访客下单保留，账户体系同时提供</b>，注册不是结算的前置条件。</p>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-S-140</td><td>注册：姓名 + 邮箱 + 密码（≥8 位，含字母与数字）；邮箱唯一，重复注册给出明确提示；<b>密码只存不可逆摘要，永不存明文</b>；注册成功自动登录并按 <code>?next=</code> 回跳 <span class="tag">增强</span></td><td class="p1">🔴</td><td>弱密码被拒并说明规则；重复邮箱不覆盖已有账户；库中查不到明文密码</td></tr>
+  <tr><td class="id">FR-S-141</td><td>登录：邮箱 + 密码；失败提示<b>不区分"账号不存在"与"密码错误"</b>（防账号枚举）；支持 <code>?next=</code> 回跳，目标仅允许 <code>/checkout</code> 与 <code>/cart</code> 白名单 <span class="tag">增强</span></td><td class="p1">🔴</td><td>从结算页登录后回到结算页而不是首页；<code>?next=//evil.com</code> 被忽略</td></tr>
+  <tr><td class="id">FR-S-142</td><td>账户门禁：未登录访问任意 <code>/account/*</code> 时，展示登录 / 注册二选一，<b>不做强制跳转</b>（跳转会丢失用户原本想去的页面） <span class="tag">增强</span></td><td class="p1">🔴</td><td>门禁页保留原始目标，登录后直达</td></tr>
+  <tr><td class="id">FR-S-143</td><td>账户概览：欢迎语（用名字）、三格统计（订单总数 / 在途订单 / 心愿单件数）、最近一单的进度时间线、常用入口 <span class="tag">增强</span></td><td class="p1">🔴</td><td>无订单时显示引导下单的空态，不出现 0 值堆叠</td></tr>
+  <tr><td class="id">FR-S-144</td><td>订单列表：按下单时间倒序，每行显示订单号、日期、状态、件数、金额、首件商品缩略图；点击进详情 <span class="tag">增强</span></td><td class="p1">🔴</td><td>分页或懒加载，50 单以上不卡顿</td></tr>
+  <tr><td class="id">FR-S-145</td><td>订单详情：商品明细（图 / 名 / 变体 / 数量 / 单价）、金额构成（商品小计 / 优惠券 / 补贴 / 运费 / 税 / 合计，<b>赠品行显示 $0</b>）、收货地址、物流承运商与单号、进度时间线 <span class="tag">增强</span></td><td class="p1">🔴</td><td>金额与下单邮件、后台订单详情三处完全一致</td></tr>
+  <tr><td class="id">FR-S-146</td><td>地址簿：新增 / 编辑 / 删除 / 设为默认；结算页优先带出默认地址；删除默认地址时提示重新指定 <span class="tag">增强</span></td><td class="p2">🟡</td><td>至少保留 1 个地址时才允许删除</td></tr>
+  <tr><td class="id">FR-S-147</td><td>心愿单：商品页心形按钮切换收藏（未登录点击引导登录并回跳原商品）；列表支持移除与直接加购；空态给推荐商品 <span class="tag">增强</span></td><td class="p2">🟡</td><td>收藏状态跨设备一致（登录态）</td></tr>
+  <tr><td class="id">FR-S-148</td><td>账户设置：改姓名、改邮箱、改密码、注销账号。改邮箱需<b>验证当前密码</b>并<b>同步迁移历史订单归属</b>；改密码需验证旧密码；注销需二次确认并说明后果 <span class="tag">增强</span></td><td class="p2">🟡</td><td>改邮箱后历史订单仍在列表中；注销后原邮箱可重新注册且看不到旧订单</td></tr>
+  <tr><td class="id">FR-S-149</td><td>访客查单 S-08 保留：订单号 + 邮箱即可查，<b>不要求登录</b>；查询结果页提供"用这个邮箱注册，自动归入账户"的入口 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>邮箱大小写不敏感；错误组合不泄露订单是否存在</td></tr>
+  <tr><td class="id">FR-S-150</td><td>订单归属：订单创建时固化下单邮箱，账户订单按邮箱匹配（规则见 BR-20） <span class="tag">增强</span></td><td class="p1">🔴</td><td>用同邮箱注册后，历史访客订单自动出现</td></tr>
+  <tr><td class="id">FR-S-151</td><td>结算页在已登录状态<b>锁定邮箱输入框</b>，只读展示"Signed in as {email}"并给 Change 入口（改邮箱等于换账户，应引导先改账户邮箱） <span class="tag">增强</span></td><td class="p1">🔴</td><td>已登录时无法在结算页改动邮箱；未登录时可自由填</td></tr>
+  <tr><td class="id">FR-S-152</td><td>页头登录态：桌面显示 <code>Hello, {名}</code> 并可进账户；移动端窄屏隐藏问候语后，<b>必须保留账户图标入口</b> <span class="tag">增强</span></td><td class="p1">🔴</td><td>375px 宽度下仍能进入账户中心</td></tr>
+  <tr><td class="id">FR-S-153</td><td>购物车抽屉底部显示登录态：未登录显示 Sign in（带 <code>?next=/checkout</code>）并说明"登录后订单会存进账户"；已登录显示当前账号 <span class="tag">增强</span></td><td class="p2">🟡</td><td>不阻断访客结算</td></tr>
+</table>
+<div class="note"><b>三条容易漏的一致性规则</b>（原型已实现，文档原先完全没有，开发时最容易出事）：<br>
+① <b>订单归属按邮箱匹配</b>，大小写不敏感。所以结算页已登录时必须锁邮箱，否则用户改个邮箱下单，订单就从账户里消失了。<br>
+② <b>改邮箱要迁移订单</b>。账户里改邮箱若只更新用户表，历史订单还是挂在旧邮箱上，用户会看到"我的订单空了"。必须在同一事务里把订单的 email 一起改。<br>
+③ <b>注销不删订单</b>。订单是财务与税务凭证，注销只解除账户关联，订单本身保留。</div>
+
+<h3 id="s5-10">5.10 生命周期与自动化 S-21 ~ S-24（v2.1 新增）</h3>
+<p class="small">这一节来自运营意见评审（<code>review/运营意见评审记录-v1.0.html</code>）。运营提的是"我需要能追回弃购、能收到评价、能看到什么时候到"，产品在这里补的是<b>这些动作的边界</b>——什么时候发、发几封、怎么退订、激励怎么披露。没有边界，自动化会变成骚扰与合规风险。</p>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-S-160</td><td class="p1">弃购挽回触发：用户留下邮箱、创建了购物车、未完成支付，且购物车未清空。<b>4 小时</b>后发第一封（仅提醒，不含折扣），<b>24 小时</b>后发第二封（含激励，见 FR-S-161），<b>72 小时</b>后发第三封（最后提醒 + 首单券）。三封均未打开则停止 <span class="tag">增强</span></td><td class="p1">🔴</td><td>已下单或已清空购物车的用户不触发；同一用户 30 天内最多 2 轮</td></tr>
+  <tr><td class="id">FR-S-161</td><td class="p1">三段激励策略<b>可配置</b>：第二封对新客为免运、对老客为赠品（海玻璃收纳袋）；第三封为 10% 首单券。<b>免运档默认关闭</b>，需在后台手动开启 <span class="tag">增强</span></td><td class="p1">🔴</td><td>新客 / 老客判定按"该邮箱是否有已完成订单"；配置改动 1 分钟内生效</td></tr>
+  <tr><td class="id">FR-S-162</td><td class="p1">邮件合规：每封营销邮件底部含<b>退订链接</b>，退订即时生效（不退订也必须在 10 个工作日内生效，我们取即时）；同一用户 <b>24 小时内最多收 1 封营销邮件</b>；交易类邮件（订单 / 发货 / 退款）不受此限 <span class="tag">增强</span></td><td class="p1">🔴</td><td>退订后不再收到任何营销邮件；频次上限由发送日志强制，不靠模板控制</td></tr>
+  <tr><td class="id">FR-S-163</td><td>弃购邮件内的一键回链：点击后恢复到<b>原购物车内容</b>（含变体、数量、已用券），商品若已下架或售罄则明确标出并给替代推荐 <span class="tag">增强</span></td><td class="p2">🟡</td><td>链接带签名且 14 天内有效；恢复后购物车与原状态一致</td></tr>
+  <tr><td class="id">FR-S-164</td><td class="p1">邀评触发：订单签收后 <b>第 10 天</b>自动发邀评邮件（不是 7 天——要给足佩戴时间，"戴了多久"才有内容可填）；同一订单只发一次；未评价不重复催 <span class="tag">增强</span></td><td class="p1">🔴</td><td>邮件里的链接免登录可直接进入提交页</td></tr>
+  <tr><td class="id">FR-S-165</td><td>评价提交页（强化 FR-S-098）：凭带签名的订单链接进入，<b>不需要登录</b>；必填"佩戴多久"（天 / 周 / 月）；支持 1–5 星、正文、≤3 张图 <span class="tag">增强</span></td><td class="p1">🔴</td><td>一单一商品一次；提交后进待审，前台显示"审核中"</td></tr>
+  <tr><td class="id">FR-S-166</td><td class="p1">评价激励与披露：带图评价赠下次可用券，<b>不论星级</b>（1 星带图同样给）；展示时在评价条目标注"Received a thank-you credit"（见 BR-21） <span class="tag">增强</span></td><td class="p1">🔴</td><td>激励发放与星级无关，代码层面禁止按星级判断</td></tr>
+  <tr><td class="id">FR-S-167</td><td class="p1">预计送达日期：商品页价格下方与结算页配送方式旁，显示<b>具体到达日期区间</b>（跳过周末与后台设置的节假日）；当计算结果 &gt; 14 天时改为"通常在 X 个工作日内发出" <span class="tag">增强</span></td><td class="p1">🔴</td><td>日期随当天日期动态变化；节假日配置改动后立即反映</td></tr>
+  <tr><td class="id">FR-S-168</td><td>凑单推荐：免邮 / 赠品进度条下方给 2–3 件推荐，规则为 <b>①价格差额 +10%~+60% → ②同题材或同集合优先 → ③毛利率排序</b>；<b>硬性排除</b>已加购、缺货、无可用变体的商品 <span class="tag">增强</span></td><td class="p2">🟡</td><td>推荐位不出现购物车里已有的商品；差额为负时不出现</td></tr>
+  <tr><td class="id">FR-S-169</td><td>生日字段：账户设置中<b>可选填</b>生日（不填不影响使用）；填写时单独勾选"愿意接收生日提醒"，未勾选则不用于营销 <span class="tag">增强</span></td><td class="p3">🟢</td><td>不勾选也能正常保存生日；生日不用于任何自动化时不得出现在邮件中</td></tr>
+  <tr><td class="id">FR-S-170</td><td>售后自助：账户订单详情页提供"申请退换 / 申请颜色保证换新"，表单收集类型、原因、照片，提交后进后台售后队列（FR-A-060），可查进度 <span class="tag">增强</span></td><td class="p2">🟡</td><td>只做提交与查询，不做自动审批；超出 BR-11 期限的申请给出说明而不是直接拒绝</td></tr>
+</table>
+<div class="warn" style="border-left:2px solid var(--r);background:#fdf6f5;padding:14px 18px;margin:18px 0;font-size:14px"><b>三条不能妥协的边界</b>：① 营销邮件必须先有同意（BR-22），"下单填了邮箱"不等于同意收营销信；② 评价激励不得以正面评价为条件，且必须披露（BR-21）；③ 弃购邮件里的免运默认关闭，先只给赠品——等有 A/B 数据再决定是否放开，否则会训练出"等 24 小时再买"的习惯。</div>
+
+<h2 id="s6"><span class="n">6</span>后台功能需求</h2>
+
+<h3 id="s6-1">6.1 交易与商品</h3>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-A-001</td><td class="p1">登录与权限：<b>复用前台账号体系</b>，后台只校验 <code>role ∈ {staff, owner}</code>；<code>customer</code> 角色访问后台一律拒绝。会话 24 小时，连续失败 5 次锁定 10 分钟；<b>敏感操作按权限位二次校验</b>（改价、删评价、导出客户、退款审批） <span class="tag">v2.0 修订</span></td><td class="p1">🔴</td><td>顾客账号无法进入后台；staff 看不到设置与导出入口；所有写操作进操作日志（FR-A-016）</td></tr>
+  <tr><td class="id">FR-A-001b</td><td>账号与权限管理（仅 owner）：成员列表、角色分配（staff / owner）、权限位勾选、停用账号；<b>不提供自助注册</b>，后台账号由 owner 邀请创建 <span class="tag">增强</span></td><td class="p2">🟡</td><td>停用后该账号立即失去后台权限，前台账户仍可用</td></tr>
+  <tr><td class="id">FR-A-002</td><td>概览：GMV / 订单数 / 客单价 / 退款率四个核心指标（可切 7 / 30 / 90 天） <span class="tag">复刻</span></td><td class="p1">🔴</td><td>指标口径与订单列表可对账</td></tr>
+  <tr><td class="id">FR-A-003</td><td>概览图表：营收趋势折线、订单来源占比、Top 6 商品 <span class="tag">增强</span></td><td class="p1">🔴</td><td>切换周期图表同步刷新</td></tr>
+  <tr><td class="id">FR-A-004</td><td>订单列表：按状态 / 日期 / 金额 / 关键词筛选，可按时间或金额排序，分页 20 条 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>筛选条件可组合，刷新后保留</td></tr>
+  <tr><td class="id">FR-A-005</td><td>订单详情：客户与地址、商品明细、金额构成（含优惠券 / 补贴 / 赠品）、成本拆解、状态流转记录、备注 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>展示毛利与毛利率；赠品行金额为 $0 但成本计入</td></tr>
+  <tr><td class="id">FR-A-006</td><td>订单操作：标记发货（填承运商 + 运单号）、取消、登记退款 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>发货后自动发邮件；退款需二次确认</td></tr>
+  <tr><td class="id">FR-A-007</td><td>商品列表：图 / 名 / SKU / 价格 / 库存 / 状态，支持搜索与筛选 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>缺货商品高亮提示</td></tr>
+  <tr><td class="id">FR-A-008</td><td>商品编辑：标题、描述、价格、成本、图片（多张排序）、变体、挂载集合、SEO 字段、上架开关 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>保存后前台立即生效；必填项校验</td></tr>
+  <tr><td class="id">FR-A-009</td><td>库存：SKU 粒度库存数、<b>已占用数（reserved）</b>、可售数（onHand − reserved）、安全库存、预警列表、批量改库存 <span class="tag">复刻·v1.0 缺 reserved</span></td><td class="p1">🔴</td><td>低于安全库存进入预警区；批量修改有确认；三列数值关系始终自洽</td></tr>
+  <tr><td class="id">FR-A-010</td><td>集合管理：新建 / 编辑集合、手动选品或条件规则、排序、是否显示在导航、mega menu 分组 <span class="tag">复刻</span></td><td class="p2">🟡</td><td>导航开关关闭后前台立即消失</td></tr>
+  <tr><td class="id">FR-A-011</td><td>客户：由订单聚合，展示订单数、累计消费、首末单时间、分层（新客 / 复购 / 高价值） <span class="tag">复刻</span></td><td class="p2">🟡</td><td>复购率与概览口径一致</td></tr>
+  <tr><td class="id">FR-A-012</td><td>内容管理：首页各区块文案与图片、公告栏（多条）、8 个内容页正文 <span class="tag">复刻</span></td><td class="p2">🟡</td><td>保存后前台刷新即可见</td></tr>
+  <tr><td class="id">FR-A-013</td><td class="p1">设置：品牌信息、货币（锁定 USD）、免邮门槛、费用参数（关税 / 头程 / 仓配 / 支付 / 包装 / 退货计提 / <b>颜色保证准备金</b>）、仓库、改密码 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>费率改动只影响<b>之后创建</b>的订单；历史订单金额与毛利不变（靠 FR-A-017 的快照实现）</td></tr>
+  <tr><td class="id">FR-A-014</td><td class="p1"><b>费率快照</b>：每笔订单在创建瞬间，把当时生效的全部费率与成本参数<b>写入订单自身</b>（<code>costSnapshot</code>），订单详情永远用快照重算 <span class="tag">增强·修 v1.0 硬伤</span></td><td class="p1">🔴</td><td>改一次税率后，历史订单毛利一分不变；快照可展开查看当时各项参数值</td></tr>
+  <tr><td class="id">FR-A-015</td><td>数据导出：订单 / 商品 / 客户 / 优惠券使用明细导出 CSV <span class="tag">复刻</span></td><td class="p2">🟡</td><td>字段完整，中文不乱码</td></tr>
+  <tr><td class="id">FR-A-016</td><td>操作日志：记录登录、改价、改库存、改状态、删评价、改活动等关键动作 <span class="tag">增强</span></td><td class="p2">🟡</td><td>可按时间与操作人筛选；删除类操作必须留痕</td></tr>
+  <tr><td class="id">FR-A-017</td><td>库存占用可视化：列表区分"在库 / 占用中 / 可售"，占用行显示到期倒计时，可手动释放 <span class="tag">增强</span></td><td class="p2">🟡</td><td>与 BR-05 的 30 分钟占用一致</td></tr>
+  <tr><td class="id">FR-A-018</td><td>到货提醒名单：收集缺货商品的邮箱，可按商品查看、导出、一键发送补货通知 <span class="tag">增强·v1.0 只收集无出口</span></td><td class="p2">🟡</td><td>补货后 24 小时内可批量通知；同一邮箱同一 SKU 不重复</td></tr>
+  <tr><td class="id">FR-A-019</td><td>定制需求单 A-12：列表含客户邮箱、款式、参考图、数量、期望交期、状态（待报价 / 已报价 / 已成单 / 已关闭）、备注 <span class="tag">增强·补 v1.0 悬空</span></td><td class="p2">🟡</td><td>前台 FR-S-092 提交后 5 秒内出现在列表；状态流转有记录</td></tr>
+</table>
+
+<h3 id="s6-2">6.2 营销中心（新增）</h3>
+<p class="small">营销中心的定位：<b>你在这里配，前台自动生效，不需要研发介入</b>。所有活动共用一套"生效时间 + 适用范围 + 优先级 + 叠加规则 + 预算上限"的模型，避免出现"三个活动互相打架、结算金额算错"。</p>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-A-020</td><td>营销总览：活动列表（名称 / 类型 / 状态 / 起止时间 / 已用次数 / 带来营收 / 折扣成本 / ROI），支持复制活动、暂停、删除 <span class="tag">增强</span></td><td class="p1">🔴</td><td>状态机：草稿 → 待生效 → 进行中 → 已结束 / 已暂停；时间到点自动切换，误差 ≤1 分钟</td></tr>
+  <tr><td class="id">FR-A-021</td><td class="p1">优惠券创建：码（手填或自动生成）、类型（百分比 / 固定减 / 免邮）、面值、最低消费、适用范围（全站 / 指定集合 / 指定商品）、有效期、总使用上限、单用户上限、是否可与其他优惠叠加 <span class="tag">增强</span></td><td class="p1">🔴</td><td>保存前做冲突校验：同一码不可重复；面值不得超过最低消费</td></tr>
+  <tr><td class="id">FR-A-022</td><td>优惠券批量生成：一次生成 N 个唯一码（用于红人 / 邮件投放），支持导出码表 CSV、按渠道打标 <span class="tag">增强</span></td><td class="p2">🟡</td><td>单批 ≤5000 个；导出含码、渠道、状态、使用时间</td></tr>
+  <tr><td class="id">FR-A-023</td><td class="p1">补贴（自动折扣）：按集合 / 商品设置折扣率或直降，起止时间精确到分钟，可选"是否前台显示划线价" <span class="tag">增强</span></td><td class="p1">🔴</td><td>同一商品同时命中两个补贴时，按优先级取其一，不叠加；结束时价格自动还原</td></tr>
+  <tr><td class="id">FR-A-024</td><td class="p1">满额赠品：设置门槛金额、赠品 SKU、每单赠品数、活动库存上限、前台文案；支持"A 赠品 + B 赠品"二选一 <span class="tag">复刻</span></td><td class="p1">🔴</td><td>参考站为满 €140 送 Mystery Earrings；赠品库存耗尽后自动停止赠送且不阻断下单</td></tr>
+  <tr><td class="id">FR-A-025</td><td>免邮门槛：可设单一门槛，或阶梯（满 $95 免标准 / 满 $180 免加急） <span class="tag">复刻</span></td><td class="p2">🟡</td><td>与购物车进度条、结算运费计算三处口径一致</td></tr>
+  <tr><td class="id">FR-A-026</td><td class="p1">叠加与优先级规则：可配置"优惠券与自动折扣是否叠加""多个优惠券是否可叠加""取较优还是顺序应用" <span class="tag">增强</span></td><td class="p1">🔴</td><td>规则变更对<b>已创建未支付</b>的订单同样生效，但必须在结算页提示用户金额变化</td></tr>
+  <tr><td class="id">FR-A-027</td><td>活动效果：每个活动的使用次数、带来营收、折扣成本、AOV 对比、新客占比 <span class="tag">增强</span></td><td class="p2">🟡</td><td>数据与订单明细可对账</td></tr>
+  <tr><td class="id">FR-A-028</td><td>活动预览：生成一个带 <code>?preview=token</code> 的前台链接，未生效的活动可提前看真实效果 <span class="tag">增强</span></td><td class="p2">🟡</td><td>预览链接不对外索引，不影响真实价格</td></tr>
+  <tr><td class="id">FR-A-029</td><td>预算与熔断：可选设置活动总折扣预算，达到上限自动暂停 <span class="tag">增强</span></td><td class="p3">🟢</td><td>熔断后前台价格即刻还原</td></tr>
+  <tr><td class="id">FR-A-030</td><td class="p1">赠品成本核算：赠品不产生营收但产生货品与关税成本，必须在订单成本里计入，不能算成 0 <span class="tag">增强</span></td><td class="p1">🔴</td><td>赠品行的成本 = 货品成本 + 关税 + 头程；订单毛利不为虚高</td></tr>
+</table>
+
+<h3 id="s6-3">6.3 评价、定制与名单（新增）</h3>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-A-040</td><td class="p1">评价审核队列：三个 tab（待审核 / 已发布 / 已拒绝），显示星级、正文摘要、晒图缩略图、订单号、提交时间 <span class="tag">增强</span></td><td class="p1">🔴</td><td>待审核数量在侧边栏显示红点角标</td></tr>
+  <tr><td class="id">FR-A-041</td><td class="p1">审核操作：通过（立即前台可见）/ 拒绝（必须填原因，可选通知用户）/ 删除（必须填原因，留痕）/ 置顶 / 标记为精选 <span class="tag">增强</span></td><td class="p1">🔴</td><td>删除与拒绝均写入操作日志，含操作人与原因</td></tr>
+  <tr><td class="id">FR-A-042</td><td>批量审核：多选后批量通过或批量拒绝 <span class="tag">增强</span></td><td class="p2">🟡</td><td>批量拒绝同样要求填统一原因</td></tr>
+  <tr><td class="id">FR-A-043</td><td class="p1">低分保护：<b>管理员有权删除任何评价，但删除 1–2 星评价时必须从"违规 / 广告 / 无购买凭证 / 其他"中选择原因</b>，系统按月统计删除低分的次数并在概览提示 <span class="tag">增强</span></td><td class="p1">🔴</td><td>理由枚举必选；月删除低分数 &gt;3 时概览出现提示（防自我欺骗）</td></tr>
+  <tr><td class="id">FR-A-044</td><td>评价统计：平均分、星级分布、含图率、按月趋势、待审积压天数 <span class="tag">增强</span></td><td class="p2">🟡</td><td>平均分与商品页显示一致</td></tr>
+  <tr><td class="id">FR-A-045</td><td>评价导出 CSV 与"举报/申诉"记录查看 <span class="tag">增强</span></td><td class="p3">🟢</td><td>字段完整</td></tr>
+  <tr><td class="id">FR-A-046</td><td>到货提醒名单导出与批量通知（见 FR-A-018） <span class="tag">增强</span></td><td class="p2">🟡</td><td>—</td></tr>
+  <tr><td class="id">FR-A-047</td><td>邮件模板管理：订单确认 / 发货通知 / 退款通知 / 评价邀请 / 补货通知，可改主题与正文变量 <span class="tag">增强</span></td><td class="p2">🟡</td><td>变量占位符有校验，缺变量时禁止保存</td></tr>
+  <tr><td class="id">FR-A-048</td><td>定时任务可视化：占用释放、活动起止、补货通知、月度出生石切换的最近执行时间与结果 <span class="tag">增强</span></td><td class="p3">🟢</td><td>失败任务可手动重跑</td></tr>
+</table>
+
+<h3 id="s6-4">6.4 运营效率 A-14 ~ A-20（v2.1 新增）</h3>
+<p class="small">运营视角的六条效率需求。判断标准不是"能不能做"，而是"每周要用一次以上"。一次性配置的事手工做掉就行，不做功能。</p>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-A-050</td><td class="p1">渠道归因采集：落地页解析 UTM（source / medium / campaign / content），写入首方 cookie；订单创建时固化<b>末次来源</b>与<b>注册来源</b>。<b>必须等 Cookie 同意后才启用</b>（依赖 FR-S-095） <span class="tag">增强</span></td><td class="p1">🔴</td><td>拒绝分析的访问不产生渠道数据；直接访问记为 direct</td></tr>
+  <tr><td class="id">FR-A-051</td><td>渠道花费录入：按渠道 + 月份手填花费（广告 / 红人 / 联盟），用于算 CAC 与 ROI <span class="tag">增强</span></td><td class="p2">🟡</td><td>不填时 ROI 显示"—"，不显示 0</td></tr>
+  <tr><td class="id">FR-A-052</td><td>渠道报表：每个渠道的订单数、GMV、AOV、退款率、CAC、ROI（可切 7 / 30 / 90 天）；支持导出 <span class="tag">增强</span></td><td class="p2">🟡</td><td>GMV 与订单 GMV 总量一致，差额落在 direct / 未归因</td></tr>
+  <tr><td class="id">FR-A-053</td><td class="p1">活动预检与告警：活动<b>生效前 1 小时</b>自动预检（关联商品是否上架、库存是否充足、赠品 SKU 是否有货、门槛是否高于最低在售价），异常发内部邮件；生效 / 结束 / 预算熔断各发一次通知 <span class="tag">增强</span></td><td class="p1">🔴</td><td>预检失败不自动阻止活动，但必须告警并留记录</td></tr>
+  <tr><td class="id">FR-A-054</td><td class="p1">商品批量编辑：多选后批量改价（按百分比或固定额）、改状态、加减集合、调库存。<b>仅 owner 可用</b>，需二次确认（显示影响款数与价格区间）→ 写操作日志（逐款记录改前改后）→ 提供 <b>5 分钟内一键撤销</b> <span class="tag">增强</span></td><td class="p1">🔴</td><td>批量改价后 5 分钟内可完整回滚；撤销本身也写日志</td></tr>
+  <tr><td class="id">FR-A-055</td><td>CSV 导入导出：导出商品模板 → 填写 → 上传后先<b>校验预览</b>（列出错误行与原因，不写库）→ 确认导入 <span class="tag">增强</span></td><td class="p2">🟡</td><td>不允许"上传即生效"；校验失败最多列出前 50 条错误</td></tr>
+  <tr><td class="id">FR-A-056</td><td>库存预警与可售天数：每日发库存邮件，列出低于阈值或"可售天数 &lt; 补货周期"的商品；可售天数 = (onHand − reserved) ÷ 近 30 天日均销量，新品不足 30 天用类目均值兜底 <span class="tag">增强</span></td><td class="p1">🔴</td><td>按可售天数升序排列；阈值为 0 的商品单独标红</td></tr>
+  <tr><td class="id">FR-A-057</td><td>客户筛选与导出：按 tier、最后下单距今天数、累计消费区间筛选，导出 CSV（邮箱 / 姓名 / 订单数 / 消费额 / 最后下单日） <span class="tag">增强</span></td><td class="p2">🟡</td><td>导出需 <code>customer.export</code> 权限位；导出行为写日志</td></tr>
+  <tr><td class="id">FR-A-058</td><td>处理时长与节假日设置：设置默认处理时长（1–2 个工作日）与不发货日（节假日），供 FR-S-167 计算送达日期 <span class="tag">增强</span></td><td class="p1">🔴</td><td>修改后商品页与结算页的日期立即变化</td></tr>
+  <tr><td class="id">FR-A-059</td><td>UGC 精选标记：评价列表可将带图评价标为"精选"，用于前台 UGC 聚合区块与社媒素材库 <span class="tag">增强</span></td><td class="p3">🟢</td><td>仅在用户已授权图片使用（BR-21）的评价上出现该操作</td></tr>
+  <tr><td class="id">FR-A-060</td><td>售后队列：列表显示订单号、类型（退换 / 颜色保证）、原因、凭证图、提交时间、状态；可标记处理中 / 已同意 / 已拒绝并填说明 <span class="tag">增强</span></td><td class="p2">🟡</td><td>拒绝必须填原因；处理后自动发通知邮件</td></tr>
+  <tr><td class="id">FR-A-061</td><td class="p1">邮件发送日志与限流：记录每封邮件的收件人、模板、类型（交易 / 营销）、发送时间、打开状态；<b>发送前统一校验</b>频次上限与退订状态，命中则不发送并记原因 <span class="tag">增强</span></td><td class="p1">🔴</td><td>限流在服务层强制，任何模板都无法绕过</td></tr>
+</table>
+
+<h2 id="s7"><span class="n">7</span>业务规则</h2>
+
+<h3>7.1 价格与成本</h3>
+<table>
+  <tr><th>编号</th><th>规则</th><th>说明</th></tr>
+  <tr><td class="id">BR-01</td><td class="p1">售价与价格带</td><td>后台手工填写，不做自动加价公式；<b>整体价格带 $58–$143</b>，对齐参考站。分层：不锈钢基础款 $58–$89；双层/多层与珍珠款 $92–$118；14K 镀金与套装 $120–$143。划线价仅在促销时填写，且划线价必须真实售卖过 ≥14 天</td></tr>
+  <tr><td class="id">BR-02</td><td>成本构成</td><td>货品成本 + 关税（默认 31%，按货品成本计）+ 头程（5.5%，按货品成本计）+ 仓配（$9.8/单）+ 支付（3.2% + $0.3）+ 包装（$0.85/单）+ 退货计提（6%，按营收计）+ <b>颜色保证准备金（2%，按营收计）</b></td></tr>
+  <tr><td class="id">BR-03</td><td>贡献毛利</td><td>营收 − 上述全部成本；后台订单详情按单展示。赠品按 BR-16 单独计入成本</td></tr>
+  <tr><td class="id">BR-04</td><td>币种</td><td>全站 USD，不做汇率换算、不做地区定价 <span class="tag">已确认</span></td></tr>
+</table>
+
+<h4>毛利测算（按价格带三档示例）</h4>
+<table>
+  <tr><th>项目</th><th>$58 入门款</th><th>$88 主力款</th><th>$143 14K 款</th><th>口径</th></tr>
+  <tr><td>售价</td><td>$58.00</td><td>$88.00</td><td>$143.00</td><td>—</td></tr>
+  <tr><td>货品成本</td><td>$13.00</td><td>$18.00</td><td>$32.00</td><td>约售价 20–22%</td></tr>
+  <tr><td>关税</td><td>$4.03</td><td>$5.58</td><td>$9.92</td><td>货品 × 31%</td></tr>
+  <tr><td>头程</td><td>$0.72</td><td>$0.99</td><td>$1.76</td><td>货品 × 5.5%</td></tr>
+  <tr><td>仓配</td><td>$9.80</td><td>$9.80</td><td>$9.80</td><td>固定/单</td></tr>
+  <tr><td>支付</td><td>$2.16</td><td>$3.12</td><td>$4.88</td><td>3.2% + $0.3</td></tr>
+  <tr><td>包装</td><td>$0.85</td><td>$0.85</td><td>$0.85</td><td>固定/单</td></tr>
+  <tr><td>退货计提</td><td>$3.48</td><td>$5.28</td><td>$8.58</td><td>售价 × 6%</td></tr>
+  <tr><td>颜色保证准备金</td><td>$1.16</td><td>$1.76</td><td>$2.86</td><td>售价 × 2%</td></tr>
+  <tr><td><b>贡献毛利</b></td><td><b>$22.80</b></td><td><b>$42.62</b></td><td><b>$72.35</b></td><td>—</td></tr>
+  <tr><td><b>毛利率</b></td><td><b>39.3%</b></td><td><b>48.4%</b></td><td><b>50.6%</b></td><td>—</td></tr>
+</table>
+<p class="small">对照：v1.0 的 $35–$85 价格带下，固定成本（仓配 $9.8 + 包装 $0.85 + 支付 $0.3）就占掉 $10.95，$35 款毛利率不足 25%，扣掉广告投放后基本无利。这正是把价格带提到 $58 起的直接原因——不是"卖贵一点"，而是<b>低客单价在这个成本结构下跑不通</b>。</p>
+
+<h3>7.2 库存与超卖</h3>
+<table>
+  <tr><th>编号</th><th>规则</th><th>说明</th></tr>
+  <tr><td class="id">BR-05</td><td class="p1">扣减与占用</td><td>结算页创建订单时，按 SKU <b>写入占用记录（reserved）</b>，可售数 = 在库 − 占用；支付成功转为实扣；<b>30 分钟未支付自动释放</b> <span class="tag">已确认</span></td></tr>
+  <tr><td class="id">BR-06</td><td>超卖保护</td><td>加购、结算、支付回调三处各校验一次；库存不足时阻止提交并提示可购数量</td></tr>
+  <tr><td class="id">BR-07</td><td>低库存阈值</td><td>≤5 件前台提示"仅剩 N 件"；后台安全库存可单独设置</td></tr>
+  <tr><td class="id">BR-08</td><td>SKU 编码</td><td><code>TG-1xx</code> 项链 / <code>2xx</code> 戒指 / <code>3xx</code> 手链 / <code>4xx</code> 脚链 / <code>5xx</code> 耳饰 / <code>6xx</code> 珍珠 / <code>7xx</code> 定制 / <code>8xx</code> 礼盒</td></tr>
+</table>
+
+<h3>7.3 运费、税费与售后</h3>
+<table>
+  <tr><th>编号</th><th>规则</th><th>说明</th></tr>
+  <tr><td class="id">BR-09</td><td>免邮门槛</td><td>满 <b>$95</b> 免标准运费（原 $75 已上调：价格带提到 $58 起后，$75 只需买一件即达标，运费成本会吃掉毛利）；门槛后台可改</td></tr>
+  <tr><td class="id">BR-10</td><td>税费</td><td>售价不含税；美国各州由 Stripe Tax 计算并代收 <span class="tag">已确认</span></td></tr>
+  <tr><td class="id">BR-11</td><td>退换窗口</td><td>签收后 30 天内，非定制款、未佩戴、原包装可退；<b>退货运费由客户承担</b>，质量问题由我们承担</td></tr>
+  <tr><td class="id">BR-12</td><td>退款方式</td><td>原路退回，后台登记后由 Stripe 发起；不自动处理</td></tr>
+  <tr><td class="id">BR-13</td><td>订单号</td><td><code>TG-</code> + 4 位年月 + 4 位流水，如 <code>TG-2611-0042</code>（原型演示用简化序号 <code>#TG1132</code>，生产按此规范）</td></tr>
+  <tr><td class="id">BR-14</td><td>集合归属</td><td>一件商品可同时属于多个集合，不互斥；导航集合按后台排序展示</td></tr>
+  <tr><td class="id">BR-15</td><td class="p1">终身颜色保证</td><td><b>真承诺</b>：在正常佩戴条件下（日常接触水、汗液、香水、洗手液）出现褪色、发黑、镀层起泡脱落，<b>自购买日起终身免费换新一次</b>，运费双方各承担一半。不适用：人为刮擦、化学品浸泡（漂白剂 / 强酸）、非本店商品。执行方式：客户邮件提交订单号 + 实物照片，客服判定后寄新，无需退回旧件。成本由 BR-02 的 2% 准备金覆盖，年换新率预估 ≤5%</td></tr>
+  <tr><td class="id">BR-16</td><td class="p1">满额赠品</td><td>按<b>折后商品小计</b>（不含运费、税费、已用优惠券金额）判断门槛；达标自动加车一行 $0 赠品；赠品计入实物库存扣减与成本核算（货品 + 关税 + 头程），但不计入 GMV 与销量；赠品库存耗尽自动停止赠送，不阻断下单</td></tr>
+  <tr><td class="id">BR-17</td><td class="p1">优惠叠加顺序</td><td>固定顺序：<b>① 自动折扣（补贴）→ ② 优惠券 → ③ 免邮判定 → ④ 赠品门槛判定</b>。默认"自动折扣与优惠券可叠加、两张优惠券不可叠加"（取较优一张）；全部规则可在 A-26 改。任何组合下应付金额不得 &lt; $0.5（Stripe 最低收款限制），且不得低于成本线——触发时自动降为"不可用"并提示</td></tr>
+  <tr><td class="id">BR-18</td><td class="p1">评价规则</td><td>仅已收货客户可评；一单一商品一次；所有评价先入待审核；审核通过才计入评分；评分 = 已发布评价算术平均，保留 1 位小数</td></tr>
+  <tr><td class="id">BR-21</td><td class="p1">评价激励与内容授权</td><td>① 带图评价可赠下次可用券，<b>与星级无关</b>（1 星带图同样给），代码层面禁止按星级判断是否发放；② 前台展示该评价时必须标注"Received a thank-you credit"（FTC 要求披露实质性关联）；③ 评价提交页需取得<b>图片营销使用授权</b>，未授权的图片只在前台评价区展示，不得用于首页 / 社媒 / 广告；④ <b>不得引导用户修改或删除低分评价</b>，与 BR-19 一致</td></tr>
+  <tr><td class="id">BR-22</td><td class="p1">邮件分类与频次</td><td>① <b>交易类</b>（订单确认 / 发货 / 退款 / 密码重置）无需营销同意，随时可发；② <b>营销类</b>（弃购提醒 / 邀评 / 活动 / 生日 / 补货）必须取得 opt-in，且每封含退订链接；③ 同一用户 <b>24 小时内最多 1 封营销邮件</b>，由 FR-A-061 在服务层强制；④ 退订即时生效，退订后仅保留交易类；⑤ 生日字段仅在用户单独勾选同意后用于营销</td></tr>
+  <tr><td class="id">BR-20</td><td class="p1">订单归属与账户一致性</td><td>① 订单创建瞬间固化 <code>email</code>，归属按邮箱<b>大小写不敏感</b>匹配；② 已登录用户在结算页<b>锁定邮箱</b>，如需换邮箱应先改账户邮箱；③ 账户改邮箱时，历史订单的 <code>email</code> <b>在同一事务内一并迁移</b>；④ 访客用某邮箱下单后，用同一邮箱注册即<b>自动继承</b>历史订单；⑤ <b>注销账户不删除订单</b>，仅解除账户关联（订单为财务与税务凭证，按当地法规需留存）；⑥ 一个邮箱不允许绑定多个账户</td></tr>
+  <tr><td class="id">BR-19</td><td class="p1">评价删除边界</td><td>管理员<b>有权删除任何评价</b>，但删除 1–2 星评价必须选择原因（违规内容 / 广告垃圾 / 无购买凭证 / 其他并填写说明），系统留痕并计入月度统计。3–5 星可径直删除，无需理由。此规则不限制权力，只保证"删除低分是有意识的行为，不是数据美化"</td></tr>
+  <tr><td class="id">BR-20</td><td>出生石切换</td><td>每月 1 日 00:00（美东时间）自动切换当月在售诞生石集合与首页区块；提前 7 天预热显示下月款</td></tr>
+</table>
+
+<h2 id="s8"><span class="n">8</span>订单状态机</h2>
+<div class="flow">
+  <span>待支付 pending</span><i>→</i><span>已支付 paid</span><i>→</i><span>配货中 fulfilling</span><i>→</i><span>已发货 fulfilled</span><i>→</i><span>已完成 completed</span>
+</div>
+<div class="flow">
+  <span>待支付</span><i>→</i><span>已取消 cancelled</span><i>（超时 / 用户取消）</i>
+</div>
+<div class="flow">
+  <span>已支付 / 已发货</span><i>→</i><span>退款中 refunding</span><i>→</i><span>已退款 refunded</span>
+</div>
+<table>
+  <tr><th>状态</th><th>触发</th><th>可执行操作</th><th>客户可见</th></tr>
+  <tr><td>pending</td><td>创建订单未支付（同时写入库存占用）</td><td>取消</td><td>待支付</td></tr>
+  <tr><td>paid</td><td>支付回调成功（占用转实扣）</td><td>配货、取消并退款</td><td>已支付</td></tr>
+  <tr><td>fulfilling</td><td>后台开始配货</td><td>填运单发货</td><td>备货中</td></tr>
+  <tr><td>fulfilled</td><td>填写运单号</td><td>登记退款 / 换新</td><td>已发货 + 物流号</td></tr>
+  <tr><td>completed</td><td>签收后自动或手动</td><td>登记退款 / 换新 / 邀请评价</td><td>已完成</td></tr>
+  <tr><td>refunded</td><td>全额退款完成</td><td>—</td><td>已退款</td></tr>
+  <tr><td>cancelled</td><td>取消 / 超时未支付</td><td>—</td><td>已取消</td></tr>
+</table>
+<h4>售后类型（与订单状态正交，单独记录）</h4>
+<table>
+  <tr><th>类型</th><th>触发场景</th><th>是否退款</th><th>成本归集</th></tr>
+  <tr><td>return 退货退款</td><td>签收 30 天内、非定制、未佩戴</td><td>是，全额</td><td>退货计提 6%</td></tr>
+  <tr><td>exchange 换新</td><td>终身颜色保证 / 质量问题</td><td>否，寄新品</td><td>颜色保证准备金 2%</td></tr>
+  <tr><td>partial 部分退款</td><td>多件订单其中一件有问题 <span class="tag">待确认</span></td><td>是，按行金额</td><td>按行成本反冲</td></tr>
+</table>
+<p class="small">售后单独立于订单状态机，避免出现"订单已完成但又发生退款"导致状态回退、财务对不上账。订单状态只描述<b>履约进度</b>，售后单描述<b>售后处理</b>。</p>
+<p class="small">部分退款、部分发货是否纳入首版，见第 11 节待确认项。</p>
+
+<h2 id="s9"><span class="n">9</span>非功能需求</h2>
+<table>
+  <tr><th>维度</th><th>要求</th></tr>
+  <tr><td>性能</td><td>移动端 LCP ≤ 2.5s、CLS ≤ 0.1；后台首屏 ≤ 1.5s</td></tr>
+  <tr><td>可用性</td><td>核心链路（浏览→加购→支付）可用性 ≥ 99.9%</td></tr>
+  <tr><td>安全</td><td>后台强制鉴权、登录限流、CSRF 防护、输入校验；支付走 Stripe 托管，不接触卡号</td></tr>
+  <tr><td>合规</td><td>GDPR / CCPA 同意与删除请求通道；隐私政策、条款、退换政策齐备；欧盟 IOSS 税号展示 <span class="tag">待确认</span></td></tr>
+  <tr><td>数据</td><td>数据库每日备份，保留 30 天；订单与客户数据加密传输</td></tr>
+  <tr><td>可维护</td><td>商品与内容均可在后台维护，改文案不需要改代码</td></tr>
+  <tr><td>可观测</td><td>接入错误监控与访问日志；支付失败单独告警</td></tr>
+</table>
+
+<h2 id="s10"><span class="n">10</span>验收清单</h2>
+<ol>
+  <li>11 项一级导航在 1440 / 1024 / 390 三档下均正确呈现，无换行、无横向滚动；mega menu <b>不出现第三层</b>。</li>
+  <li>公告栏为<b>多条循环滚动</b>，每条可点击，点击后落到对应集合。</li>
+  <li>首页区块顺序与参考站一致：Slideshow → Best Sellers → New Arrivals → 数字背书 → 创始人故事 → 服务承诺条 → 页脚。</li>
+  <li>集合页商品卡<b>不点击进详情</b>即可完成加购；卡内切换颜色后图片与小计同步。</li>
+  <li>价格与折扣显示为 <code>SAVE $14</code> 金额型，不出现百分比型。</li>
+  <li>商品页价格下方 4 条卖点平铺可读，首条为 Lifetime Color Guarantee。</li>
+  <li>从首页 → 集合 → 卡内加购 → 结算，全链路无阻断；结算页可输入优惠码并即时看到减额。</li>
+  <li>购物车金额跨过赠品门槛时，赠品行自动出现（$0、GIFT 标记、不可改数量）；降到门槛以下自动移除。</li>
+  <li>同时存在自动折扣与优惠券时，摘要区明确展示两者关系，应付金额与后台订单详情完全一致。</li>
+  <li>下单后后台订单列表出现新订单，库存"在库 / 占用 / 可售"三列自洽，金额与前台一致。</li>
+  <li><b>改一次关税税率</b>，此前所有订单的毛利数字一分不变（验证 FR-A-014 费率快照）。</li>
+  <li>提交一条 1 星评价，前台不显示；后台审核通过后才出现并计入平均分；管理员删除时必须选原因。</li>
+  <li>用订单号 + 邮箱可查到刚下的订单；邮箱错误时查不到。</li>
+  <li>连续点击下单按钮 5 次，只产生 1 笔订单。</li>
+  <li>移动端 390px 全站无横向溢出。</li>
+</ol>
+
+<h2 id="s11"><span class="n">11</span>待确认问题</h2>
+<p class="small">v1.0 的 10 条已有 6 条确认，移到第 12 节；以下为仍需你拍板的 4 条。</p>
+<table>
+  <tr><th>#</th><th>问题</th><th>我的建议</th><th>影响</th></tr>
+  <tr><td>Q1</td><td>品牌名已定为 <b>TIDEGLASS</b>（商标与域名核查见 <code>branding/品牌名核查-v1.0.html</code>）。<b>待办</b>：tideglassjewelry.com 等域名注册、USPTO / UKIPO Class 14 正式检索</td><td>先注册域名占位，再委托代理做跨境检索</td><td>上线时间、包装印刷、社媒账号注册</td></tr>
+  <tr><td>Q5</td><td><b>价格带是否锁定 $58–$143？</b>原型数据已按此三档上调（基础 58–89 / 珍珠 92–118 / 套装 120–143）。若改为低价切入（$42–$96），毛利从 48% 降到 35%，扣除获客成本后可能无利</td><td>锁定 $58 起价。低价款用入门小件（$58 耳钉 / 脚链）承担引流，不整体降价</td><td>毛利模型、免邮门槛、赠品门槛</td></tr>
+  <tr><td>Q7</td><td><b>弃购第二封要不要开放免运？</b>当前默认关闭、只给赠品。开放的好处是短期挽回率更高，代价是训练出"等 24 小时再买"的习惯，半年后才显形</td><td>先只给赠品，积累 2–3 个月 A/B 数据（首单转化率 + 90 天复购率）再决定</td><td>弃购挽回率、新客首单周期</td></tr>
+  <tr><td>Q8</td><td><b>渠道花费手填还是对接广告平台？</b>手填每周约 10 分钟；对接需要开发与长期维护</td><td>首版手填。等月投放额超过 $20k 再考虑对接</td><td>CAC / ROI 报表的准确性</td></tr>
+  <tr><td>Q6</td><td><b>品类轴到底有没有耳环 / 发饰？</b>规划是发饰 6 款、无耳环；原型导航是 EARRINGS、无发饰</td><td>按规划去掉耳环、补发饰，或反过来调整规划</td><td>11 项一级导航、集合挂载、筛选维度</td></tr>
+  <tr><td>Q2</td><td>Stripe 账号是否已开通、支持哪些支付方式？</td><td>需尽早开通测试号</td><td>结算实现、Apple Pay 域名验证</td></tr>
+  <tr><td>Q3</td><td>商品图来源：自拍 / AI 生成 / 供应商图？</td><td>首版供应商图 + 统一调色，逐步替换</td><td>上线时间与视觉一致性</td></tr>
+  <tr><td>Q4</td><td>部分退款是否进首版？</td><td>进，多件订单几乎必然遇到</td><td>财务对账、售后单模型</td></tr>
+</table>
+
+<h2 id="s12"><span class="n">12</span>决策记录与变更（v1.0 → v2.0）</h2>
+<h3>12.7 v2.1 变更（运营意见落地）</h3>
+<p class="small">依据 <code>review/运营建议意见稿-v1.0.html</code>（13 条）与 <code>review/运营意见评审记录-v1.0.html</code>（逐条判定）。运营 13 条中采纳 7、部分采纳 5、无否决；产品侧另补 6 条合规与工程约束。</p>
+<table>
+  <tr><th>类别</th><th>变更</th><th>条目</th></tr>
+  <tr><td><b>新增章节</b></td><td>5.10 生命周期与自动化（11 条）、6.4 运营效率（12 条）</td><td>FR-S-160~170、FR-A-050~061</td></tr>
+  <tr><td><b>合规硬约束</b></td><td>新增评价激励披露（FTC）与邮件分类频次（CAN-SPAM / GDPR）两条业务规则</td><td>BR-21、BR-22</td></tr>
+  <tr><td><b>修正运营建议</b></td><td>弃购首封 1h→4h；邀评 7 天→10 天；凑单推荐不按毛利率优先；批量改价限 owner + 5 分钟撤销；渠道归因仅末次点击</td><td>FR-S-160、164、168、FR-A-050、054</td></tr>
+  <tr><td><b>提级</b></td><td>Cookie 同意条（FR-S-095）由"待补"升级为归因前置依赖</td><td>FR-S-095、FR-A-050</td></tr>
+  <tr><td><b>降级</b></td><td>客户群发只做筛选导出；生日自动化放二期，字段先埋（可选）</td><td>FR-A-057、FR-S-169</td></tr>
+  <tr><td><b>待确认</b></td><td>Q7 弃购免运是否放开、Q8 渠道花费录入方式</td><td>第 11 节</td></tr>
+</table>
+
+<h3>12.6 v2.0 变更（与原型同步）</h3>
+<p class="small">v2.0 不新增业务想象，只做一件事：<b>把文档拉回到原型已经验证过的现实</b>。依据是 <code>review/同步核查报告-v1.0.html</code> 的核查结论（硬冲突 6 · 原型超前 7 · 文档超前 9 · 文档内耗 3）。</p>
+<table>
+  <tr><th>类别</th><th>变更</th><th>条目</th></tr>
+  <tr><td><b>范围翻案</b></td><td>用户注册登录从「不做」改为「做」，新增 5.9 账户中心 14 条需求、8 个页面（S-13~S-20）；访客下单保留</td><td>2.1、2.2、3、4.2、FR-S-140~153</td></tr>
+  <tr><td><b>权限模型</b></td><td>后台由「单密码、单角色、全权限」改为「同账号体系 + role + 权限位 + 操作日志」</td><td>FR-A-001、FR-A-001b、第 3 节</td></tr>
+  <tr><td><b>一致性规则</b></td><td>新增订单归属规则（按邮箱匹配、锁定、迁移、继承、注销保留）</td><td>BR-20、FR-S-150~151</td></tr>
+  <tr><td><b>品牌</b></td><td>Wildkind → TIDEGLASS；编号 WK- → TG-；SKU 与订单号前缀同步</td><td>全文</td></tr>
+  <tr><td><b>数据口径</b></td><td>原型 36 款商品价格按 BR-01 三档上调至 $58–$143，与毛利模型一致</td><td>BR-01（未变）、原型数据</td></tr>
+  <tr><td><b>补写缺失</b></td><td>把原型已实现但文档未写的 7 项补进需求：支付失败重试、邮箱锁定、订单迁移、抽屉登录态、移动端账户入口、登录回跳、心愿单</td><td>FR-S-076、151、153、152、141、147、148</td></tr>
+  <tr><td><b>标注覆盖</b></td><td>9 条文档先行需求标注覆盖状态：mega menu 与 Cookie 条为真缺，其余属「原型抽样不覆盖」</td><td>见附录 A 覆盖矩阵</td></tr>
+  <tr><td><b>待确认</b></td><td>Q1 品牌清单化、新增 Q5 价格带、Q6 品类轴</td><td>第 11 节</td></tr>
+</table>
+
+<h3>12.1 已确认的 6 项决策</h3>
+<table>
+  <tr><th>#</th><th>决策项</th><th>你的决定</th><th>落到哪条需求</th></tr>
+  <tr><td>D1</td><td>价格带</td><td><b>跟参考站</b>（$58–$143，14K 与珍珠款上探至 $143）</td><td>BR-01、7.1 毛利测算、FR-A-008 定价校验</td></tr>
+  <tr><td>D2</td><td>终身颜色保证</td><td><b>真承诺</b>（终身免费换新一次，成本计入准备金）</td><td>BR-15、BR-02 准备金 2%、FR-S-052 卖点首位、FR-S-091 政策页、售后类型 exchange</td></tr>
+  <tr><td>D3</td><td>商品卡直接加购</td><td><b>做</b></td><td>FR-S-044、FR-S-045、原型 S-02 改版</td></tr>
+  <tr><td>D4</td><td>优惠券 / 补贴 / 满额赠品</td><td><b>后台控制</b>——你的反问成立：这三项本质是营销工具</td><td>新增 6.2 营销中心（FR-A-020~030）与 5.7 前台呈现（FR-S-110~119），共 21 条</td></tr>
+  <tr><td>D5</td><td>满额赠品</td><td><b>做</b>（并归入营销中心，不做成独立功能）</td><td>FR-A-024、FR-S-113~115、BR-16、BR-17</td></tr>
+  <tr><td>D6</td><td>评价系统</td><td><b>自建 + 后台审核，管理员有权删除</b></td><td>FR-S-130~135、FR-A-040~045、BR-18、BR-19、原型 A-11</td></tr>
+</table>
+
+<h3>12.2 新增需求（52 条）</h3>
+<table>
+  <tr><th>区块</th><th>编号</th><th>内容</th></tr>
+  <tr><td>全局</td><td class="id">FR-S-009 / 010</td><td>服务承诺条移到页脚上方；全站锁定 USD 不显示切换器</td></tr>
+  <tr><td>首页</td><td class="id">FR-S-023 / 027 / 031</td><td>数字背书条；出生石月度区块；服务承诺条归属</td></tr>
+  <tr><td>集合</td><td class="id">FR-S-044 / 045 / 049</td><td>商品卡 6 字段（含 SAVE $X 与色点切换）；卡内直接加购；三轴明确不做</td></tr>
+  <tr><td>详情</td><td class="id">FR-S-052 / 057</td><td>价格下平铺 4 条卖点；商品页评价区</td></tr>
+  <tr><td>内容</td><td class="id">FR-S-091 / 098</td><td>政策页写清终身保证边界；评价提交页 S-12</td></tr>
+  <tr><td>营销呈现</td><td class="id">FR-S-110~119</td><td>优惠码输入与校验、自动折扣展示、赠品进度条、赠品自动加车、赠品缺货降级、叠加提示、活动角标、倒计时、不做多币种</td></tr>
+  <tr><td>评价</td><td class="id">FR-S-130~135</td><td>仅收货客户可评、评价字段、待审核不展示、排序、低分不可因分数删除、评分口径</td></tr>
+  <tr><td>后台交易</td><td class="id">FR-A-014 / 017 / 018 / 019</td><td>费率快照；库存占用可视化；到货提醒名单；定制需求单 A-12</td></tr>
+  <tr><td>后台营销</td><td class="id">FR-A-020~030</td><td>活动总览、优惠券创建、批量码、补贴、满额赠品、免邮阶梯、叠加优先级、效果统计、预览链接、预算熔断、赠品成本核算</td></tr>
+  <tr><td>后台评价</td><td class="id">FR-A-040~045</td><td>审核队列、审核操作、批量审核、低分保护、统计、导出</td></tr>
+  <tr><td>后台其他</td><td class="id">FR-A-046~048</td><td>名单通知、邮件模板、定时任务可视化</td></tr>
+</table>
+
+<h3>12.3 修订条目（21 条，含 5 处硬伤）</h3>
+<table>
+  <tr><th>编号</th><th>v1.0</th><th>v1.1</th><th>原因</th></tr>
+  <tr><td class="id">FR-S-004</td><td>单条公告文案</td><td>多条跑马灯，可带链接与倒计时</td><td class="p1">与参考站不符（实为 7 条滚动）</td></tr>
+  <tr><td class="id">FR-S-020</td><td>单张 Hero 左文右图</td><td>2–3 张 Slideshow 轮播</td><td class="p1">与参考站不符</td></tr>
+  <tr><td class="id">FR-S-021</td><td>Best Sellers 无眉标</td><td>眉标为社媒背书文案</td><td>参考站为 AS SEEN ON TIKTOK</td></tr>
+  <tr><td class="id">FR-S-022</td><td>无独立新品区</td><td>New Arrivals 独立区块</td><td>参考站有</td></tr>
+  <tr><td class="id">FR-S-024</td><td>品牌故事在题材磁贴之后</td><td>创始人故事，位置前移</td><td>对齐参考站顺序</td></tr>
+  <tr><td class="id">FR-S-050</td><td>图库 ≥3 张</td><td>结构不限张数，首版 ≥6 张</td><td>参考站单款 21 张</td></tr>
+  <tr><td class="id">FR-S-051</td><td>评分与评价数混在标题行</td><td>无评价时不显示评分行</td><td>避免虚构评分</td></tr>
+  <tr><td class="id">FR-S-056</td><td>退换政策（仅 30 天）</td><td>退换与终身颜色保证</td><td>与 D2 一致</td></tr>
+  <tr><td class="id">FR-S-070</td><td>抽屉只有商品行</td><td>含赠品进度条 / 赠品行 / 优惠码入口</td><td>与 D4、D5 一致</td></tr>
+  <tr><td class="id">FR-S-075</td><td>免邮门槛 $75</td><td>$95（阶梯加急 $180）</td><td class="p2">价格带上移后原门槛失效</td></tr>
+  <tr><td class="id">FR-S-092</td><td>"后台生成定制需求单"但后台无此模块</td><td>明确写入 A-12</td><td class="p1">v1.0 流程悬空</td></tr>
+  <tr><td class="id">FR-A-005</td><td>金额构成不含优惠与赠品</td><td>含优惠券 / 补贴 / 赠品</td><td>与营销中心配套</td></tr>
+  <tr><td class="id">FR-A-009</td><td>只有库存数</td><td>在库 / 占用 / 可售三列</td><td class="p1">BR-05 的占用无法落地</td></tr>
+  <tr><td class="id">FR-A-013</td><td>声称"历史订单不变"但无快照</td><td>明确靠 FR-A-014 实现，并加颜色保证准备金费率</td><td class="p1">v1.0 会算错账</td></tr>
+  <tr><td class="id">FR-A-016</td><td>操作日志 🟢 低优先</td><td>🟡 中，删除类必须留痕</td><td>评价删除需要可追溯</td></tr>
+  <tr><td class="id">BR-02</td><td>7 项成本</td><td>8 项，新增颜色保证准备金 2%</td><td>与 D2 配套</td></tr>
+  <tr><td class="id">BR-09</td><td>$75</td><td>$95</td><td>价格带联动</td></tr>
+  <tr><td class="id">BR-11</td><td>定制款不退不换</td><td>补充退货运费归属与质量责任</td><td>减少客诉争议</td></tr>
+  <tr><td class="id">BR-17</td><td>无叠加规则</td><td>四步固定顺序 + 最低金额保护</td><td class="p1">v1.0 三个活动会打架</td></tr>
+  <tr><td class="id">角色表</td><td>"下单客户"作为可登录角色</td><td>改为"回访客户（无账户）"</td><td class="p1">首版无账户体系，原表述自相矛盾</td></tr>
+  <tr><td class="id">2.2 范围</td><td>"多语言、多币种不做"未标注参考站有无</td><td>明确参考站有多币种、我们主动不做</td><td>来源标注规范</td></tr>
+</table>
+
+<h3>12.4 删除条目（3 条）</h3>
+<ul>
+  <li><b>原 FR-A-014「折扣码」</b>——被 6.2 营销中心整块取代（只做折扣码等于漏掉补贴与赠品）。</li>
+  <li><b>"下单客户"角色</b>——首版无账户体系，不存在这个登录主体。</li>
+  <li><b>集合三轴（风格 / 材质 / 宝石）</b>——D5 明确不做，相关筛选维度从 FR-S-041 中移除。</li>
+</ul>
+
+<h3>12.5 仍未解决、需要你注意的两处</h3>
+<div class="note">
+<p><b>1. 价格带上移的经营风险。</b>$58 起意味着要和 Atolea、Pura Vida 正面拼品牌而不是拼价格。参考站能卖 $58 是因为它有 7M+ 件销量、1.6M+ 客户、4.7 分评分做背书。我们首版没有这些，前 3 个月大概率要靠 Meta 广告 + 红人内容换信任，CAC 会偏高。价格带本身没错，但<b>不能假设"标价上去就卖得动"</b>，推广预算和测款节奏要跟上。</p>
+<p><b>2. 终身颜色保证的兑现成本。</b>按年换新率 5% 估，若年销 2 万件、客单价 $88，则年换新 1000 件，单件成本约 $28（货品 18 + 关税 5.58 + 头程 0.99 + 双向运费约 $3.5），合计约 $2.8 万，占营收 1.6%——2% 准备金能覆盖。但若供应链批次不稳导致换新率到 15%，成本会翻到 4.8%、毛利被打掉一半。所以<b>这条承诺的前提是 PVD 工艺稳定</b>，首版必须在入库环节抽检并留样，否则承诺会变成负债。</p>
+</div>
+
+<hr>
+<p class="small">— 文档结束 · TG-FRD-001 v1.1 评审稿 · 待一审通过后再进入视觉与开发 —</p>
+
+</main>
+</div>
+</body>
+</html>

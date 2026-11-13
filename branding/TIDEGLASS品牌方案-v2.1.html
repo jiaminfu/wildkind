@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TIDEGLASS 品牌方案 · TG-BR-001 v2.1</title>
+<style>
+  :root{
+    --sea:#1B3A34; --sea-d:#122823; --glass:#A8C3B4; --sand:#E7DAC8;
+    --cream:#FAF6EF; --gold:#B08A56; --clay:#B4472F;
+    --ink:#16130F; --ink2:#4A453F; --muted:#8A7C64; --line:#E2DCD2; --line2:#F0EAE0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font:15px/1.78 -apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;color:var(--ink);background:var(--cream)}
+  .layout{display:grid;grid-template-columns:250px minmax(0,1fr);align-items:start}
+  .toc{position:sticky;top:0;height:100vh;overflow:auto;border-right:1px solid var(--line);background:#fff}
+  .toc__in{padding:28px 20px 40px}
+  .toc__t{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+  .toc a{display:block;padding:5px 0;font-size:13px;color:var(--ink2);text-decoration:none}
+  .toc a:hover{color:var(--sea)}
+  .doc{max-width:960px;padding:56px 60px 120px}
+
+  .cover{background:var(--sea);color:var(--cream);padding:76px 56px 64px;margin-bottom:48px;position:relative;overflow:hidden}
+  .cover::after{content:"";position:absolute;right:-80px;top:-80px;width:340px;height:340px;border:1px solid rgba(231,218,200,.18);border-radius:50%}
+  .cover::before{content:"";position:absolute;right:20px;bottom:-120px;width:260px;height:260px;border:1px solid rgba(231,218,200,.12);border-radius:50%}
+  .cover__kick{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--glass);margin:0 0 30px}
+  .cover__logo{font-family:Georgia,"Times New Roman",serif;font-size:44px;letter-spacing:.18em;text-indent:.18em;margin:0 0 10px;font-weight:400}
+  .cover h1{font-size:30px;font-weight:400;margin:26px 0 0;line-height:1.3;letter-spacing:.01em}
+  .cover h1 em{font-style:italic;color:var(--sand)}
+  .cover__meta{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:44px;padding-top:26px;border-top:1px solid rgba(231,218,200,.22);font-size:12.5px;position:relative;z-index:1}
+  .cover__meta i{display:block;font-style:normal;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--glass);margin-bottom:5px}
+
+  h2{font-size:26px;margin:70px 0 6px;letter-spacing:-.01em;font-weight:600;padding-top:20px;border-top:1px solid var(--line)}
+  h2 .n{color:var(--gold);font-weight:400;margin-right:12px;font-family:Georgia,serif}
+  h3{font-size:17.5px;margin:34px 0 10px;font-weight:600}
+  h4{font-size:14px;margin:22px 0 6px;font-weight:600;letter-spacing:.04em;color:var(--ink2)}
+  p{margin:11px 0}
+  ul,ol{margin:11px 0;padding-left:22px}
+  li{margin:6px 0}
+  .lede{font-size:16.5px;color:var(--ink2);line-height:1.8}
+  .small{font-size:13.5px;color:var(--muted)}
+  code{background:#fff;border:1px solid var(--line);padding:1px 6px;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .note{border-left:2px solid var(--gold);background:#fff;padding:15px 20px;margin:20px 0;font-size:14px}
+  .note b{color:var(--gold)}
+  .rule{border-left:2px solid var(--sea);background:#fff;padding:15px 20px;margin:20px 0;font-size:14px}
+
+  table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:13.5px;background:#fff}
+  th,td{border:1px solid var(--line);padding:10px 13px;text-align:left;vertical-align:top}
+  th{background:#FBF8F2;font-weight:600;font-size:12.5px;letter-spacing:.03em}
+
+  /* 字标展示 */
+  .markbox{background:#fff;border:1px solid var(--line);padding:44px;text-align:center;margin:20px 0}
+  .markbox .lg{font-family:Georgia,"Times New Roman",serif;font-size:40px;letter-spacing:.18em;text-indent:.18em;color:var(--sea)}
+  .markbox .sm{font-family:Georgia,serif;font-size:22px;letter-spacing:.18em;text-indent:.18em;color:var(--sea);margin-top:26px}
+  .markbox .xs{font-family:Georgia,serif;font-size:14px;letter-spacing:.18em;text-indent:.18em;color:var(--sea);margin-top:22px}
+  .markbox .tag{display:block;margin-top:28px;font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
+
+  /* 色卡 */
+  .sw{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);background:#fff;margin:18px 0}
+  .sw div{padding:0}
+  .sw .chip{height:96px}
+  .sw .lab{padding:11px 13px;border-top:1px solid var(--line);font-size:12px;line-height:1.6}
+  .sw .lab b{display:block;font-size:12.5px;margin-bottom:1px}
+  .sw .lab span{color:var(--muted);font-family:ui-monospace,monospace;font-size:11.5px}
+
+  .arrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:18px 0;font-size:13px}
+  .arrow span{border:1px solid var(--line);background:#fff;padding:7px 13px}
+  .arrow i{color:var(--muted);font-style:normal}
+
+  @media(max-width:900px){
+    .layout{grid-template-columns:1fr}.toc{display:none}
+    .doc{padding:26px 18px 80px}.cover{padding:44px 26px 40px}
+    .cover__logo{font-size:28px}.cover h1{font-size:22px}
+    .cover__meta{grid-template-columns:1fr;gap:14px}
+    .sw{grid-template-columns:repeat(2,1fr)}
+    table{font-size:12.5px}th,td{padding:8px 10px}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc"><div class="toc__in">
+  <p class="toc__t">目录</p>
+  <a href="#s1">1 命名：为什么是 TIDEGLASS</a>
+  <a href="#s2">2 品牌定位</a>
+  <a href="#s3">3 字标与标识规范</a>
+  <a href="#s4">4 色彩系统</a>
+  <a href="#s5">5 字体系统</a>
+  <a href="#s6">6 摄影与图像</a>
+  <a href="#s7">7 文案语气</a>
+  <a href="#s8">8 包装与开箱</a>
+  <a href="#s9">9 社媒与内容支柱</a>
+  <a href="#s10">10 落地清单</a>
+  <a href="#s11">11 与 SEREIA 方案的关系</a>
+</div></nav>
+
+<main class="doc">
+
+<div class="cover">
+  <p class="cover__kick">Brand Identity · v2.1</p>
+  <p class="cover__logo">TIDEGLASS</p>
+  <span style="font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--glass)">Sea glass doesn't fade. Neither do we.</span>
+  <h1>被海水打磨几十年，<br><em>它还是透光的。</em></h1>
+  <div class="cover__meta">
+    <div><i>文档编号</i>TG-BR-001</div>
+    <div><i>版本</i>v2.1（字标实现修正）</div>
+    <div><i>日期</i>2026-11-13</div>
+  </div>
+</div>
+
+<p class="lede">这份方案替代 <code>品牌方案-v1.0</code>。换名字不是审美偏好，是商标核查的结果：SEREIA 在美国已有 Class 14 珠宝类在先申请（USPTO 98755473，商品描述含耳环、手链、戒指、项链），无法安全使用。新名字必须同时满足三件事——<b>商标可用、域名可买、含义能承载产品事实</b>。TIDEGLASS 是六个候选里唯一三项全过的。</p>
+
+<h2 id="s1"><span class="n">1</span>命名：为什么是 TIDEGLASS</h2>
+
+<h3>1.1 字面与读音</h3>
+<p><b>TIDEGLASS</b> = tide（潮汐）+ glass（玻璃）。两个都是英语母语者的高频词，不需要解释就能拼读。两拍重音落在 <code>TIDE</code>，念作 /ˈtaɪdɡlæs/，九个字母在字标上属于偏长但可接受的长度（参照 PATAGONIA 十个字母、TIDEWEAVE 九个字母）。</p>
+<p>它不是生造词，也不是拉丁词根拼接——这一点很关键。DTC 饰品品牌里生造词泛滥（Atolea、Mejuri、Gorjana 都是），好处是不撞车，坏处是<b>没有任何语义抓手，全靠投放砸出认知</b>。TIDEGLASS 走的是另一条路：用两个已有的词，拼出一个视觉画面。</p>
+
+<h3>1.2 品牌故事的物理基础</h3>
+<div class="rule">
+<p style="margin:0"><b>海玻璃是怎么来的：</b>玻璃碎片掉进海里，被浪推、被沙磨，几十年后冲上岸——棱角磨圆了，表面变成哑光，边缘半透。它被磨损得最厉害，却始终没有失去透光这件事。</p>
+</div>
+<p>这个物理事实，恰好是产品事实的同构：</p>
+<table>
+  <tr><th>海玻璃</th><th>我们的产品</th><th>对消费者的意义</th></tr>
+  <tr><td>被海水与沙反复冲刷</td><td>316L 不锈钢 + PVD 镀层，可游泳、洗澡、睡觉佩戴</td><td>不需要为了首饰改变生活习惯</td></tr>
+  <tr><td>表面磨成哑光，但依然透光</td><td>镀层不掉色、不发黑、不锈</td><td>"不褪色"不是宣传语，是材质决定的</td></tr>
+  <tr><td>几十年才成型</td><td>不追季节款，做能戴很多年的款</td><td>买一次，不必反复替换</td></tr>
+</table>
+<p>这就是命名的核心价值：<b>它把"我们不掉色"这句所有竞品都会说的话，变成了一个可以被讲出来的故事。</b>Atolea 的 "Made for salt water" 讲的是使用场景，TIDEGLASS 讲的是时间——被磨损却不消失，比"防水"高一个层级。</p>
+
+<h3>1.3 三层含义</h3>
+<ul>
+  <li><b>材质层</b>：glass 直接对应"透明感"的视觉调性——通透、半哑、有光。</li>
+  <li><b>时间层</b>：tide 是周期，是反复。对应"戴几年也不变"，而不是"这一季的流行款"。</li>
+  <li><b>审美层</b>：海玻璃是被海选过的形状，没有一个是重复的。对应我们做题材化设计（海洋 / 林地 / 星象）而不是基础款堆量。</li>
+</ul>
+
+<h3>1.4 六个候选的取舍</h3>
+<table>
+  <tr><th>候选</th><th>USPTO 珠宝类</th><th>域名</th><th>结论</th></tr>
+  <tr><td><b>TIDEGLASS</b></td><td>✅ 零记录</td><td>tideglassjewelry.com / .shop / .store 可注册</td><td><b>采用</b>。含义、可用性、可注册性三项全过</td></tr>
+  <tr><td>NAIADE</td><td>✅ 无 Class 14</td><td>naiadejewelry.com / getnaiade.com 可用</td><td>备选。但读音是硬伤，英语母语者念不出，口播投放会流失</td></tr>
+  <tr><td>EVERWAVE</td><td>✅ 无记录</td><td>组合域名可用</td><td>备选。拼词过于直白，像物流公司</td></tr>
+  <tr><td>SELKIE</td><td>⚠️ 服装类已被占</td><td>主要域名全被占</td><td>淘汰。品牌认知已被他人占据</td></tr>
+  <tr><td>SEREIA</td><td>❌ 98755473 在审，商品含珠宝</td><td>sereia.com 被占</td><td>淘汰。商标直接冲突</td></tr>
+  <tr><td>MAREA</td><td>❌ 99009231 已注册，商品就一个词 Jewelry</td><td>3 个域名全被占</td><td>淘汰。同一持有人还有 MAREA 连衣裙等，已成矩阵</td></tr>
+</table>
+<div class="note"><b>需要正视的一个残缺</b>：<code>tideglass.com</code> 被 Automattic（WordPress 母公司）持有，拿不到。所以主域名用 <b>tideglassjewelry.com</b>，短域名 <code>tideglass.shop</code> 作为落地页与广告投放跳转。这在 DTC 里很常见（allbirds.com 之外还有 allbirds.co.nz 一类），不影响品牌完整性，但意味着<b>早期所有印刷物料都要写全 tideglassjewelry.com</b>，不能只写品牌名——这是要在包装设计时提前留出位置的实际约束。</div>
+
+<h2 id="s2"><span class="n">2</span>品牌定位</h2>
+
+<h3>2.1 定位声明</h3>
+<div class="rule">
+<p style="margin:0;font-size:15.5px">为 <b>22–38 岁、每天戴同一件首饰不想摘的北美女性</b>，TIDEGLASS 是<b>一个不用摘的饰品品牌</b>——因为 316L 不锈钢加 PVD 镀层让它经得起海水、淋浴与睡眠，而<b>终身不褪色承诺</b>让它敢把这件事写进政策页；不像快时尚饰品要在洗澡前摘下、三个月后换新。</p>
+</div>
+
+<h3>2.2 三个支柱（按重要度排序）</h3>
+<table>
+  <tr><th>#</th><th>支柱</th><th>证据（不是形容词）</th><th>在页面上的落点</th></tr>
+  <tr><td>1</td><td><b>不褪色</b></td><td>PVD 镀层 + 终身颜色保证（掉色免费换新一次，成本计入 2% 准备金）</td><td>商品页四条卖点首位、Returns 政策页、包装卡</td></tr>
+  <tr><td>2</td><td><b>可碰水</b></td><td>316L 医用级不锈钢，游泳 / 淋浴 / 睡觉不摘</td><td>首页首屏、FAQ、佩戴场景图</td></tr>
+  <tr><td>3</td><td><b>低敏</b></td><td>无镍释放、无铅镉，适合敏感肌</td><td>Materials 页、耳饰类目详情</td></tr>
+</table>
+<p class="small">顺序不能换。"低敏"是门槛项（做不到会被退货），"可碰水"是场景项（决定使用习惯），"不褪色"才是差异项——它直接对应海玻璃的故事，也是唯一能做成终身承诺的一条。</p>
+
+<h3>2.3 与竞品的差异</h3>
+<table>
+  <tr><th></th><th>Atolea</th><th>Pura Vida</th><th>TIDEGLASS</th></tr>
+  <tr><td>核心话术</td><td>Made for salt water</td><td>手工 + 公益</td><td>Sea glass doesn't fade</td></tr>
+  <tr><td>叙事落点</td><td>场景（海边）</td><td>人（工匠 / 公益）</td><td>时间（被磨损但不变）</td></tr>
+  <tr><td>价格带</td><td>$45–$135</td><td>$15–$60</td><td>$58–$143</td></tr>
+  <tr><td>我们的差异</td><td>同价位正面竞争：他们在讲"能下水"，我们讲"下水十年还这样"</td><td>不与其低价竞争，用题材设计与终身承诺拉开</td><td>—</td></tr>
+</table>
+
+<h3>2.4 人群画像（一个具体的人）</h3>
+<div class="rule">
+<p style="margin:0"><b>Maya，29 岁，洛杉矶，做市场策划。</b>她有一条款式简单的金项链，从大学戴到现在，洗澡睡觉都不摘。她不是不买首饰，而是<b>讨厌"要小心"的首饰</b>——摘来摘去、发黑、皮肤痒，都会让她干脆不戴。她愿意为"买了就不用管"多付 20–30 美元，但前提是品牌敢给承诺。她刷 TikTok 与 Instagram，买之前会翻评论里有没有人说"戴了半年还是亮的"。</p>
+</div>
+<p>这个画像推出三条设计要求：<b>①承诺要写在明面上</b>（政策页与商品页都要有，不能藏在 FAQ）；<b>②评论区的"用了多久"比"好不好看"更重要</b>（所以评价系统要收佩戴时长）；<b>③佩戴图必须出现水</b>（泳池、海边、淋浴），否则"可碰水"就只是文案。</p>
+
+<h2 id="s3"><span class="n">3</span>字标与标识规范</h2>
+
+<h3>3.1 字母为主，一个符号收口</h3>
+<p>v2.0 的判断是<b>只用字母、不做图形标</b>，参照 Atolea。落地到原型后发现这个判断只对了一半——问题不在"要不要符号"，而在<b>字距拉开之后，字标没有落点</b>。</p>
+<p>v2.0 的参数是 21px / +0.18em 全大写衬线。实际渲染出来，九个字母等距排成一行，每个字母的视觉重量完全相同，看久了像<b>打字机打出来的编号</b>——这就是"生硬"的来源。修法有两条：</p>
+<ul>
+  <li><b>继续收紧</b>：字距压到 0.10em 以下，字母粘连，回到"普通单词"的观感，失去标识感。</li>
+  <li><b>拉开并加锚点</b>：字距放大到 0.30em 制造留白，同时在左侧放一个符号把整块视线"钉住"。<b>留白有了落点，才不会散。</b></li>
+</ul>
+<p>选了后者。但符号必须满足三条，否则还不如不加：</p>
+<ul>
+  <li><b>能一笔画完</b>——圆环 + 两道波浪，24×24 网格内可辨认，缩小到 18px 仍成形。</li>
+  <li><b>与品类有关但不成具象</b>——波浪指海水，圆环取海玻璃被磨圆的轮廓，不做贝壳、不做船锚（具象符号会和商品抢注意力）。</li>
+  <li><b>只能用单色</b>——与字标同色（Deep Sea），反白版自动跟随，不做渐变或双色。</li>
+</ul>
+<p>三个用途各有一套规格：页头/页脚用「符号 + 字标」横排；favicon 与社媒头像<b>只用符号</b>（九字母在 16px 下必糊）；包装印字只印字标、不印符号（小面积印细节会脏）。</p>
+
+<div class="markbox">
+  <div class="lg">TIDEGLASS</div>
+  <div class="sm">TIDEGLASS</div>
+  <div class="xs">TIDEGLASS</div>
+  <span class="tag">大字 / 中字 / 小字 · 同一套字距规则</span>
+</div>
+
+<h3>3.2 字标参数（v2.1 实测值）</h3>
+<table>
+  <tr><th>项目</th><th>规格</th><th>说明</th></tr>
+  <tr><td>字体</td><td><b>Italiana</b>（Google Fonts，单一字重）</td><td>取代 v2.0 的 Cormorant / Playfair。Italiana 的大写高度更低、竖干更细、横画更薄，同字号下比二者都"轻"一档，正好抵消全大写的笨重感。系统兜底仍是 Georgia</td></tr>
+  <tr><td>字重</td><td>Regular 400（该字体只有一个字重）</td><td>加粗会丢掉细笔画，且小尺寸下糊成一团</td></tr>
+  <tr><td>字距</td><td><b>+0.30em</b></td><td>v2.0 的 0.18em 实测不足以制造呼吸感，九字母仍显拥挤。<b>0.30em 是本轮定稿值</b>：再往上字母开始各自为政，往下回到"普通单词"</td></tr>
+  <tr><td>末位补偿</td><td><b>加 <code>margin-right:-0.30em</code></b>，<b>不要用 text-indent</b></td><td>letter-spacing 会在最后一个字母之后也留一份 0.30em，不补掉则整块字标在容器里偏左。用 text-indent 补是错的——那是把整行往右推，只会让符号和文字之间多出一道缝（本轮踩过）</td></tr>
+  <tr><td>大小写</td><td>全大写</td><td>小写 tideglass 在字标里会显得像普通单词，失去标识感</td></tr>
+  <tr><td>主色</td><td>Deep Sea <code>#1B3A34</code></td><td>反白版用于深色底：Cream <code>#FAF6EF</code></td></tr>
+  <tr><td>字号 · 桌面</td><td><b>24px</b></td><td>页头高 68px；24px 字标 + 22px 符号 + 10px 间距 ≈ 235px 宽，与 11 项导航共存不换行</td></tr>
+  <tr><td>字号 · 移动</td><td><b>20px / 字距降为 0.22em</b></td><td>470px 宽下 24px + 0.30em 会顶到汉堡按钮。移动端留白本就紧张，字距必须让位</td></tr>
+  <tr><td>符号</td><td>22×22px（移动 18px），与字标间距 10px（移动 8px）</td><td>符号高度略小于字标（24px）——等高会让符号显得比字母重</td></tr>
+  <tr><td>最小尺寸</td><td>印刷 ≥ 22mm 宽；屏幕 ≥ 96px 宽</td><td>低于此尺寸字距需减到 0.12em，否则末字母会看不清</td></tr>
+  <tr><td>安全边距</td><td>四周 ≥ 字标高度的 1.2 倍</td><td>与其他元素（导航、图标）之间不得小于这个距离</td></tr>
+</table>
+
+<div class="note"><b>为什么这轮改的是"字距"而不是"字体"。</b>第一反应是换一个更"艺术"的手写体（Great Vibes、Parisienne 之类）。实际比过之后放弃了：手写体在 24px 的页头高度上笔画糊成一片，手机端更糟；而且手写体与页面里的 Instrument Serif 标题不同源，整站会出现三套字形。<b>"艺术气息"不一定来自花体，更多来自留白节奏</b>——参考站 ATOLEA 也只是一个无衬线大写、字距极宽、把 A 的横杠去掉，没有一笔是花体。</div>
+
+<h3>3.3 禁用用法</h3>
+<ul>
+  <li>不拉伸、不压缩、不倾斜、不加描边或投影。</li>
+  <li>不拆成 TIDE / GLASS 两行（拆开后读作两个词，失去品牌名的整体性）。</li>
+  <li>不与非品牌字体混排在同一行（如 "TIDEGLASS by xxx" 这种联名写法，首版不出现）。</li>
+  <li>不在花哨背景（图案、渐变、高对比照片）上直接压字标，必须先加纯色底或半透明蒙层。</li>
+</ul>
+
+<h3>3.4 标语（Tagline）</h3>
+<div class="rule">
+<p style="margin:0;font-size:17px"><b>Sea glass doesn't fade. Neither do we.</b></p>
+<p style="margin:8px 0 0" class="small">中文对应：海玻璃不会褪色，我们也不会。</p>
+</div>
+<p>用法：<b>首页首屏第二行用斜体衬线</b>（与主标题形成对比），页脚与包装卡上只用第一句 <code>Sea glass doesn't fade.</code>。不要两句都放在页头——太长，会把导航挤掉。</p>
+
+<h2 id="s4"><span class="n">4</span>色彩系统</h2>
+
+<p>整套色彩从海边取：深海、沙、被磨过的玻璃、旧金属。刻意避开两类常见组合——<b>粉金 + 白</b>（太少女，与"能戴十年"的定位冲突）与<b>黑金 + 高饱和</b>（太夜店）。</p>
+
+<div class="sw">
+  <div><div class="chip" style="background:#1B3A34"></div><div class="lab"><b>Deep Sea 深海</b><span>#1B3A34</span></div></div>
+  <div><div class="chip" style="background:#FAF6EF"></div><div class="lab"><b>Cream 米白</b><span>#FAF6EF</span></div></div>
+  <div><div class="chip" style="background:#E7DAC8"></div><div class="lab"><b>Sand 沙</b><span>#E7DAC8</span></div></div>
+  <div><div class="chip" style="background:#A8C3B4"></div><div class="lab"><b>Sea Glass 海玻璃</b><span>#A8C3B4</span></div></div>
+  <div><div class="chip" style="background:#B08A56"></div><div class="lab"><b>Old Gold 旧金</b><span>#B08A56</span></div></div>
+  <div><div class="chip" style="background:#B4472F"></div><div class="lab"><b>Clay 陶土红</b><span>#B4472F</span></div></div>
+  <div><div class="chip" style="background:#16130F"></div><div class="lab"><b>Ink 墨</b><span>#16130F</span></div></div>
+  <div><div class="chip" style="background:#E2DCD2"></div><div class="lab"><b>Line 描边</b><span>#E2DCD2</span></div></div>
+</div>
+
+<table>
+  <tr><th>色</th><th>角色</th><th>用在哪</th><th>占比</th></tr>
+  <tr><td>Deep Sea</td><td>主色</td><td>页头字标、主按钮、页脚底色、强调文案</td><td>10%</td></tr>
+  <tr><td>Cream</td><td>主背景</td><td>全站底色（比纯白柔和，衬得金饰不刺眼）</td><td>60%</td></tr>
+  <tr><td>Sand</td><td>次级背景</td><td>区块分隔、卡片底、深色底上的文字</td><td>15%</td></tr>
+  <tr><td>Sea Glass</td><td>点缀</td><td>标签、进度条、图表辅色；深色底上的小标题</td><td>6%</td></tr>
+  <tr><td>Old Gold</td><td>辅助强调</td><td>评分星、会员标识、精致的细线</td><td>4%</td></tr>
+  <tr><td>Clay</td><td>功能色</td><td><b>只用于</b> Sale 价格、错误提示、删除操作</td><td>3%</td></tr>
+  <tr><td>Ink</td><td>正文</td><td>正文与标题（纯黑太硬，用偏褐的墨）</td><td>—</td></tr>
+</table>
+
+<div class="note"><b>一条硬规则</b>：Clay 红只承担"降价 / 出错 / 危险"三种语义，<b>绝不用作装饰</b>。它出现在哪里，用户就该知道那里有需要他注意的事。这条规则比配色本身更重要——很多饰品站把红色当点缀用，结果 Sale 标签失去警示力。</div>
+
+<h2 id="s5"><span class="n">5</span>字体系统</h2>
+
+<table>
+  <tr><th>用途</th><th>字体</th><th>字号 / 字距</th><th>说明</th></tr>
+  <tr><td>字标</td><td>Italiana（衬线，单一字重）</td><td>24px / .30em 大写 · 移动 20px / .22em</td><td>见 3.2</td></tr>
+  <tr><td>大标题</td><td>同上，斜体用于第二行</td><td>40–56px / -.01em</td><td>首屏标题第二行用 italic，制造"手工感"</td></tr>
+  <tr><td>区块标题</td><td>同上</td><td>26–28px / 0</td><td>不用全大写，避免与导航混淆</td></tr>
+  <tr><td>正文</td><td>无衬线（Inter / SF / 系统栈）</td><td>14–16px / 1.75 行高</td><td>长段落必须无衬线，衬线在屏幕上读久会累</td></tr>
+  <tr><td>导航 / 按钮 / 标签</td><td>无衬线</td><td>11–12px / .14em 大写</td><td>全大写 + 宽字距，是这类站点建立"精致感"最省力的手段</td></tr>
+  <tr><td>价格 / 数字</td><td>无衬线，等宽数字（tabular-nums）</td><td>同正文</td><td>价格列对齐靠这个；不开等宽，购物车金额会跳</td></tr>
+</table>
+<p class="small"><b>只允许两个字体族</b>：一个衬线、一个无衬线。第三个字体出现就说明设计失控了——这条比任何字号规范都管用。</p>
+
+<h2 id="s6"><span class="n">6</span>摄影与图像</h2>
+
+<h3>6.1 三类图，三种职责</h3>
+<table>
+  <tr><th>类型</th><th>职责</th><th>规范</th><th>数量</th></tr>
+  <tr><td><b>产品图</b></td><td>让人看清是什么</td><td>正方形 1:1，浅米底（Cream 或 Sand），单一柔光源 45°，不加水印不加文字；金属表面必须有高光但不能过曝</td><td>每款 ≥6 张（正面 / 侧面 / 细节 / 佩戴比例 / 包装）</td></tr>
+  <tr><td><b>佩戴图</b></td><td>让人知道自己戴上什么样</td><td><b>必须出现水</b>——泳池、海边、淋浴、洗手；肤色至少覆盖浅 / 中 / 深三档；不修掉皮肤纹理</td><td>每款 ≥2 张；首页与社媒主力</td></tr>
+  <tr><td><b>场景图</b></td><td>传递品牌气质</td><td>自然光、真实场景（沙滩石堆、木桌、旧瓷盘），不摆拍过度；色调统一压向沙与青</td><td>首页 3–5 张、About 页 4 张</td></tr>
+</table>
+
+<h3>6.2 三条禁令</h3>
+<ul>
+  <li><b>不用纯白背景</b>。纯白是平台电商（Amazon）的语言，会让页面立刻"便宜"。统一用米白或沙色。</li>
+  <li><b>不加文字浮层</b>。图片上不放"BEST SELLER"之类的标签，标签由页面元素承担，否则图片无法在社媒与广告复用。</li>
+  <li><b>不修成塑料</b>。金属的划痕、珍珠的天然不均要保留——"不褪色"的说服力来自真实感，修得太干净反而像镀层很薄。</li>
+</ul>
+
+<h2 id="s7"><span class="n">7</span>文案语气</h2>
+
+<h3>7.1 三条原则</h3>
+<ol>
+  <li><b>先说事实，再说感受。</b>不写"优雅绽放你的美"，写"316L 不锈钢，游泳时不用摘"。形容词一句就够，事实要给足。</li>
+  <li><b>句子短。</b>正文句长 ≤ 18 词。移动端一屏能读完一段，才有下一段。</li>
+  <li><b>敢给承诺，也给边界。</b>终身颜色保证要写清"免费换新一次""人为破坏不换""运费谁承担"。敢写边界，承诺才可信。</li>
+</ol>
+
+<h3>7.2 句式模板</h3>
+<table>
+  <tr><th>场景</th><th>模板</th><th>示例</th></tr>
+  <tr><td>商品标题</td><td>题材 / 形态 + 品类</td><td>Foxtrot Pendant Necklace · 单看名字就知道是一只狐狸吊坠</td></tr>
+  <tr><td>商品描述</td><td>一个画面 + 一个材质事实</td><td>"A fox caught mid-step, cut from a single sheet of steel so the negative space draws the ear and the tail."</td></tr>
+  <tr><td>卖点</td><td>四字以内的名词短语</td><td>Lifetime Color Guarantee / Waterproof &amp; Tarnish-Free / Hypoallergenic 316L / Free Shipping over $95</td></tr>
+  <tr><td>空态</td><td>承认现状 + 给下一步</td><td>"Your wishlist is empty. Save the pieces you're thinking about."</td></tr>
+  <tr><td>错误提示</td><td>说清原因 + 怎么改</td><td>"That card was declined. Try another card — nothing was charged."</td></tr>
+</table>
+
+<h3>7.3 不要这样写</h3>
+<table>
+  <tr><th>❌ 反例</th><th>✅ 改法</th><th>原因</th></tr>
+  <tr><td>"Unleash your inner goddess"</td><td>"Swim in it. Shower in it. Sleep in it."</td><td>空话不产生购买理由，具体场景才会</td></tr>
+  <tr><td>"Premium quality materials"</td><td>"316L surgical stainless steel with PVD coating"</td><td>"premium" 是谁都能写的词，牌号才是证据</td></tr>
+  <tr><td>"100% waterproof guaranteed forever"</td><td>"Waterproof. If the colour ever fades, we replace it once, free."</td><td>绝对化承诺会招来滥用，也给不出兑现方式</td></tr>
+</table>
+
+<h2 id="s8"><span class="n">8</span>包装与开箱</h2>
+
+<p>饰品的开箱是复购与晒单的起点。目标不是"豪华"，是<b>让人愿意拍下来</b>。</p>
+
+<table>
+  <tr><th>层级</th><th>做法</th><th>成本</th><th>要点</th></tr>
+  <tr><td>外箱</td><td>牛皮纸色，单色印字标，无覆膜</td><td>≈$0.45</td><td>可回收，符合加州与欧盟包装法规；不做塑料气泡膜</td></tr>
+  <tr><td>内盒</td><td>深青硬纸盒，内衬米白绒布</td><td>≈$0.60</td><td>盒子尺寸要能长期收纳饰品——用户会留着它</td></tr>
+  <tr><td>绒布袋</td><td>米白棉布，印小字标</td><td>≈$0.28</td><td>旅行携带用，比塑料自封袋高一个档次且可降解</td></tr>
+  <tr><td>保养卡</td><td>名片大小，正面写三条保养要点，背面写终身换新政策与二维码</td><td>≈$0.06</td><td><b>政策必须印在卡上</b>，不能只放网站——这是"敢承诺"的实体证据</td></tr>
+  <tr><td>赠品</td><td>海玻璃小石子一枚（真实打磨过的玻璃，非塑料）</td><td>≈$0.12</td><td>成本极低但记忆点强，直接对应品牌名；晒单率提升的主要来源</td></tr>
+</table>
+<p class="small">合计 ≈ <b>$1.51/单</b>，与 FRD BR-02 里的包装成本 $0.85 有差距。这不是笔误：$0.85 是不含开箱体验的基础包装估值，如果要做到上面这套，需要把包装成本调到 $1.5 并同步更新成本模型——<b>这一条要在定价前确认</b>，否则毛利会被低估。</p>
+
+<h2 id="s9"><span class="n">9</span>社媒与内容支柱</h2>
+
+<h3>9.1 三个内容支柱（按投放效率排序）</h3>
+<table>
+  <tr><th>支柱</th><th>内容形态</th><th>为什么有效</th><th>频次</th></tr>
+  <tr><td><b>耐久实证</b></td><td>同一件首饰戴 30 / 90 / 180 天的对比；泳池浸泡测试；淋浴 vlog 片段</td><td>直接回答"Maya 会不会翻评论找'戴了半年还亮'"这个问题</td><td>每周 2 条</td></tr>
+  <tr><td><b>题材故事</b></td><td>狐狸 / 野兔 / 海龟这些图案从哪来；设计师手稿到成品的 15 秒</td><td>题材化设计是差异点，且天然适合短视频</td><td>每周 1 条</td></tr>
+  <tr><td><b>搭配场景</b></td><td>同一条项链的三种戴法；叠戴教学；旅行打包</td><td>提高客单（叠戴 = 多件），且是 UGC 最容易参与的形式</td><td>每周 2 条</td></tr>
+</table>
+
+<h3>9.2 账号命名</h3>
+<ul>
+  <li>Instagram / TikTok / Pinterest：统一 <code>@tideglassjewelry</code>（与主域名一致，避免用户记两个名字）。</li>
+  <li>若被占用，退而用 <code>@tideglass.co</code>，但<b>不要</b>用 <code>@tideglass_official</code> 这类带后缀的写法——搜不到，且显得不自信。</li>
+  <li>Pinterest 对这个品类尤其重要：装饰品类目的自然流量有相当比例来自 Pinterest 的搭配图收藏。</li>
+</ul>
+
+<h2 id="s10"><span class="n">10</span>落地清单</h2>
+
+<table>
+  <tr><th>#</th><th>事项</th><th>状态</th><th>说明</th></tr>
+  <tr><td>1</td><td>注册 <code>tideglassjewelry.com</code></td><td class="p1">待办 · 最高优先</td><td>约 $12/年。名字一旦对外露出，域名被抢注的窗口期只有几天</td></tr>
+  <tr><td>2</td><td>注册 <code>tideglass.shop</code> / <code>tideglass.store</code></td><td>待办</td><td>防抢注 + 广告投放落地页</td></tr>
+  <tr><td>3</td><td>USPTO Class 14 正式检索 + 申请</td><td class="p1">待办</td><td>自助检索已做（零记录），但正式申请建议委托代理，费用约 $350–$700（含官费）</td></tr>
+  <tr><td>4</td><td>UKIPO Class 14 检索</td><td>待办</td><td>英国是第二市场，需单独检索；EUIPO 若无欧盟发货计划可后置</td></tr>
+  <tr><td>5</td><td>社媒账号注册（IG / TikTok / Pinterest）</td><td>待办</td><td>与域名同一天做，避免被抢</td></tr>
+  <tr><td>6</td><td>域名邮箱 <code>hello@</code> / <code>trade@</code></td><td>待办</td><td>原型里已用这两个地址，注册后直接对上</td></tr>
+  <tr><td>7</td><td>字标视觉稿（AI / SVG / PNG 三套）</td><td>待办</td><td>需含反白版与最小尺寸版；本方案 3.2 的参数可直接交付设计师</td></tr>
+  <tr><td>8</td><td>包装打样（盒子 + 绒布袋 + 保养卡 + 海玻璃）</td><td>待办</td><td>先打 50 套，用于拍摄与早期订单</td></tr>
+  <tr><td>9</td><td>品牌色写入设计系统 token</td><td class="p2">已完成（原型）</td><td>原型 <code>refine.css</code> 的 <code>--sea / --cream / --sand</code> 即本方案色板</td></tr>
+  <tr><td>10</td><td>商标监测</td><td>待办</td><td>申请后设置监测，防止近似标抢注</td></tr>
+</table>
+
+<div class="note"><b>顺序很重要</b>：域名与社媒账号必须在任何对外露出（哪怕是一次朋友圈截图）之前注册完。商标可以后补，域名不能——抢注者盯的就是"品牌名刚被讨论、还没注册"这个窗口。</div>
+
+<h2 id="s11"><span class="n">11</span>与 SEREIA 方案的关系</h2>
+
+<h3 style="margin-top:40px">v2.1 变更（字标实现修正）</h3>
+<table>
+  <tr><th>项</th><th>v2.0</th><th>v2.1</th><th>为什么改</th></tr>
+  <tr><td>字体</td><td>Cormorant / Playfair</td><td>Italiana</td><td>同字号下更轻，抵消全大写的笨重</td></tr>
+  <tr><td>字距</td><td>+0.18em</td><td><b>+0.30em</b></td><td>0.18em 实测仍拥挤，九个字母像打字机</td></tr>
+  <tr><td>末位处理</td><td>等量 text-indent</td><td>负右边距 -0.30em</td><td>text-indent 会把整行右推，造成符号与文字之间多一道缝</td></tr>
+  <tr><td>桌面字号</td><td>21px</td><td>24px</td><td>Italiana 字面小，21px 在 68px 页头里偏弱</td></tr>
+  <tr><td>移动字号</td><td>18px</td><td>20px / 字距 0.22em</td><td>移动端优先保字距让位，字号可略回升</td></tr>
+  <tr><td>符号</td><td>不做</td><td>22px 圆环 + 双波浪，横排左侧</td><td>字距拉开后需要视觉落点，否则整块发飘</td></tr>
+</table>
+
+<p>v1.0 的品牌方案在审美与语气部分仍然有效——海边质感、米白底、衬线字标、克制的文案，这些判断没有变。变的是<b>名字，以及名字背后的故事</b>。</p>
+
+<table>
+  <tr><th>维度</th><th>SEREIA v1.0</th><th>TIDEGLASS v2.0</th><th>变化原因</th></tr>
+  <tr><td>名字来源</td><td>葡萄牙语"美人鱼"</td><td>海玻璃（tide + glass）</td><td>商标冲突，必须换</td></tr>
+  <tr><td>故事落点</td><td>海妖 / 诱惑</td><td>被磨损但依然透光</td><td>SEREIA 的故事是"神秘"，与"耐戴"的产品事实隔了一层；TIDEGLASS 直接同构</td></tr>
+  <tr><td>标语</td><td>Made for salt water.</td><td>Sea glass doesn't fade. Neither do we.</td><td>从场景升级到时间，且把"不褪色"写进标语</td></tr>
+  <tr><td>色彩</td><td>深青 + 米白 + 沙</td><td>不变</td><td>这套色本来就是从海边取的，与新名字更契合</td></tr>
+  <tr><td>字标</td><td>6 字母 / 23px / .24em</td><td>9 字母 / 21px / .18em</td><td>字母数增加，字距与字号必须重算，否则顶掉导航（已在原型修正并验证）</td></tr>
+  <tr><td>域名</td><td>sereia.com（被占）</td><td>tideglassjewelry.com（可注册）</td><td>—</td></tr>
+</table>
+
+<div class="rule">
+<p style="margin:0"><b>一句话总结这次更换</b>：SEREIA 是个好听的名字，但它讲的是海的神秘；TIDEGLASS 讲的是海对东西做了什么——这恰好就是我们的产品承诺。而且这个名字没人注册。</p>
+</div>
+
+<p class="small" style="margin-top:40px;color:var(--muted)">— 文档结束 · TG-BR-001 v2.1 · 品牌落地清单第 1–6 项建议本周内完成 —</p>
+
+</main>
+</div>
+</body>
+</html>

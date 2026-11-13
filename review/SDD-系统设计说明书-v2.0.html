@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>系统设计说明书 · TG-SDD-001 v2.0（同步稿）</title>
+<style>
+  :root{
+    --ink:#1c1c1c; --ink2:#3d3a36; --muted:#6d6862; --line:#e2ddd5; --line2:#efeae3;
+    --bone:#f8f7f2; --cream:#f3e8de; --accent:#8a6a40; --white:#fff;
+    --r:#b3261e; --y:#b06f00; --g:#2f7a1f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font:15px/1.75 -apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;color:var(--ink);background:var(--bone)}
+  .layout{display:grid;grid-template-columns:250px minmax(0,1fr);align-items:start}
+  .toc{position:sticky;top:0;height:100vh;overflow:auto;border-right:1px solid var(--line);background:var(--white)}
+  .toc__in{padding:28px 20px 40px}
+  .toc__t{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+  .toc a{display:block;padding:5px 0;font-size:13px;color:var(--ink2);text-decoration:none}
+  .toc a:hover{color:var(--accent)}
+  .doc{max-width:940px;padding:56px 60px 120px}
+  .cover{border:1px solid var(--line);background:var(--white);padding:56px 48px;margin-bottom:44px}
+  .cover__kicker{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin:0 0 22px}
+  .cover h1{font-size:38px;line-height:1.14;letter-spacing:-.02em;margin:0 0 14px;font-weight:600}
+  .cover h1 small{display:block;font-size:17px;font-weight:400;color:var(--muted);margin-top:12px;letter-spacing:0}
+  .meta{display:grid;grid-template-columns:repeat(2,1fr);margin-top:34px;border-top:1px solid var(--line2)}
+  .meta div{padding:12px 0;border-bottom:1px solid var(--line2);font-size:13.5px}
+  .meta div:nth-child(odd){color:var(--muted)}
+  .badge{display:inline-block;font-size:11px;letter-spacing:.1em;padding:3px 9px;background:var(--cream);color:#7a5a30}
+  h2{font-size:23px;margin:62px 0 10px;font-weight:600;padding-top:18px;border-top:1px solid var(--line);letter-spacing:-.01em}
+  h2 .n{color:var(--accent);font-weight:400;margin-right:10px}
+  h3{font-size:16.5px;margin:32px 0 10px;font-weight:600}
+  p{margin:10px 0}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:5px 0}
+  code{background:var(--cream);padding:1px 6px;font-size:13px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  pre{background:#2a2724;color:#efe9e1;padding:16px 18px;overflow:auto;font-size:12.5px;line-height:1.6;margin:14px 0}
+  pre code{background:none;color:inherit;padding:0}
+  .lede{font-size:16px;color:var(--ink2)}
+  .note{border-left:2px solid var(--accent);background:var(--white);padding:14px 18px;margin:18px 0;font-size:14px}
+  table{width:100%;border-collapse:collapse;margin:16px 0 22px;font-size:13.5px;background:var(--white)}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:#faf8f4;font-weight:600;font-size:12.5px;white-space:nowrap}
+  td.id{white-space:nowrap;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px}
+  .p1{color:var(--r);font-weight:600}
+  .p2{color:var(--y)}
+  .p3{color:var(--g)}
+  /* layered diagram */
+  .stack{border:1px solid var(--line);background:var(--white);padding:16px;margin:20px 0}
+  .layer{display:grid;grid-template-columns:130px 1fr;gap:12px;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line2)}
+  .layer:last-child{border-bottom:0}
+  .layer b{font-size:12.5px;letter-spacing:.06em;color:var(--muted);font-weight:600}
+  .boxes{display:flex;flex-wrap:wrap;gap:8px}
+  .boxes span{border:1px solid var(--line);background:var(--bone);padding:7px 11px;font-size:12.5px}
+  .boxes span.hl{background:var(--cream);border-color:#e3cdb4}
+  .small{font-size:12.5px;color:var(--muted)}
+  hr{border:0;border-top:1px solid var(--line2);margin:34px 0}
+  @media print{
+    .toc{display:none}.layout{display:block}body{background:#fff}
+    .doc{max-width:none;padding:0}
+    h2{page-break-after:avoid}
+    table,.note,.stack,pre{page-break-inside:avoid}
+    @page{margin:18mm}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside class="toc"><div class="toc__in">
+  <p class="toc__t">目录</p>
+  <a href="#s1">1 文档说明</a>
+  <a href="#s2">2 架构总览</a>
+  <a href="#s3">3 技术选型</a>
+  <a href="#s4">4 模块划分</a>
+  <a href="#s5">5 数据模型</a>
+  <a href="#s6">6 接口设计</a>
+  <a href="#s7">7 关键流程</a>
+  <a href="#s8">8 部署与运维</a>
+  <a href="#s9">9 安全与合规</a>
+  <a href="#s10">10 性能与缓存</a>
+  <a href="#s11">11 演进路线</a>
+  <a href="#s12">12 风险与对策</a>
+  <a href="#s13">13 待确认</a>
+  <a href="#s14">14 需求追溯矩阵</a>
+  <a href="#s15">15 邮件模板 / 埋点 / 定时任务</a>
+</div></aside>
+
+<main class="doc">
+
+<div class="cover">
+  <p class="cover__kicker">TIDEGLASS · System Design</p>
+  <h1>系统设计说明书
+    <small>System Design Document · 技术架构、数据模型、接口与部署</small>
+  </h1>
+  <div class="meta">
+    <div>文档编号</div><div>TG-SDD-001</div>
+    <div>版本</div><div>v2.0 同步稿（<span class="badge">待一审</span>）</div>
+    <div>编写日期</div><div>2026-11-12</div>
+    <div>上游文档</div><div>WK-FRD-001 功能需求说明书 v1.1</div>
+    <div>适用对象</div><div>开发、运维、后续接手者</div>
+    <div>本轮交付</div><div>仅设计方案，不含实现代码</div>
+  </div>
+  <div class="note" style="margin-top:26px"><b>v1.1 变更摘要</b>：新增营销引擎（优惠券 / 自动折扣 / 满额赠品 / 叠加计算）、评价与审核、库存占用、定制需求单、到货提醒五块设计；数据模型从 12 张表扩到 <b>25 张</b>；补<b>需求追溯矩阵</b>、<b>邮件模板表</b>、<b>埋点表</b>、<b>定时任务表</b> 四张清单；修正 v1.0 的费率快照缺失问题。</div>
+</div>
+
+<h2 id="s1"><span class="n">1</span>文档说明</h2>
+<p class="lede">本文回答"这套系统怎么搭、数据怎么存、接口怎么定、上线放哪里、出问题怎么查"。所有关键决策都给出<b>选项对比 + 建议 + 待确认标记</b>，不默认你已经同意某一个方案。</p>
+<p>与 FRD 的关系：FRD 定义"做什么"，本文定义"怎么做"。凡是本文出现的技术选择，若与你的预期冲突，以你的确认为准，改文档成本远低于改代码。</p>
+
+<h2 id="s2"><span class="n">2</span>架构总览</h2>
+
+<h3>2.1 分层结构</h3>
+<div class="stack">
+  <div class="layer"><b>访问层</b><div class="boxes"><span>Cloudflare / CDN</span><span>HTTPS</span><span>WAF 基础防护</span></div></div>
+  <div class="layer"><b>应用层</b><div class="boxes"><span class="hl">前台服务（SSR）</span><span class="hl">后台服务（SPA + API）</span><span>静态资源</span></div></div>
+  <div class="layer"><b>领域层</b><div class="boxes"><span>商品与变体</span><span>集合与导航</span><span>购物车</span><span>订单与状态机</span><span>库存与占用</span><span>客户</span><span>内容</span><span class="hl">营销引擎</span><span class="hl">评价与审核</span><span>定制单</span></div></div>
+  <div class="layer"><b>数据层</b><div class="boxes"><span class="hl">PostgreSQL</span><span>对象存储（商品图）</span><span>Redis（可选缓存）</span></div></div>
+  <div class="layer"><b>外部服务</b><div class="boxes"><span>Stripe 支付</span><span>Resend 邮件</span><span>海外仓 / 物流</span><span>GA4 + 错误监控</span></div></div>
+</div>
+
+<h3>2.2 两个前端形态</h3>
+<table>
+  <tr><th>形态</th><th>使用方</th><th>渲染方式</th><th>为什么这样选</th></tr>
+  <tr><td>前台商城</td><td>消费者</td><td>服务端渲染（SSR）+ 少量客户端脚本</td><td>商品页要能被 Google 收录，首屏要快；交互只在加购、抽屉、筛选处增强</td></tr>
+  <tr><td>后台管理</td><td>你 / 运营</td><td>单页应用 + JSON API</td><td>不需要 SEO，追求操作不刷新、切页快</td></tr>
+</table>
+<p class="small">两者共用同一套领域逻辑与数据库，避免"前台一套规则、后台一套规则"导致数据对不上——这是上一版最需要避免的问题。</p>
+
+<h2 id="s3"><span class="n">3</span>技术选型</h2>
+
+<h3>3.1 三个候选方案</h3>
+<table>
+  <tr><th>方案</th><th>构成</th><th>优点</th><th>代价</th><th>适合场景</th></tr>
+  <tr>
+    <td><b>A（建议）</b><br>自建全栈</td>
+    <td>Next.js + Prisma + PostgreSQL + Stripe + Resend，部署在 Coolify</td>
+    <td>完全可控、无平台抽成、结构随意扩展、SEO 友好</td>
+    <td>需要自己维护服务器与备份</td>
+    <td>长期做品牌、SKU 会持续增加</td>
+  </tr>
+  <tr>
+    <td>B 轻量自建</td>
+    <td>Node 原生服务 + 单文件 JSON 存储</td>
+    <td>极轻、启动快、零依赖、改起来最快</td>
+    <td>并发与数据量上限低；多人同时改易冲突</td>
+    <td>纯演示 / 内部评审 <span class="badge">原型阶段用过</span></td>
+  </tr>
+  <tr>
+    <td>C 平台托管</td>
+    <td>Shopify + 主题定制</td>
+    <td>交易、支付、物流生态成熟，几乎不用写代码</td>
+    <td>月费 + 交易抽成；深度定制受限；数据不在自己手里</td>
+    <td>想最快开店、不打算做特殊流程</td>
+  </tr>
+</table>
+
+<div class="note"><b>建议：A。</b>理由：你的 100 款 SKU 与多轴集合体系需要自定义数据结构；后台的成本拆解、定制单这类需求平台方案做不了；长期看自建的可控性更重要。若你更看重"最快上线"，C 也成立，但要接受抽成与定制上限。</div>
+
+<h3>3.2 具体技术清单（方案 A）</h3>
+<table>
+  <tr><th>层</th><th>选型</th><th>说明</th></tr>
+  <tr><td>框架</td><td>Next.js（App Router）</td><td>SSR + 静态生成混合，前台页面按需选择</td></tr>
+  <tr><td>语言</td><td>TypeScript</td><td>订单、金额相关逻辑必须有类型约束</td></tr>
+  <tr><td>样式</td><td>Tailwind CSS + 少量自定义 CSS 变量</td><td>设计规范沉淀在 token 里，改色改字号集中可控</td></tr>
+  <tr><td>数据库</td><td>PostgreSQL 16</td><td>订单与库存需要事务；JSON 字段可存变体快照</td></tr>
+  <tr><td>ORM</td><td>Prisma</td><td>迁移可追溯，schema 即文档</td></tr>
+  <tr><td>支付</td><td>Stripe（Embedded Checkout）</td><td>卡号不进入我们服务器，PCI 责任转移给 Stripe</td></tr>
+  <tr><td>邮件</td><td>Resend</td><td>事务邮件（订单确认、发货、退款）</td></tr>
+  <tr><td>图片</td><td>对象存储 + CDN，输出 WebP/AVIF</td><td>统一 4:5 裁切，多尺寸响应式</td></tr>
+  <tr><td>部署</td><td>Coolify（Docker）+ Nginx</td><td>一台 2C4G 起步够用，后续可水平扩展</td></tr>
+  <tr><td>监控</td><td>访问日志 + 错误监控 + 支付失败告警</td><td>先保证"能发现问题"</td></tr>
+</table>
+
+<h2 id="s4"><span class="n">4</span>模块划分</h2>
+<table>
+  <tr><th>模块</th><th>职责</th><th>对外提供</th><th>依赖</th></tr>
+  <tr><td>catalog</td><td>商品、变体、集合、导航、搜索</td><td>列表、详情、筛选、搜索</td><td>DB</td></tr>
+  <tr><td>cart</td><td>购物车增删改、算价、免邮判断</td><td>cart API</td><td>catalog</td></tr>
+  <tr><td>checkout</td><td>地址校验、运费与税、创建支付意图、回调处理</td><td>checkout API、webhook</td><td>cart、payment、inventory</td></tr>
+  <tr><td>order</td><td>订单生成、状态机、发货、退款登记</td><td>admin order API</td><td>checkout、inventory、mail</td></tr>
+  <tr><td>inventory</td><td>库存读写、扣减与回滚、低库存预警</td><td>内部服务</td><td>DB</td></tr>
+  <tr><td>customer</td><td>由订单聚合客户、分层、查询</td><td>admin customer API</td><td>order</td></tr>
+  <tr><td>content</td><td>首页区块、内容页、公告栏</td><td>前台读取、后台编辑</td><td>DB</td></tr>
+  <tr><td>auth</td><td>后台登录、会话、限流</td><td>admin auth API</td><td>DB</td></tr>
+  <tr><td>mail</td><td>模板管理与发送</td><td>内部服务</td><td>Resend</td></tr>
+  <tr><td class="hl">promotion</td><td class="hl">营销引擎：优惠券校验、自动折扣、赠品判定、叠加与优先级计算</td><td>前台结算、后台营销中心</td><td>order、inventory</td></tr>
+  <tr><td>review</td><td>评价提交、审核状态机、评分聚合、删除留痕</td><td>前台评价区、后台审核</td><td>order</td></tr>
+  <tr><td>reservation</td><td>库存占用：写入、转实扣、超时释放</td><td>内部服务 + 定时任务</td><td>inventory、order</td></tr>
+  <tr><td>custom</td><td>定制需求单：提交、状态流转</td><td>前台 S-09、后台 A-12</td><td>mail</td></tr>
+  <tr><td>notify</td><td>到货提醒名单：收集、去重、批量通知</td><td>内部服务</td><td>mail、inventory</td></tr>
+</table>
+<p class="small">模块之间只通过定义好的函数/接口通信，不跨模块直接读对方表，避免后期耦合。</p>
+<div class="note"><b>为什么单独抽 promotion 模块</b>：优惠计算是这套系统里<b>最容易出错、也最影响钱</b>的一段逻辑（自动折扣 + 优惠券 + 免邮 + 赠品四步串联，顺序错了金额就错）。把它做成纯函数式的模块——输入购物车与活动列表，输出「折扣明细 + 赠品清单 + 应付金额」——可以被单元测试完全覆盖，也能被结算页、订单创建、后台改单三处复用同一份逻辑，不会出现"前台显示 $72、后台算出 $75"的对不上账。</div>
+
+<h2 id="s5"><span class="n">5</span>数据模型</h2>
+
+<h3>5.1 实体关系</h3>
+<pre><code>Collection ──&lt; CollectionProduct &gt;── Product ──&lt; Variant
+                                          │
+                                          ├──&lt; ProductImage
+                                          └──&lt; Review
+
+Order ──&lt; OrderItem (快照: 标题/价格/变体/成本)
+  │   └── costSnapshot (JSON: 下单瞬间的全部费率)
+  ├──&lt; OrderAdjustment (优惠明细: 自动折扣 / 券 / 赠品)
+  ├──&lt; PaymentRecord
+  ├──&lt; StatusLog
+  └──&lt; AfterSale (退货 / 换新 / 部分退款)
+
+Coupon ──&lt; CouponRedemption &gt;── Order
+Promotion (自动折扣)   GiftRule (满额赠品 → 指向 Variant)
+Variant ──&lt; StockReservation (占用 → Order)
+
+Review ──&lt; ReviewAudit (通过/拒绝/删除留痕)
+CustomRequest   NotifyRequest   EmailTemplate   JobRun
+Customer 1──&lt; Order (以邮箱识别)   Setting (单行)   ContentBlock / ContentPage
+
+User (账户) ──&lt; Session (会话)
+  ├──&lt; Address
+  ├──&lt; WishlistItem &gt;── Product
+  └─(email)─&gt; Order   ← 归属靠邮箱匹配，<b>不设外键</b>：访客订单要先能存在，用户后才注册</code></pre>
+
+<h3>5.2 核心表（29 张）</h3>
+<h4>商品与内容（7 张）</h4>
+<table>
+  <tr><th>表</th><th>关键字段</th><th>索引 / 约束</th></tr>
+  <tr><td>Product</td><td>id、handle（唯一）、title、description、status、price、compareAtPrice、cost、tags、seoTitle、seoDesc、birthstone（枚举，可空）、createdAt</td><td>handle 唯一；status + createdAt；birthstone</td></tr>
+  <tr><td>Variant</td><td>id、productId、sku（唯一）、metal（gold / silver）、size、price、<b>onHand</b>、<b>reserved</b>、safetyStock、weight</td><td>sku 唯一；productId；（onHand − reserved）不得为负，由事务保证</td></tr>
+  <tr><td>ProductImage</td><td>id、productId、url、alt、position</td><td>productId + position</td></tr>
+  <tr><td>Collection</td><td>id、handle（唯一）、title、description、isNav、parentId、menuGroup、position、ruleJson</td><td>handle 唯一；isNav + position</td></tr>
+  <tr><td>CollectionProduct</td><td>collectionId、productId、position</td><td>联合主键</td></tr>
+  <tr><td>ContentBlock</td><td>key（唯一）、type、payloadJson、updatedAt</td><td>key 唯一</td></tr>
+  <tr><td>ContentPage</td><td>slug（唯一）、title、bodyHtml、seoTitle、seoDesc</td><td>slug 唯一</td></tr>
+</table>
+
+<h4>交易与库存（7 张）</h4>
+<table>
+  <tr><th>表</th><th>关键字段</th><th>索引 / 约束</th></tr>
+  <tr><td>Order</td><td>id、number（唯一）、email、status、<b>subtotal</b>、<b>discountTotal</b>、shipping、tax、total、currency、addressJson、shippingMethod、trackingNo、carrier、<b>costSnapshot(JSON)</b>、<b>couponCode</b>、<b>giftJson</b>、createdAt、paidAt</td><td>number 唯一；email + createdAt；status</td></tr>
+  <tr><td>OrderItem</td><td>id、orderId、productId、variantId、titleSnap、variantSnap、unitPrice、qty、costSnap、<b>isGift</b>、<b>lineDiscount</b></td><td>orderId；isGift 赠品行 unitPrice=0 但 costSnap 不为 0</td></tr>
+  <tr><td class="hl">OrderAdjustment</td><td class="hl">id、orderId、type（promotion / coupon / gift / shipping）、refId、label、amount（赠品为负成本）、createdAt</td><td class="hl">orderId + type；一笔订单可有多个 adjustment</td></tr>
+  <tr><td>PaymentRecord</td><td>id、orderId、provider（stripe）、intentId、amount、status、rawJson、createdAt</td><td>intentId 唯一（幂等）</td></tr>
+  <tr><td>StatusLog</td><td>id、orderId、from、to、note、operator、createdAt</td><td>orderId + createdAt</td></tr>
+  <tr><td class="hl">StockReservation</td><td class="hl">id、variantId、orderId、qty、status（held / committed / released）、expiresAt、createdAt</td><td class="hl">variantId + status；expiresAt 索引供定时任务扫描</td></tr>
+  <tr><td class="hl">AfterSale</td><td class="hl">id、orderId、type（return / exchange / partial）、reason、itemsJson、amount、status、operator、createdAt</td><td class="hl">orderId + type；与订单状态正交</td></tr>
+</table>
+
+<h4>营销（4 张）</h4>
+<table>
+  <tr><th>表</th><th>关键字段</th><th>索引 / 约束</th></tr>
+  <tr><td class="hl">Coupon</td><td class="hl">id、code（唯一）、type（percent / fixed / freeship）、value、minSubtotal、scope（all / collection / product）、scopeIds、startsAt、endsAt、totalLimit、perUserLimit、usedCount、stackable、channel、status</td><td class="hl">code 唯一；status + startsAt + endsAt</td></tr>
+  <tr><td class="hl">CouponRedemption</td><td class="hl">id、couponId、orderId、email、amount、createdAt</td><td class="hl">couponId + email（校验 perUserLimit）；orderId 唯一</td></tr>
+  <tr><td class="hl">Promotion</td><td class="hl">id、name、scope、scopeIds、type（percent / fixed）、value、startsAt、endsAt、priority、showCompareAt、budget、spent、status</td><td class="hl">status + startsAt + endsAt；priority 降序取首个命中</td></tr>
+  <tr><td class="hl">GiftRule</td><td class="hl">id、threshold（分）、giftVariantIds（JSON，可多选一）、perOrderQty、stockLimit、usedCount、copyText、startsAt、endsAt、status</td><td class="hl">status + startsAt + endsAt</td></tr>
+</table>
+
+<h4>账户与权限（4 张 · v2.0 新增）</h4>
+<table>
+  <tr><th>表</th><th>关键字段</th><th>索引 / 约束</th></tr>
+  <tr><td class="hl">User</td><td class="hl">id、email（唯一）、passwordHash（argon2id）、name、<b>role</b>（customer / staff / owner）、<b>permissions</b>（JSON 数组，权限位）、status（active / disabled）、createdAt、lastLoginAt</td><td class="hl">email 唯一且<b>入库前统一小写</b>（否则 A@x.com 与 a@x.com 会变成两个账户，订单归属立刻错）；role + status</td></tr>
+  <tr><td class="hl">Session</td><td class="hl">id、userId、tokenHash（唯一）、userAgent、ip、expiresAt、revokedAt、createdAt</td><td class="hl">tokenHash 唯一（库里只有哈希，泄库不能直接冒用）；expiresAt 索引供清理任务；同一用户允许多设备会话</td></tr>
+  <tr><td class="hl">Address</td><td class="hl">id、userId、first、last、line1、line2、city、state、zip、country、phone、isDefault</td><td class="hl">userId + isDefault；每个用户至多一个默认地址（部分唯一索引保证）</td></tr>
+  <tr><td class="hl">WishlistItem</td><td class="hl">id、userId、productId、createdAt</td><td class="hl">userId + productId 唯一（重复收藏靠 upsert 幂等）</td></tr>
+</table>
+
+<h4>评价与运营（7 张）</h4>
+<table>
+  <tr><th>表</th><th>关键字段</th><th>索引 / 约束</th></tr>
+  <tr><td class="hl">Review</td><td class="hl">id、productId、orderId、email、rating（1–5）、title、body、imagesJson、height、scene、status（pending / published / rejected）、pinned、featured、createdAt、publishedAt</td><td class="hl">productId + status；orderId + productId 唯一（一单一商品一次）；rating</td></tr>
+  <tr><td class="hl">ReviewAudit</td><td class="hl">id、reviewId、action（approve / reject / delete）、reasonCode（违规 / 广告 / 无凭证 / 其他）、reasonText、operator、createdAt</td><td class="hl">reviewId + createdAt；删除必须 reasonCode 非空</td></tr>
+  <tr><td>Customer</td><td>id、email（唯一）、name、ordersCount、totalSpent、firstOrderAt、lastOrderAt、tier</td><td>email 唯一</td></tr>
+  <tr><td class="hl">CustomRequest</td><td class="hl">id、email、productId、refImagesJson、text、qty、dueDate、status（new / quoted / converted / closed）、note、createdAt</td><td class="hl">status + createdAt</td></tr>
+  <tr><td class="hl">NotifyRequest</td><td class="hl">id、variantId、email、notified、createdAt</td><td class="hl">variantId + email 唯一（不重复收集）</td></tr>
+  <tr><td class="hl">EmailTemplate</td><td class="hl">key（唯一）、subject、bodyHtml、variablesJson、updatedAt</td><td class="hl">key 唯一</td></tr>
+  <tr><td class="hl">JobRun</td><td class="hl">id、job（releaseReservation / promotionSwitch / restockNotify / birthstone）、startedAt、finishedAt、result、error</td><td class="hl">job + startedAt</td></tr>
+</table>
+<table>
+  <tr><th>表</th><th>关键字段</th><th>索引 / 约束</th></tr>
+  <tr><td>Setting</td><td>单行：brandName、currency（固定 USD）、freeShipThreshold、costs(JSON，含 returnRate 6% / colorGuaranteeRate 2%)、warehouses(JSON)、ownerEmail（仅作通知收件人，<b>不再是登录凭据</b>，v2.0 起后台登录走 User 表）</td><td>固定 id=1</td></tr>
+</table>
+
+<h3>5.4 六个关键设计决定</h3>
+<ul>
+  <li><b>订单项存快照</b>：下单时把标题、价格、变体、成本写入 OrderItem，之后商品改价不影响历史订单与毛利核算。</li>
+  <li class="hl"><b>费率也要快照</b>：Order.costSnapshot 存下单瞬间的关税税率、头程费率、仓配单价、支付费率、包装费、退货计提、颜色保证准备金。<b>没有这一层，改一次税率就会把所有历史订单的毛利一起改掉</b>——这是 v1.0 最严重的账务漏洞。</li>
+  <li><b>订单归 User，但归属靠邮箱</b>：订单表存 <code>email</code>，账户订单按邮箱匹配（BR-20）。<b>刻意不给 Order 加 userId 外键</b>——访客必须先能下单，用户是后注册的；若用外键，访客订单无处挂载，注册时还要回填。代价是改邮箱必须迁移订单，这一点在 7.5 里用同一事务保证。Customer 表退化为<b>统计视图</b>（按邮箱聚合），不再承担身份职责。</li>
+  <li class="hl"><b>权限位与角色分离</b>：<code>role</code> 决定"能不能进后台"，<code>permissions</code> 决定"进去能做什么"。<code>staff</code> 默认无 <code>price.write</code> / <code>review.delete</code> / <code>customer.export</code> / <code>refund.approve</code> 四个权限位——这四项直接对应钱与口碑，误操作代价最高。<b>判断权限只看权限位，不看角色</b>，避免"加个新角色到处改 if"。</li>
+  <li class="hl"><b>优惠计算是纯函数</b>：<code>calc(cart, promotions, coupon, giftRules, settings) → { adjustments, gifts, total }</code>，不读数据库、不写数据库，输入输出都是普通对象。同一份函数被结算页预览、订单创建、后台改单三处调用，保证三处金额永远一致。</li>
+  <li class="hl"><b>库存三值分离</b>：<code>onHand</code>（物理在库）、<code>reserved</code>（占用中）、<code>available = onHand − reserved</code>（可售）。不做物理预扣，只写占用记录，超时释放由定时任务扫 expiresAt 完成——避免"下单不付钱把库存锁死"。</li>
+</ul>
+
+<h2 id="s6"><span class="n">6</span>接口设计</h2>
+
+<h3>6.1 前台接口</h3>
+<table>
+  <tr><th>方法</th><th>路径</th><th>说明</th><th>鉴权</th></tr>
+  <tr><td>GET</td><td><code>/api/products?collection=&amp;metal=&amp;sort=&amp;page=</code></td><td>集合与筛选列表</td><td>公开</td></tr>
+  <tr><td>GET</td><td><code>/api/products/{handle}</code></td><td>商品详情（含变体、关联）</td><td>公开</td></tr>
+  <tr><td>GET</td><td><code>/api/search?q=</code></td><td>搜索与联想</td><td>公开</td></tr>
+  <tr><td>GET / POST / PATCH / DELETE</td><td><code>/api/cart</code></td><td>读、加、改数量、删行</td><td>购物车 Cookie</td></tr>
+  <tr><td>POST</td><td><code>/api/checkout/intent</code></td><td>创建支付意图，返回客户端密钥</td><td>购物车 Cookie</td></tr>
+  <tr><td>POST</td><td><code>/api/webhooks/stripe</code></td><td>支付结果回调（签名校验）</td><td>Stripe 签名</td></tr>
+  <tr><td>POST</td><td><code>/api/orders/lookup</code></td><td>订单号 + 邮箱查单</td><td>公开 + 限流</td></tr>
+  <tr><td class="hl">POST</td><td class="hl"><code>/api/cart/coupon</code></td><td class="hl">应用 / 移除优惠码，返回折扣明细或失败原因</td><td class="hl">购物车 Cookie + 限流</td></tr>
+  <tr><td class="hl">GET</td><td class="hl"><code>/api/promotions/active?cart=</code></td><td class="hl">当前购物车可用的活动：自动折扣、赠品进度、免邮差额</td><td class="hl">公开</td></tr>
+  <tr><td class="hl">POST</td><td class="hl"><code>/api/reviews</code></td><td class="hl">提交评价（订单号 + 邮箱校验后写入 pending）</td><td class="hl">公开 + 限流 + 一单一商品一次</td></tr>
+  <tr><td class="hl">POST</td><td class="hl"><code>/api/notify</code></td><td class="hl">到货提醒登记</td><td class="hl">公开 + 限流</td></tr>
+  <tr><td class="hl">POST</td><td class="hl"><code>/api/custom</code></td><td class="hl">定制需求提交（含图片上传）</td><td class="hl">公开 + 限流</td></tr>
+  <tr><td>POST</td><td><code>/api/newsletter</code></td><td>订阅</td><td>公开 + 限流</td></tr>
+</table>
+
+<h3>6.2 后台接口</h3>
+<table>
+  <tr><th>方法</th><th>路径</th><th>说明</th></tr>
+  <tr><td>POST</td><td><code>/api/admin/login</code></td><td>登录，成功写 HttpOnly 会话 Cookie</td></tr>
+  <tr><td>GET</td><td><code>/api/admin/summary?days=30</code></td><td>概览指标与图表数据</td></tr>
+  <tr><td>GET / PATCH</td><td><code>/api/admin/orders</code>、<code>/api/admin/orders/{id}</code></td><td>列表筛选、详情、改状态</td></tr>
+  <tr><td>GET / POST / PATCH</td><td><code>/api/admin/products</code></td><td>商品增改、上下架</td></tr>
+  <tr><td>GET / PATCH</td><td><code>/api/admin/inventory</code></td><td>库存查询与批量调整</td></tr>
+  <tr><td>GET / PATCH</td><td><code>/api/admin/collections</code></td><td>集合与导航排序</td></tr>
+  <tr><td>GET</td><td><code>/api/admin/customers</code></td><td>客户列表与分层</td></tr>
+  <tr><td>GET / PATCH</td><td><code>/api/admin/content</code></td><td>首页区块与内容页</td></tr>
+  <tr><td>GET / PATCH</td><td><code>/api/admin/settings</code></td><td>品牌、费率、仓库、密码</td></tr>
+  <tr><td class="hl">GET / POST / PATCH / DELETE</td><td class="hl"><code>/api/admin/marketing/coupons</code></td><td class="hl">优惠券增删改查、批量生成码、导出</td></tr>
+  <tr><td class="hl">GET / POST / PATCH</td><td class="hl"><code>/api/admin/marketing/promotions</code></td><td class="hl">自动折扣活动、优先级、预算熔断</td></tr>
+  <tr><td class="hl">GET / POST / PATCH</td><td class="hl"><code>/api/admin/marketing/gifts</code></td><td class="hl">满额赠品规则</td></tr>
+  <tr><td class="hl">GET / PATCH</td><td class="hl"><code>/api/admin/reviews</code>、<code>/api/admin/reviews/{id}</code></td><td class="hl">审核队列、通过 / 拒绝 / 删除（需 reasonCode）/ 置顶</td></tr>
+  <tr><td class="hl">GET / PATCH</td><td class="hl"><code>/api/admin/custom</code></td><td class="hl">定制需求单列表与状态流转</td></tr>
+  <tr><td class="hl">GET / POST</td><td class="hl"><code>/api/admin/notify</code></td><td class="hl">到货提醒名单、批量发送补货通知</td></tr>
+  <tr><td class="hl">GET</td><td class="hl"><code>/api/admin/jobs</code></td><td class="hl">定时任务最近执行结果，可手动重跑</td></tr>
+</table>
+
+<h3>6.3 约定</h3>
+<ul>
+  <li>统一响应体：<code>{ ok, data, error }</code>；错误带 <code>code</code> 与可读 <code>message</code>。</li>
+  <li>金额一律用<b>整数分</b>存储与传输，避免浮点误差。</li>
+  <li>后台接口全部要求会话；写操作校验 CSRF Token；列表接口强制分页（默认 20，上限 100）。</li>
+  <li>幂等：<code>/api/checkout/intent</code> 与 webhook 以 <code>idempotencyKey</code> / 事件 id 去重，防止重复建单。</li>
+</ul>
+
+<h2 id="s7"><span class="n">7</span>关键流程</h2>
+
+<h3>7.1 下单与扣库存</h3>
+<div class="stack">
+  <div class="layer"><b>1 校验</b><div class="boxes"><span>校验地址</span><span class="hl">校验可售数 = onHand − reserved</span><span>命中活动列表</span></div></div>
+  <div class="layer"><b>2 计价</b><div class="boxes"><span class="hl">自动折扣</span><span class="hl">优惠券</span><span class="hl">免邮判定</span><span class="hl">赠品门槛判定</span><span>计算运费与税</span></div></div>
+  <div class="layer"><b>3 落单</b><div class="boxes"><span class="hl">写 StockReservation(held, 30min)</span><span>创建 pending 订单</span><span class="hl">写 costSnapshot</span><span class="hl">写 OrderAdjustment</span></div></div>
+  <div class="layer"><b>4 支付</b><div class="boxes"><span>创建 PaymentIntent</span><span>用户在 Stripe 内嵌表单支付</span></div></div>
+  <div class="layer"><b>5 回调</b><div class="boxes"><span class="hl">校验签名 + 事件去重</span><span>订单转 paid</span><span class="hl">占用转 committed 并实扣</span><span class="hl">券核销 +1</span></div></div>
+  <div class="layer"><b>6 通知</b><div class="boxes"><span>发确认邮件</span><span>写入 StatusLog</span><span>后台出现待配货</span></div></div>
+</div>
+<p class="small">失败路径：支付失败 → 订单保持 pending → 30 分钟定时任务释放占用并关闭订单；回调重复 → 按事件 id 丢弃，不重复扣库存、不重复核销优惠券。</p>
+
+<h3>7.2 优惠计算顺序（promotion 模块）</h3>
+<div class="stack">
+  <div class="layer"><b>① 自动折扣</b><div class="boxes"><span>按 priority 取首个命中的 Promotion</span><span>逐行计算 lineDiscount</span><span>同一商品不重复打折</span></div></div>
+  <div class="layer"><b>② 优惠券</b><div class="boxes"><span class="hl">校验 stackable</span><span>校验 minSubtotal（用折后小计）</span><span>校验次数与预算</span><span>计算券减额</span></div></div>
+  <div class="layer"><b>③ 免邮判定</b><div class="boxes"><span>用②之后的金额判门槛</span><span class="hl">门槛用商品小计，不含运费税</span></div></div>
+  <div class="layer"><b>④ 赠品判定</b><div class="boxes"><span>用②之后的商品小计判门槛</span><span class="hl">赠品库存足够才加车</span><span class="hl">写 $0 行 + 成本快照</span></div></div>
+  <div class="layer"><b>⑤ 兜底</b><div class="boxes"><span class="hl">应付 &lt; $0.5 则拒绝该券</span><span class="hl">应付 &lt; 成本线则警告并拒绝</span></div></div>
+</div>
+<p class="small">这五步必须<b>严格按序执行且只有一份实现</b>。v1.0 文档里三个活动各自独立描述、没有规定顺序，直接后果是"折扣算在券前还是券后"两处不一致，金额差 $3–$8，客诉无法解释。顺序一变，金额就变，所以顺序要写进代码常量而不是散在注释里。</p>
+
+<h3>7.3 评价审核流程</h3>
+<div class="stack">
+  <div class="layer"><b>1 提交</b><div class="boxes"><span>订单号 + 邮箱校验</span><span class="hl">校验该订单已 completed</span><span>写入 pending</span></div></div>
+  <div class="layer"><b>2 待审</b><div class="boxes"><span>后台红点提示</span><span>前台不展示、不计分</span><span>用户看到"审核中"</span></div></div>
+  <div class="layer"><b>3 审核</b><div class="boxes"><span class="hl">通过 → published</span><span class="hl">拒绝 → rejected + 原因</span><span class="hl">删除 → 软删 + 必填原因</span></div></div>
+  <div class="layer"><b>4 聚合</b><div class="boxes"><span>重算商品评分与评价数</span><span>失效商品页缓存</span><span>更新结构化数据</span></div></div>
+</div>
+<p class="small">删除采用<b>软删</b>（保留记录与审核日志），不做物理删除：一是 GDPR 下的用户可主张删除权，需要可响应；二是一旦物理删除，就再也无法证明"我们没有因为分数难看而删评价"。</p>
+
+<h3>7.4 发货与退款</h3>
+<ul>
+  <li>后台填运单 → 订单转 fulfilled → 发发货邮件（含物流号）→ 客户可用订单号查单。</li>
+  <li>退款：后台登记售后单 → 二次确认 → 调 Stripe 退款 → 订单转 refunded → 发退款邮件 → 库存是否回补由人工决定（默认不回补，避免二次销售瑕疵品）。</li>
+  <li class="hl">换新（终身颜色保证）：登记 exchange 售后单 → 不退款 → 生成一张 $0 换新发货单 → 扣减一件库存 → 成本从颜色保证准备金归集。旧件不要求退回。</li>
+</ul>
+
+<h3>7.5 账户与订单归属（v2.0 新增）</h3>
+<p class="small">这条流程看着简单，但四个环节任一处理错，用户就会看到"我的订单不见了"。原型里已经把四条都实现，这里给出服务端口径。</p>
+<h4>注册与访客订单继承</h4>
+<pre><code>POST /api/auth/register { name, email, password }
+  1. email 归一化小写 → 查 User 唯一性，冲突返 409
+  2. passwordHash = argon2id(password)
+  3. 事务：INSERT User
+          + 把 Order.email = 该邮箱的<b>访客订单</b>自动归入账户（无需回填字段，靠匹配即生效）
+  4. 建 Session（HttpOnly Cookie）→ 写 lastLoginAt
+  5. 发欢迎邮件（EmailTemplate key = welcome）</code></pre>
+<h4>登录</h4>
+<pre><code>POST /api/auth/login { email, password }
+  失败一律返回「邮箱或密码不正确」，<b>不区分账号是否存在</b>（防枚举）
+  计数键 = email + ip，5 次失败锁定 10 分钟
+  成功 → 建 Session；若带 ?next= 且在白名单（/checkout、/cart）则跳回</code></pre>
+<h4 class="hl">改邮箱（最容易出事的环节）</h4>
+<pre><code>PATCH /api/account/email { newEmail, currentPassword }
+  1. 校验 currentPassword —— 改邮箱属于敏感操作，必须验密码
+  2. 校验 newEmail 未被占用（含大小写归一后）
+  3. <b>单事务内</b>：
+       UPDATE User    SET email = newEmail WHERE id = ?
+       UPDATE "Order" SET email = newEmail WHERE lower(email) = lower(oldEmail)
+  4. 若两步分属不同事务，中间失败 = 用户历史订单全部"消失"
+  5. 发安全通知邮件到<b>旧邮箱</b>（异常改绑的第一时间告知）</code></pre>
+<h4>注销</h4>
+<pre><code>DELETE /api/account  { password }
+  1. 二次确认 + 验密码
+  2. User.status = 'deleted_marked'，Session 全部 revoke，PII（姓名 / 电话 / 地址）清空
+  3. <b>订单不删</b>：Order.email 保留（财务与税务凭证需留存 7 年），仅解除账户关联
+  4. Address / WishlistItem 物理删除
+  5. 记录删除请求时间与范围，供 GDPR / CCPA 审计</code></pre>
+<div class="note"><b>为什么订单不跟着删</b>：GDPR 的删除权与税务留存义务是冲突的，通行做法是<b>保留交易记录、清除可直接识别个人的字段</b>。所以注销后订单仍在库里（金额、商品、日期），但姓名、电话、详细地址被清空，只留邮箱作为交易凭证索引——这一点必须写进隐私政策，否则会被投诉"说好删除却还留着"。</div>
+
+<h2 id="s8"><span class="n">8</span>部署与运维</h2>
+<table>
+  <tr><th>项</th><th>方案</th><th>说明</th></tr>
+  <tr><td>服务器</td><td>2C4G 云主机起步</td><td>预估日订单 &lt; 200 完全够用</td></tr>
+  <tr><td>容器</td><td>Docker + Coolify</td><td>一键部署、回滚到上一版本</td></tr>
+  <tr><td>反向代理</td><td>Nginx</td><td>HTTPS 终止、gzip/brotli、静态资源长缓存</td></tr>
+  <tr><td>域名与证书</td><td>自有域名 + Let's Encrypt 自动续期</td><td>强制 HTTPS，HTTP 301</td></tr>
+  <tr><td>数据库</td><td>同机 PostgreSQL 起步，后续迁托管</td><td><b>每日全量备份 + 保留 30 天</b>，备份需实测可恢复</td></tr>
+  <tr><td>环境</td><td>production / staging 两套</td><td>staging 用于验收，不接真实支付</td></tr>
+  <tr><td>日志</td><td>应用日志 + 访问日志 + 支付失败告警</td><td>保留 14 天</td></tr>
+  <tr><td>回滚</td><td>镜像版本回退 + 数据库迁移分离</td><td>迁移只做向前兼容，不回滚数据</td></tr>
+</table>
+
+<h2 id="s9"><span class="n">9</span>安全与合规</h2>
+<table>
+  <tr><th>面</th><th>措施</th></tr>
+  <tr><td class="hl">账户鉴权（v2.0 扩充）</td><td class="hl">前后台<b>同一套 User 表</b>：argon2id 密码哈希（<b>永不存明文、不可逆</b>）、HttpOnly + SameSite=Lax + Secure Cookie、会话 24h、登录失败按 email + ip 限流并锁定、Session 只存 tokenHash、改邮箱与改密码均需验旧密码并通知旧邮箱</td></tr>
+  <tr><td class="hl">后台授权</td><td class="hl">进后台校验 <code>role ∈ {staff, owner}</code>，<code>customer</code> 一律 403；敏感操作按权限位二次校验：<code>price.write</code>（改价）、<code>review.delete</code>（删评价）、<code>customer.export</code>（导出客户）、<code>refund.approve</code>（退款审批）；越权尝试写安全日志</td></tr>
+  <tr><td>登录枚举防护</td><td>注册与登录对"邮箱已存在 / 不存在"给出统一文案，避免被批量探测账号；忘记密码同样只回"如果该邮箱已注册，我们已发送邮件"</td></tr>
+  <tr><td>输入</td><td>服务端全量校验；富文本白名单过滤；上传限类型与大小</td></tr>
+  <tr><td>CSRF / XSS</td><td>写操作校验 Token；输出转义；CSP 限制外链脚本</td></tr>
+  <tr><td>支付</td><td>Stripe 托管卡信息，服务端只存支付意图 id 与结果，不落卡号（PCI 责任转移）</td></tr>
+  <tr><td>隐私</td><td>只收集履约必需信息；隐私政策与删除通道；Cookie 同意后才加载分析</td></tr>
+  <tr><td>合规</td><td>GDPR / CCPA（同意、访问、删除）；IOSS 与关税展示（待确认具体国家）</td></tr>
+  <tr><td>数据</td><td>全链路 HTTPS；备份加密；敏感配置走环境变量不入库不入 Git</td></tr>
+  <tr><td>审计</td><td>后台关键动作写操作日志（改价、改库存、退款、<b>删除评价</b>、<b>改活动</b>）</td></tr>
+  <tr><td class="hl">评价治理</td><td class="hl">删除为软删 + 原因必填 + 审核日志独立表；低分删除次数月度统计并在概览提示，防止把评分"修"漂亮</td></tr>
+  <tr><td class="hl">营销防刷</td><td class="hl">优惠券按邮箱 + 设备指纹双限；批量码带渠道标签；预算熔断；同一 IP 短时高频失败请求限流</td></tr>
+  <tr><td class="hl">上传</td><td class="hl">定制参考图与评价晒图：限 jpg/png/webp、单张 ≤5MB、重编码去 EXIF、存对象存储私有读，不落本地磁盘</td></tr>
+</table>
+
+<h2 id="s10"><span class="n">10</span>性能与缓存</h2>
+<ul>
+  <li><b>页面</b>：商品页与集合页 SSR 后做短时缓存（60s）+ 内容变更时主动失效。</li>
+  <li><b>图片</b>：统一 4:5，输出 3 档宽度（480 / 900 / 1400），WebP 优先，懒加载首屏以下。</li>
+  <li><b>数据库</b>：列表查询走索引；后台统计用按日聚合表，避免每次全表扫描。</li>
+  <li class="hl"><b>活动缓存</b>：当前生效活动列表缓存 60 秒，活动起止由定时任务主动失效——不能缓存到活动结束后，否则用户会看到过期价格。</li>
+  <li class="hl"><b>评分缓存</b>：商品评分与评价数缓存 5 分钟，审核通过/删除时立即失效对应商品缓存。</li>
+  <li><b>结算</b>：优惠计算不查库，活动与券数据由上层一次性取出后传入纯函数，单次计算 &lt; 5ms。</li>
+  <li><b>前端</b>：首页 JS 体积控制在 100KB 以内；图表用轻量 SVG 自绘，不引大库。</li>
+  <li><b>指标</b>：LCP ≤ 2.5s、CLS ≤ 0.1、TTFB ≤ 500ms（目标值，验收时实测）。</li>
+</ul>
+
+<h2 id="s11"><span class="n">11</span>演进路线</h2>
+<table>
+  <tr><th>阶段</th><th>内容</th><th>触发条件</th></tr>
+  <tr><td>v1（首版）</td><td>访客下单、<b>营销中心（券/补贴/赠品）</b>、<b>自建评价与审核</b>、定制单、到货提醒、12 个后台模块、Stripe + 邮件</td><td>当前</td></tr>
+  <tr><td>v1.1</td><td>数据导出增强、邮件模板编辑、活动效果看板、定时任务可视化</td><td>首版上线后 1 个月</td></tr>
+  <tr><td>v2</td><td>账户体系与收藏、多语言（英/法）、客户分层营销、订阅制</td><td>月订单 &gt; 500 或进入加拿大法语区</td></tr>
+  <tr><td>v3</td><td>多仓发货、自动选物流、退货自助、集合三轴（若导航改版）</td><td>SKU &gt; 300 或订单 &gt; 50/天</td></tr>
+</table>
+<p class="small">注意：v1.0 把"折扣码、定制需求单"放在上线后的 v1.1，与"促销必备"的判断自相矛盾。v1.1 文档起，营销与评价列入首版，因为它们直接决定客单价与信任度，不是可延后的增强项。</p>
+
+<h2 id="s12"><span class="n">12</span>风险与对策</h2>
+<table>
+  <tr><th>风险</th><th>影响</th><th>对策</th></tr>
+  <tr><td>支付回调丢失</td><td>已付款但订单未转 paid</td><td>定时对账任务，按 Stripe 会话反查并补单</td></tr>
+  <tr><td>超卖</td><td>客户付款后无货</td><td>支付成功时事务内扣减，扣失败自动退款并告警</td></tr>
+  <tr><td class="hl">优惠叠加算错</td><td>少收钱或多收钱，客诉无法解释</td><td class="hl">单一纯函数实现 + 边界用例单元测试（0.5 元下限、券过期、赠品缺货、活动切换瞬间）</td></tr>
+  <tr><td class="hl">优惠券被羊毛党刷</td><td>预算被耗尽、真实客户拿不到</td><td class="hl">perUserLimit 按邮箱 + 设备指纹双限；批量码带渠道标记；预算熔断</td></tr>
+  <tr><td class="hl">终身颜色保证被滥用</td><td>换新成本超准备金</td><td class="hl">一单一款终身一次；照片判定；批次留样追溯；月度监控换新率，超 8% 立即复盘供应链</td></tr>
+  <tr><td class="hl">评价删除被质疑</td><td>公信力受损、平台投诉</td><td class="hl">软删 + 原因必填 + 月度统计；低分删除次数超阈值在概览告警</td></tr>
+  <tr><td>图片体积过大</td><td>首屏慢、转化下降</td><td>上传即转码，限制源图尺寸</td></tr>
+  <tr><td>单机故障</td><td>全站不可用</td><td>每日备份 + 镜像化部署，30 分钟内可重建</td></tr>
+  <tr><td>合规披露不全</td><td>被投诉 / 支付通道风控</td><td>上线前逐项核对政策页与 Cookie 同意</td></tr>
+</table>
+
+<h2 id="s13"><span class="n">13</span>待确认</h2>
+<table>
+  <tr><th>#</th><th>决策点</th><th>我的建议</th></tr>
+  <tr><td>D1</td><td>选方案 A / B / C</td><td>A（自建全栈）</td></tr>
+  <tr><td>D2</td><td>数据库用 PostgreSQL 还是 MySQL</td><td>PostgreSQL（JSON 字段与事务更顺手）</td></tr>
+  <tr><td>D3</td><td>是否引入 Redis 缓存</td><td>v1 不引，先用页面缓存；有性能问题再加</td></tr>
+  <tr><td>D4</td><td>服务器放哪个区域</td><td>美国东部（客户主要在美东/加东）</td></tr>
+  <tr><td>D5</td><td>图片是否上 CDN</td><td>上线即上，Cloudflare 起步</td></tr>
+  <tr><td>D6</td><td>是否要 staging 环境</td><td>要，验收与培训都在 staging 做</td></tr>
+</table>
+
+<h2 id="s14"><span class="n">14</span>需求追溯矩阵</h2>
+<p class="lede">评审时最容易挑出的问题是"这条需求到底落在哪个模块、哪张表、哪个接口"。下表把 FRD 的需求块逐段映射到实现位置，<b>每一行都能反查</b>。</p>
+<table>
+  <tr><th>FRD 需求块</th><th>模块</th><th>主要表</th><th>接口</th><th>前端</th></tr>
+  <tr><td>FR-S-001~010 全局框架</td><td>content</td><td>ContentBlock</td><td>—（SSR 直出）</td><td>layout 组件</td></tr>
+  <tr><td>FR-S-020~031 首页</td><td>content、promotion</td><td>ContentBlock、Promotion</td><td><code>/api/promotions/active</code></td><td>首页 11 区块</td></tr>
+  <tr><td>FR-S-040~049 集合与搜索</td><td>catalog</td><td>Product、Variant、Collection</td><td><code>/api/products</code>、<code>/api/search</code></td><td>集合页 + 商品卡</td></tr>
+  <tr><td>FR-S-050~059 商品详情</td><td>catalog、review</td><td>Product、Review</td><td><code>/api/products/{handle}</code></td><td>详情页</td></tr>
+  <tr><td>FR-S-070~079 交易链路</td><td>cart、order、payment</td><td>Order、OrderItem、StockReservation</td><td><code>/api/cart</code>、<code>/api/checkout/intent</code>、<code>/api/webhooks/stripe</code></td><td>抽屉 / 结算</td></tr>
+  <tr><td class="hl">FR-S-140~153 账户中心（v2.0）</td><td class="hl">auth、account、order</td><td class="hl">User、Session、Address、WishlistItem、Order(email)</td><td class="hl"><code>/api/auth/*</code>、<code>/api/account/*</code>、<code>/api/orders/lookup</code></td><td class="hl">S-13~S-20</td></tr>
+  <tr><td>FR-S-090~098 内容与辅助</td><td>content、custom</td><td>ContentPage、CustomRequest</td><td><code>/api/custom</code></td><td>内容页 / 定制 / 评价提交</td></tr>
+  <tr><td class="hl">FR-S-110~119 营销呈现</td><td class="hl">promotion</td><td class="hl">Coupon、CouponRedemption、Promotion、GiftRule、OrderAdjustment</td><td class="hl"><code>/api/cart/coupon</code>、<code>/api/promotions/active</code></td><td class="hl">赠品进度条 / 券输入 / 角标</td></tr>
+  <tr><td class="hl">FR-S-130~135 评价</td><td class="hl">review</td><td class="hl">Review、ReviewAudit</td><td class="hl"><code>/api/reviews</code></td><td class="hl">评价区 / 提交页</td></tr>
+  <tr><td>FR-A-001~019 交易与商品</td><td>auth、order、catalog、inventory</td><td>Order、Variant、Setting</td><td><code>/api/admin/*</code></td><td>8 个后台模块</td></tr>
+  <tr><td class="hl">FR-A-020~030 营销中心</td><td class="hl">promotion</td><td class="hl">Coupon、Promotion、GiftRule、OrderAdjustment</td><td class="hl"><code>/api/admin/marketing/*</code></td><td class="hl">A-10</td></tr>
+  <tr><td class="hl">FR-A-040~048 评价与名单</td><td class="hl">review、notify、mail</td><td class="hl">Review、ReviewAudit、NotifyRequest、EmailTemplate、JobRun</td><td class="hl"><code>/api/admin/reviews</code>、<code>/api/admin/notify</code>、<code>/api/admin/jobs</code></td><td class="hl">A-11 / A-12</td></tr>
+  <tr><td>BR-01~21 业务规则</td><td>order、promotion、inventory</td><td>Setting、Order.costSnapshot</td><td>—（服务层强校验）</td><td>—</td></tr>
+  <tr><td>状态机 + 售后类型</td><td>order</td><td>Order、StatusLog、AfterSale</td><td><code>/api/admin/orders/{id}</code></td><td>订单详情</td></tr>
+</table>
+
+<h2 id="s15"><span class="n">15</span>邮件模板 / 埋点 / 定时任务</h2>
+
+<h3>15.1 邮件模板（6 个）</h3>
+<table>
+  <tr><th>key</th><th>触发时机</th><th>必含变量</th><th>目的</th></tr>
+  <tr><td>order_confirm</td><td>支付成功</td><td>orderNo、items、total、address</td><td>确认 + 降低客服询问</td></tr>
+  <tr><td>shipped</td><td>填运单号</td><td>orderNo、carrier、trackingNo、eta</td><td>减少"我的货到哪了"</td></tr>
+  <tr><td>refund_done</td><td>退款完成</td><td>orderNo、amount、days</td><td>告知到账周期</td></tr>
+  <tr><td class="hl">review_invite</td><td>签收后 7 天</td><td>orderNo、productTitle、reviewUrl</td><td class="hl">评价来源的主要入口（首版没这个，评价数会一直是 0）</td></tr>
+  <tr><td>restock</td><td>补货上架</td><td>productTitle、variant、buyUrl</td><td>把等待需求转成订单</td></tr>
+  <tr><td>color_guarantee</td><td>换新受理</td><td>orderNo、newShipmentNo</td><td>兑现承诺的仪式感</td></tr>
+</table>
+
+<h3>15.2 关键埋点（8 个）</h3>
+<table>
+  <tr><th>事件</th><th>参数</th><th>用来回答什么</th></tr>
+  <tr><td>view_collection</td><td>handle、position</td><td>哪个入口带来的流量最多</td></tr>
+  <tr><td>quick_add</td><td>productId、variantId、from（collection / home）</td><td class="hl">卡片直接加购到底贡献多少（验证 FR-S-045 值不值）</td></tr>
+  <tr><td>add_to_cart</td><td>productId、variantId、price</td><td>详情页加购率</td></tr>
+  <tr><td>coupon_apply</td><td>code、result、amount</td><td>券的真实使用与失败率</td></tr>
+  <tr><td>gift_unlocked</td><td>ruleId、threshold、subtotal</td><td>赠品门槛是否定对了</td></tr>
+  <tr><td>checkout_start / purchase</td><td>value、items、coupon</td><td>漏斗与 GMV 归因</td></tr>
+  <tr><td>review_submit</td><td>productId、rating</td><td>评价转化率与满意度分布</td></tr>
+  <tr><td>color_guarantee_claim</td><td>orderNo、productId、reason</td><td class="hl">承诺的真实成本，决定 2% 准备金够不够</td></tr>
+</table>
+
+<h3>15.3 定时任务（4 个）</h3>
+<table>
+  <tr><th>任务</th><th>频率</th><th>做什么</th><th>失败后果</th></tr>
+  <tr><td>releaseReservation</td><td>每 5 分钟</td><td>扫 expiresAt 过期占用 → 释放 → 关闭对应 pending 订单</td><td class="hl">库存被锁死，商品显示售罄但实际有货</td></tr>
+  <tr><td>promotionSwitch</td><td>每 1 分钟</td><td>按起止时间切换活动状态、失效页面缓存</td><td>活动不开始或不结束，价格错误</td></tr>
+  <tr><td>restockNotify</td><td>每小时</td><td>检测库存从 0 变正 → 通知 NotifyRequest</td><td>错过转化机会</td></tr>
+  <tr><td>birthstone</td><td>每月 1 日 00:00 ET</td><td>切换当月在售诞生石集合与首页区块</td><td>首页还挂着上月款</td></tr>
+</table>
+<p class="small">四个任务都写入 JobRun 表，后台可在设置页看到最近执行结果并手动重跑。任务必须<b>幂等</b>：重复执行不产生副作用。</p>
+
+<hr>
+<p class="small">— 文档结束 · TG-SDD-001 v2.0 同步稿 · 与 FRD v2.0 一并确认后再进入实现 —</p>
+
+</main>
+</div>
+</body>
+</html>

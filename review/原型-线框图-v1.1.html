@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>线框原型 · Wildkind 独立站（评审稿）</title>
+<style>
+  :root{--ink:#222;--muted:#777;--line:#d8d8d8;--bg:#ececea;--paper:#fff;--soft:#f5f5f3;--hi:#e8e2d8}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font:13px/1.6 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);background:var(--bg)}
+  /* ---------- shell ---------- */
+  .app{display:grid;grid-template-columns:212px minmax(0,1fr);height:100vh;overflow:hidden}
+  .side{background:#1f1e1c;color:#d9d5cf;overflow:auto;padding:22px 0 40px}
+  .side__brand{padding:0 18px 16px;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:#fff}
+  .side__brand small{display:block;font-size:10px;letter-spacing:.1em;color:#8d8880;margin-top:6px;text-transform:none}
+  .side__grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#6f6a63;padding:16px 18px 6px}
+  .side a{display:block;padding:7px 18px;color:#c9c4bc;text-decoration:none;font-size:12.5px;border-left:2px solid transparent;white-space:nowrap}
+  .side a:hover{color:#fff;background:#2a2825}
+  .side a.on{color:#fff;background:#2a2825;border-left-color:#c9a87c}
+  .side a i{display:inline-block;width:40px;font-style:normal;color:#726c64;font-size:11px;white-space:nowrap;vertical-align:top}
+  .main{overflow:auto;padding:26px 34px 70px}
+  /* ---------- screen ---------- */
+  .screen{display:none;max-width:1180px;margin:0 auto}
+  .screen.on{display:block}
+  .scr__hd{border-bottom:1px solid #d2d0cb;padding-bottom:14px;margin-bottom:22px}
+  .scr__hd h2{margin:0;font-size:20px;font-weight:600;letter-spacing:-.01em}
+  .scr__hd h2 span{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#8a857d;margin-left:10px;font-weight:400}
+  .scr__hd p{margin:6px 0 0;font-size:13px;color:#5f5a53}
+  .cols{display:grid;grid-template-columns:minmax(0,1fr) 268px;gap:26px;align-items:start}
+  .anno{background:var(--paper);border:1px solid var(--line);padding:16px 16px 20px;position:sticky;top:0}
+  .anno h3{margin:0 0 10px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8a857d}
+  .anno ol{margin:0;padding-left:0;list-style:none;counter-reset:a}
+  .anno li{counter-increment:a;font-size:12px;color:#4a453f;padding:6px 0 6px 24px;position:relative;border-bottom:1px dashed #e6e4e0}
+  .anno li:last-child{border-bottom:0}
+  .anno li::before{content:counter(a);position:absolute;left:0;top:6px;width:17px;height:17px;border-radius:50%;background:#f0ece5;color:#7a746c;font-size:10px;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace}
+  .anno li em{font-style:normal;color:#9a948c;font-family:ui-monospace,monospace;font-size:10.5px;display:block}
+  /* ---------- wireframe primitives ---------- */
+  .wf{background:var(--paper);border:1px solid #c9c7c2;position:relative}
+  .wf *{box-sizing:border-box}
+  .ph{background:repeating-linear-gradient(45deg,#efefed,#efefed 7px,#e7e7e4 7px,#e7e7e4 14px);position:relative;display:flex;align-items:center;justify-content:center;color:#a8a49d;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+  .ph::after{content:"";position:absolute;inset:0;border:1px dashed #d3d1cc;pointer-events:none}
+  .t{height:7px;background:#e3e3e0;border-radius:1px}
+  .t.d{background:#c9c7c2}
+  .t.b{height:12px;background:#bdbab4}
+  .b{border:1px solid #8f8b84;padding:7px 13px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#3a3733;display:inline-block;text-align:center}
+  .b.fill{background:#3a3733;color:#fff;border-color:#3a3733}
+  .lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#a8a49d}
+  .row{display:flex}
+  .col{display:flex;flex-direction:column}
+  .gap6{gap:6px}.gap10{gap:10px}.gap14{gap:14px}.gap20{gap:20px}
+  .pad{padding:16px}
+  .bd{border-bottom:1px solid #e2e0db}
+  .bd-t{border-top:1px solid #e2e0db}
+  .cap{font-size:10px;color:#9a948c;letter-spacing:.06em}
+  .k{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:#7a746c}
+  /* header of site */
+  .site-hd{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;padding:14px 20px;gap:14px;border-bottom:1px solid #e2e0db}
+  .site-hd .nav{display:flex;gap:7px;flex-wrap:nowrap;overflow:hidden;min-width:0}
+  .site-hd .nav span{font-size:8px;letter-spacing:.02em;text-transform:uppercase;color:#5c574f;white-space:nowrap}
+  .site-hd .logo{font-size:15px;letter-spacing:.2em;text-transform:uppercase;text-align:center}
+  .site-hd .tools{display:flex;gap:10px;justify-content:flex-end}
+  .site-hd .tools span{width:16px;height:16px;border:1px solid #a8a49d;border-radius:50%}
+  .annbar{background:#f2efe9;text-align:center;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#8a857d;padding:6px}
+  /* cards */
+  .card{border:0}
+  .card .ph{aspect-ratio:4/5}
+  /* dark blocks */
+  .dark{background:#2a2825;color:#d9d5cf}
+  /* admin */
+  .adm{display:grid;grid-template-columns:132px minmax(0,1fr);min-height:420px}
+  .adm__side{background:#26241f;color:#bdb8b0;padding:12px 0;font-size:10.5px}
+  .adm__side div{padding:7px 12px;letter-spacing:.04em}
+  .adm__side div.on{background:#332f29;color:#fff;border-left:2px solid #c9a87c}
+  .adm__main{padding:0;background:#faf9f7}
+  .adm__top{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #e6e4df;background:#fff}
+  .kpi{border:1px solid #e2e0db;background:#fff;padding:10px 12px}
+  .kpi b{display:block;font-size:16px;letter-spacing:-.01em}
+  .kpi span{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#9a948c}
+  .tbl{width:100%;border-collapse:collapse;font-size:10px}
+  .tbl th,.tbl td{border-bottom:1px solid #e8e6e1;padding:6px 8px;text-align:left}
+  .tbl th{background:#f6f5f2;font-weight:600;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#8a857d}
+  .pill{display:inline-block;border:1px solid #d8d5cf;background:#fff;border-radius:20px;padding:3px 9px;font-size:9.5px;color:#5c574f}
+  .pill.on{background:#3a3733;color:#fff;border-color:#3a3733}
+  .hl{font-weight:600;color:#5a3b18}
+  .dot{display:inline-block;width:5px;height:5px;background:#8f8b84;flex:0 0 auto}
+  .tagx{font-size:9px;border:1px solid #d8d5cf;padding:1px 5px;color:#7a746c}
+  /* mobile frame */
+  .mob{width:390px;border:1px solid #c9c7c2;background:#fff;margin:0 auto}
+  .mob .site-hd{grid-template-columns:auto 1fr auto;padding:12px 14px}
+  .mob .nav{display:none}
+  /* note */
+  .warn{background:#fff8e8;border:1px solid #ecd9ac;padding:12px 14px;font-size:12px;color:#6b5a2c;margin-bottom:20px}
+  @media print{
+    .app{display:block;height:auto}
+    .side{display:none}
+    .main{overflow:visible;padding:0}
+    .screen{display:block !important;page-break-after:always}
+    .cols{grid-template-columns:1fr}
+    .anno{position:static}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+<nav class="side">
+  <div class="side__brand">Wildkind<small>线框原型 v1.1 · 二审稿</small></div>
+  <div class="side__grp">前台</div>
+  <a href="#a-s01" data-g="s"><i>S-01</i>首页</a>
+  <a href="#a-s02" data-g="s"><i>S-02</i>集合页</a>
+  <a href="#a-s03" data-g="s"><i>S-03</i>商品详情</a>
+  <a href="#a-s05" data-g="s"><i>S-05</i>购物车抽屉</a>
+  <a href="#a-s06" data-g="s"><i>S-06</i>结算</a>
+  <a href="#a-s08" data-g="s"><i>S-08</i>订单查询</a>
+  <a href="#a-s01m" data-g="s"><i>S-01m</i>首页（移动）</a>
+  <div class="side__grp">后台</div>
+  <a href="#a-a01" data-g="a"><i>A-01</i>登录</a>
+  <a href="#a-a02" data-g="a"><i>A-02</i>概览</a>
+  <a href="#a-a03" data-g="a"><i>A-03</i>订单列表</a>
+  <a href="#a-a04" data-g="a"><i>A-04</i>商品编辑</a>
+  <a href="#a-a05" data-g="a"><i>A-05</i>库存</a>
+  <a href="#a-a10" data-g="a"><i>A-10</i>营销中心</a>
+  <a href="#a-a11" data-g="a"><i>A-11</i>评价审核</a>
+  <a href="#a-a12" data-g="a"><i>A-12</i>定制单</a>
+  <div class="side__grp">说明</div>
+  <a href="#a-about"><i>—</i>怎么用这份原型</a>
+</nav>
+
+<main class="main">
+
+  <div class="warn"><b>这是线框图，不是设计稿。</b>灰色占位块表示图片/内容，线条表示文字。它只用来确认<b>结构、层级、交互顺序</b>；配色、字体、图片质感另行设计。左侧切换页面，右侧是标注与对应需求编号。</div>
+
+  <!-- ============ S-01 首页 ============ -->
+  <section class="screen" id="s-s01">
+    <div class="scr__hd">
+      <h2>首页<span>S-01 · /</span></h2>
+      <p>v1.1 按参考站实际顺序重排：Slideshow → Best Sellers（社媒眉标）→ New Arrivals → 数字背书 → 创始人故事 → 题材 → 定制 → 出生石 → 评价 → 服务承诺条 → 页脚。</p>
+    </div>
+    <div class="cols">
+      <div class="wf">
+        <div class="annbar">Free shipping over $95 &nbsp;·&nbsp; Lifetime color guarantee &nbsp;·&nbsp; Black Friday −40% <span style="opacity:.6">▸</span></div>
+        <div class="site-hd">
+          <div class="nav"><span>Best Sellers</span><span>Custom</span><span>Sale</span><span>New</span><span>Necklaces</span><span>Rings</span><span>Pearls</span><span>Earrings</span><span>Bracelets</span><span>Anklets</span><span>Gifts</span></div>
+          <div class="logo">Wildkind</div>
+          <div class="tools"><span></span><span></span><span></span></div>
+        </div>
+        <div class="row" style="border-bottom:1px solid #e2e0db">
+          <div class="col pad gap10" style="width:46%;justify-content:center;padding:40px 26px">
+            <div class="lbl">New season · stainless steel</div>
+            <div class="col gap6" style="margin-top:10px">
+              <div class="t d" style="width:88%;height:20px"></div>
+              <div class="t d" style="width:62%;height:20px"></div>
+            </div>
+            <div class="col gap6" style="margin-top:14px">
+              <div class="t" style="width:96%"></div><div class="t" style="width:90%"></div><div class="t" style="width:58%"></div>
+            </div>
+            <div class="row gap10" style="margin-top:18px">
+              <div class="b fill">Shop best sellers</div>
+              <div class="b">See what's new</div>
+            </div>
+          </div>
+          <div style="width:54%;position:relative">
+            <div class="ph" style="min-height:330px">Slideshow 1 / 3 · 4:5</div>
+            <div class="row gap6" style="position:absolute;left:14px;bottom:12px">
+              <div style="width:16px;height:2px;background:#3a3733"></div>
+              <div style="width:16px;height:2px;background:rgba(58,55,51,.3)"></div>
+              <div style="width:16px;height:2px;background:rgba(58,55,51,.3)"></div>
+            </div>
+            <div class="cap" style="position:absolute;right:14px;bottom:10px;background:#fff;padding:2px 6px">1/3</div>
+          </div>
+        </div>
+        <div class="row" style="border-bottom:1px solid #e2e0db;background:#faf9f7">
+          <div class="col pad gap6" style="flex:1;align-items:center"><div class="cap" style="font-size:15px;font-weight:600;color:#3a3733">7M+</div><div class="cap">pieces sold</div></div>
+          <div class="col pad gap6" style="flex:1;align-items:center;border-left:1px solid #e2e0db"><div class="cap" style="font-size:15px;font-weight:600;color:#3a3733">1.6M+</div><div class="cap">happy customers</div></div>
+          <div class="col pad gap6" style="flex:1;align-items:center;border-left:1px solid #e2e0db"><div class="cap" style="font-size:15px;font-weight:600;color:#3a3733">4.7 / 5</div><div class="cap">128 verified reviews</div></div>
+        </div>
+        <div class="pad" style="border-bottom:1px solid #e2e0db">
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div class="col gap6"><div class="lbl">AS SEEN ON TIKTOK</div><div class="t d" style="width:140px;height:12px"></div></div>
+            <div class="row gap6"><div class="b" style="padding:5px 9px">←</div><div class="b" style="padding:5px 9px">→</div></div>
+          </div>
+          <div class="row gap14">
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:4/5">img</div><div class="t" style="width:80%"></div><div class="row gap6" style="align-items:center"><span class="k">$68</span><span class="tagx">SAVE $14</span></div></div>
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:4/5">img</div><div class="t" style="width:70%"></div><div class="row gap6" style="align-items:center"><span class="k">$74</span></div></div>
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:4/5">img</div><div class="t" style="width:85%"></div><div class="row gap6" style="align-items:center"><span class="k">$88</span></div></div>
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:4/5">img</div><div class="t" style="width:75%"></div><div class="row gap6" style="align-items:center"><span class="k">$96</span></div></div>
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:4/5">img</div><div class="t" style="width:78%"></div><div class="row gap6" style="align-items:center"><span class="k">$62</span></div></div>
+          </div>
+        </div>
+        <div class="pad" style="border-bottom:1px solid #e2e0db">
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div class="col gap6"><div class="lbl">New arrivals</div><div class="t d" style="width:120px;height:12px"></div></div>
+            <div class="cap">View all →</div>
+          </div>
+          <div class="row gap14">
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:4/5">new</div><div class="t" style="width:82%"></div><div class="k">$72</div></div>
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:4/5">new</div><div class="t" style="width:76%"></div><div class="k">$66</div></div>
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:4/5">new</div><div class="t" style="width:88%"></div><div class="k">$118</div></div>
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:4/5">new</div><div class="t" style="width:80%"></div><div class="k">$92</div></div>
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:4/5">new</div><div class="t" style="width:74%"></div><div class="k">$58</div></div>
+          </div>
+        </div>
+        <div class="pad" style="border-bottom:1px solid #e2e0db">
+          <div class="lbl" style="margin-bottom:10px">Shop by mood · 4 tiles</div>
+          <div class="row gap10">
+            <div class="ph" style="flex:1;aspect-ratio:3/4">Ocean</div>
+            <div class="ph" style="flex:1;aspect-ratio:3/4">Woodland</div>
+            <div class="ph" style="flex:1;aspect-ratio:3/4">Celestial</div>
+            <div class="ph" style="flex:1;aspect-ratio:3/4">Floral</div>
+          </div>
+        </div>
+        <div class="row" style="border-bottom:1px solid #e2e0db">
+          <div class="ph" style="width:50%;min-height:180px">story img</div>
+          <div class="col pad gap10" style="width:50%;justify-content:center">
+            <div class="lbl">Our approach</div>
+            <div class="t d" style="width:70%;height:12px"></div>
+            <div class="t" style="width:92%"></div><div class="t" style="width:86%"></div>
+            <div class="b" style="margin-top:8px">Read more</div>
+          </div>
+        </div>
+        <div class="pad" style="border-bottom:1px solid #e2e0db">
+          <div class="lbl" style="margin-bottom:10px">Make it yours · 3 cards</div>
+          <div class="row gap14">
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:1/1">custom</div><div class="t" style="width:70%"></div></div>
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:1/1">custom</div><div class="t" style="width:70%"></div></div>
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:1/1">custom</div><div class="t" style="width:70%"></div></div>
+          </div>
+        </div>
+        <div class="row" style="border-bottom:1px solid #e2e0db;background:#f7f5f1">
+          <div class="col pad gap6" style="width:38%;justify-content:center">
+            <div class="lbl">November · Citrine</div>
+            <div class="t d" style="width:70%;height:12px"></div>
+            <div class="t" style="width:88%"></div>
+            <div class="cap" style="margin-top:4px">每月 1 日自动切换，提前 7 天预热</div>
+            <div class="b" style="margin-top:8px;align-self:flex-start">Shop November</div>
+          </div>
+          <div class="row gap10 pad" style="width:62%">
+            <div class="ph" style="flex:1;aspect-ratio:1/1">citrine</div>
+            <div class="ph" style="flex:1;aspect-ratio:1/1">ring</div>
+            <div class="ph" style="flex:1;aspect-ratio:1/1">necklace</div>
+          </div>
+        </div>
+        <div class="pad" style="border-bottom:1px solid #e2e0db">
+          <div class="lbl" style="margin-bottom:10px">What they say · 6 quotes · 仅显示已审核</div>
+          <div class="row gap10" style="flex-wrap:wrap">
+            <div class="col gap6" style="width:calc(33.33% - 7px);border:1px solid #e8e6e1;padding:8px"><div class="cap">★★★★★</div><div class="t" style="width:90%"></div><div class="t" style="width:70%"></div></div>
+            <div class="col gap6" style="width:calc(33.33% - 7px);border:1px solid #e8e6e1;padding:8px"><div class="cap">★★★★★</div><div class="t" style="width:88%"></div><div class="t" style="width:60%"></div></div>
+            <div class="col gap6" style="width:calc(33.33% - 7px);border:1px solid #e8e6e1;padding:8px"><div class="cap">★★★★★</div><div class="t" style="width:85%"></div><div class="t" style="width:65%"></div></div>
+          </div>
+        </div>
+        <div class="pad" style="border-bottom:1px solid #e2e0db">
+          <div class="lbl" style="margin-bottom:10px">Journal · 3 posts</div>
+          <div class="row gap14">
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:16/10">post</div><div class="t" style="width:85%"></div></div>
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:16/10">post</div><div class="t" style="width:85%"></div></div>
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:16/10">post</div><div class="t" style="width:85%"></div></div>
+          </div>
+        </div>
+        <div class="pad dark col gap10" style="align-items:center;padding:26px">
+          <div class="t d" style="width:180px;height:12px;background:#5b564e"></div>
+          <div class="t" style="width:240px;background:#46423c"></div>
+          <div class="row gap6" style="margin-top:8px"><div class="b" style="border-color:#8f8b84;color:#d9d5cf;width:180px">email</div><div class="b fill" style="background:#e8e2d8;color:#2a2825;border-color:#e8e2d8">join</div></div>
+        </div>
+        <div class="row" style="background:#f7f6f4;border-bottom:1px solid #e2e0db">
+          <div class="col pad gap6" style="flex:1;align-items:center"><div class="ph" style="width:16px;height:16px;border-radius:50%"></div><div class="cap" style="font-weight:600">Free over $95</div><div class="cap">7–12 days</div></div>
+          <div class="col pad gap6" style="flex:1;align-items:center;border-left:1px solid #e2e0db"><div class="ph" style="width:16px;height:16px;border-radius:50%"></div><div class="cap" style="font-weight:600">Lifetime color</div><div class="cap">free replacement</div></div>
+          <div class="col pad gap6" style="flex:1;align-items:center;border-left:1px solid #e2e0db"><div class="ph" style="width:16px;height:16px;border-radius:50%"></div><div class="cap" style="font-weight:600">30-day returns</div><div class="cap">no questions</div></div>
+          <div class="col pad gap6" style="flex:1;align-items:center;border-left:1px solid #e2e0db"><div class="ph" style="width:16px;height:16px;border-radius:50%"></div><div class="cap" style="font-weight:600">316L steel</div><div class="cap">hypoallergenic</div></div>
+        </div>
+        <div class="pad" style="background:#f7f6f4">
+          <div class="row gap20">
+            <div class="col gap6" style="flex:1"><div class="cap" style="font-weight:600">Shop</div><div class="t" style="width:60%"></div><div class="t" style="width:50%"></div><div class="t" style="width:70%"></div></div>
+            <div class="col gap6" style="flex:1"><div class="cap" style="font-weight:600">Help</div><div class="t" style="width:65%"></div><div class="t" style="width:55%"></div></div>
+            <div class="col gap6" style="flex:1"><div class="cap" style="font-weight:600">About</div><div class="t" style="width:60%"></div><div class="t" style="width:50%"></div></div>
+            <div class="col gap6" style="flex:1"><div class="cap" style="font-weight:600">Follow</div><div class="row gap6"><div class="ph" style="width:14px;height:14px"></div><div class="ph" style="width:14px;height:14px"></div><div class="ph" style="width:14px;height:14px"></div></div></div>
+          </div>
+          <div class="row bd-t" style="justify-content:space-between;margin-top:12px;padding-top:8px"><div class="cap">© 2026 Wildkind</div><div class="cap">Privacy · Terms · Returns</div></div>
+        </div>
+      </div>
+      <aside class="anno">
+        <h3>标注</h3>
+        <ol>
+          <li class="hl">公告栏：多条循环跑马灯，可带链接与倒计时<em>FR-S-004</em></li>
+          <li>页头：11 项一级导航 + 居中 logo + 3 图标；1440 下不换行<em>FR-S-001 / FR-S-002</em></li>
+          <li class="hl">首屏为 Slideshow（2–3 张轮播），不是单张 Hero<em>FR-S-020</em></li>
+          <li class="hl">数字背书条：7M+ / 1.6M+ / 4.7 分，数值后台可改，空数据整块隐藏<em>FR-S-023</em></li>
+          <li class="hl">Best Sellers 眉标用社媒背书文案（AS SEEN ON TIKTOK）<em>FR-S-021</em></li>
+          <li class="hl">New Arrivals 独立区块，与榜单同构<em>FR-S-022</em></li>
+          <li>题材磁贴 4 个，直接进集合<em>FR-S-025</em></li>
+          <li>创始人故事图文，后台可换图换文<em>FR-S-024</em></li>
+          <li>定制入口 3 卡，带可定制标记<em>FR-S-026</em></li>
+          <li class="hl">出生石月度：November · Citrine，每月 1 日自动切换<em>FR-S-027 · BR-20</em></li>
+          <li class="hl">评价墙只取已审核评价，不足按实际数量、为 0 隐藏<em>FR-S-028</em></li>
+          <li>Journal 3 篇，可后置<em>FR-S-029</em></li>
+          <li>订阅框：邮箱校验 + 防重复<em>FR-S-030</em></li>
+          <li class="hl">服务承诺条在页脚正上方（不在 Hero 下方），四栏<em>FR-S-009 / FR-S-031</em></li>
+          <li>页脚四栏 + 政策链接<em>FR-S-007</em></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ S-02 集合页 ============ -->
+  <section class="screen" id="s-s02">
+    <div class="scr__hd">
+      <h2>集合页<span>S-02 · /collections/{handle}</span></h2>
+      <p>v1.1 重点改动：商品卡改为<b>可下单单元</b>——带色点切换、SAVE 金额、Add to cart 按钮，不用进详情页就能买。</p>
+    </div>
+    <div class="cols">
+      <div class="wf">
+        <div class="annbar">Free shipping over $95 &nbsp;·&nbsp; Lifetime color guarantee &nbsp;·&nbsp; Black Friday −40% <span style="opacity:.6">▸</span></div>
+        <div class="site-hd">
+          <div class="nav"><span>Best Sellers</span><span>Custom</span><span>Sale</span><span>New</span><span>Necklaces</span><span>Rings</span><span>Pearls</span><span>Earrings</span><span>Bracelets</span><span>Anklets</span><span>Gifts</span></div>
+          <div class="logo">Wildkind</div>
+          <div class="tools"><span></span><span></span><span></span></div>
+        </div>
+        <div class="row pad" style="justify-content:space-between;align-items:flex-end;border-bottom:1px solid #e2e0db">
+          <div class="col gap8">
+            <div class="cap">Home / Collections / Best Sellers</div>
+            <div class="t d" style="width:190px;height:16px"></div>
+            <div class="t" style="width:280px"></div>
+          </div>
+          <div class="cap">36 items</div>
+        </div>
+        <div class="row pad" style="gap:10px;align-items:center;border-bottom:1px solid #e2e0db;flex-wrap:wrap">
+          <div class="lbl">Filter</div>
+          <div class="pill on">Gold</div><div class="pill">Silver</div><div class="pill">Two-tone</div>
+          <div style="width:1px;height:16px;background:#e2e0db"></div>
+          <div class="pill">$58–89</div><div class="pill">$90–119</div><div class="pill">$120+</div>
+          <div style="width:1px;height:16px;background:#e2e0db"></div>
+          <div class="pill">In stock</div>
+          <div style="flex:1"></div>
+          <div class="row gap6"><div class="lbl">Sort</div><div class="pill on">Featured ▾</div></div>
+        </div>
+        <div class="pad">
+          <div class="row gap14" style="flex-wrap:wrap">
+            <div class="col" style="width:calc(25% - 11px);gap:6px">
+              <div class="ph" style="aspect-ratio:4/5">p1</div>
+              <div style="height:14px;display:flex;align-items:center"><div class="tagx" style="align-self:flex-start">New</div></div>
+              <div style="height:12px;display:flex;align-items:center"><div class="t" style="width:82%"></div></div>
+              <div style="height:15px;display:flex;align-items:center;gap:6px"><span class="k">$68</span><span class="cap" style="text-decoration:line-through">$82</span><span class="tagx">SAVE $14</span></div>
+              <div style="height:12px;display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border:1px solid #8f8b84;border-radius:50%;background:#e6d3b3;display:inline-block"></span><span style="width:10px;height:10px;border:1px solid #b7b4ae;border-radius:50%;background:#e9e9e7;display:inline-block"></span></div>
+              <div class="b" style="width:100%;padding:5px 0">Add to cart</div>
+            </div>
+            <div class="col" style="width:calc(25% - 11px);gap:6px">
+              <div class="ph" style="aspect-ratio:4/5">p2</div>
+              <div style="height:14px;display:flex;align-items:center"></div>
+              <div style="height:12px;display:flex;align-items:center"><div class="t" style="width:82%"></div></div>
+              <div style="height:15px;display:flex;align-items:center;gap:6px"><span class="k">$74</span></div>
+              <div style="height:12px;display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border:1px solid #8f8b84;border-radius:50%;background:#e6d3b3;display:inline-block"></span><span style="width:10px;height:10px;border:1px solid #b7b4ae;border-radius:50%;background:#e9e9e7;display:inline-block"></span></div>
+              <div class="b" style="width:100%;padding:5px 0">Add to cart</div>
+            </div>
+            <div class="col" style="width:calc(25% - 11px);gap:6px">
+              <div class="ph" style="aspect-ratio:4/5">p3</div>
+              <div style="height:14px;display:flex;align-items:center"><div class="tagx" style="align-self:flex-start">Sale</div></div>
+              <div style="height:12px;display:flex;align-items:center"><div class="t" style="width:82%"></div></div>
+              <div style="height:15px;display:flex;align-items:center;gap:6px"><span class="k">$59</span><span class="cap" style="text-decoration:line-through">$95</span><span class="tagx">SAVE $36</span></div>
+              <div style="height:12px;display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border:1px solid #8f8b84;border-radius:50%;background:#e6d3b3;display:inline-block"></span></div>
+              <div class="b" style="width:100%;padding:5px 0">Add to cart</div>
+            </div>
+            <div class="col" style="width:calc(25% - 11px);gap:6px">
+              <div class="ph" style="aspect-ratio:4/5">p4</div>
+              <div style="height:14px;display:flex;align-items:center"></div>
+              <div style="height:12px;display:flex;align-items:center"><div class="t" style="width:82%"></div></div>
+              <div style="height:15px;display:flex;align-items:center;gap:6px"><span class="k">$88</span></div>
+              <div style="height:12px;display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border:1px solid #8f8b84;border-radius:50%;background:#e6d3b3;display:inline-block"></span><span style="width:10px;height:10px;border:1px solid #b7b4ae;border-radius:50%;background:#e9e9e7;display:inline-block"></span></div>
+              <div class="b" style="width:100%;padding:5px 0">Add to cart</div>
+            </div>
+            <div class="col" style="width:calc(25% - 11px);gap:6px">
+              <div class="ph" style="aspect-ratio:4/5">p5</div>
+              <div style="height:14px;display:flex;align-items:center"><div class="tagx" style="align-self:flex-start">Only 3 left</div></div>
+              <div style="height:12px;display:flex;align-items:center"><div class="t" style="width:82%"></div></div>
+              <div style="height:15px;display:flex;align-items:center;gap:6px"><span class="k">$126</span><span class="tagx">14K</span></div>
+              <div style="height:12px;display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border:1px solid #8f8b84;border-radius:50%;background:#e6d3b3;display:inline-block"></span></div>
+              <div class="b" style="width:100%;padding:5px 0">Add to cart</div>
+            </div>
+            <div class="col" style="width:calc(25% - 11px);gap:6px">
+              <div class="ph" style="aspect-ratio:4/5">p6</div>
+              <div style="height:14px;display:flex;align-items:center"></div>
+              <div style="height:12px;display:flex;align-items:center"><div class="t" style="width:82%"></div></div>
+              <div style="height:15px;display:flex;align-items:center;gap:6px"><span class="k">$96</span></div>
+              <div style="height:12px;display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border:1px solid #8f8b84;border-radius:50%;background:#e6d3b3;display:inline-block"></span><span style="width:10px;height:10px;border:1px solid #b7b4ae;border-radius:50%;background:#e9e9e7;display:inline-block"></span></div>
+              <div class="b" style="width:100%;padding:5px 0">Add to cart</div>
+            </div>
+            <div class="col" style="width:calc(25% - 11px);gap:6px">
+              <div class="ph" style="aspect-ratio:4/5">p7</div>
+              <div style="height:14px;display:flex;align-items:center"></div>
+              <div style="height:12px;display:flex;align-items:center"><div class="t" style="width:82%"></div></div>
+              <div style="height:15px;display:flex;align-items:center;gap:6px"><span class="k">$62</span></div>
+              <div style="height:12px;display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border:1px solid #8f8b84;border-radius:50%;background:#e6d3b3;display:inline-block"></span></div>
+              <div class="b" style="width:100%;padding:5px 0">Add to cart</div>
+            </div>
+            <div class="col" style="width:calc(25% - 11px);gap:6px">
+              <div class="ph" style="aspect-ratio:4/5">p8</div>
+              <div style="height:14px;display:flex;align-items:center"></div>
+              <div style="height:12px;display:flex;align-items:center"><div class="t" style="width:82%"></div></div>
+              <div style="height:15px;display:flex;align-items:center;gap:6px"><span class="k">$143</span><span class="tagx">14K</span></div>
+              <div style="height:12px;display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border:1px solid #8f8b84;border-radius:50%;background:#e6d3b3;display:inline-block"></span></div>
+              <div class="b" style="width:100%;padding:5px 0">Add to cart</div>
+            </div>
+          </div>
+        </div>
+        <div class="row pad bd-t" style="justify-content:center;gap:6px">
+          <div class="b" style="padding:5px 9px">1</div><div class="b fill" style="padding:5px 9px">2</div><div class="b" style="padding:5px 9px">3</div><div class="b" style="padding:5px 9px">→</div>
+        </div>
+        <div class="pad" style="background:#faf9f7;border-top:1px dashed #e2e0db">
+          <div class="cap">空态：无匹配商品时 → 说明文案 +「清除筛选」+ 推荐集合 3 个入口</div>
+        </div>
+      </div>
+      <aside class="anno">
+        <h3>标注</h3>
+        <ol>
+          <li>面包屑 + 标题 + 描述 + 数量<em>FR-S-040</em></li>
+          <li>筛选：金属 / 价格 / 库存，多选，写入 URL。价格区间按新价格带重划<em>FR-S-041</em></li>
+          <li>排序 5 项，切换不整页跳动<em>FR-S-042</em></li>
+          <li>网格 4/3/2 列，图统一 4:5<em>FR-S-043</em></li>
+          <li class="hl">卡片 6 字段：图 + 角标 + 标题 + 现价/划线/SAVE 金额 + 色点 + Add to cart<em>FR-S-044</em></li>
+          <li class="hl">色点卡内切色，不跳页；切后图与小计同步<em>FR-S-044</em></li>
+          <li class="hl">按钮点后变 Added ✓，2 秒复原；抽屉不强制弹出，只角标 +1<em>FR-S-045</em></li>
+          <li>分页用页码，SEO 友好<em>FR-S-046</em></li>
+          <li>空态必须给出口，不留白屏<em>FR-S-047</em></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ S-03 商品详情 ============ -->
+  <section class="screen" id="s-s03">
+    <div class="scr__hd">
+      <h2>商品详情<span>S-03 · /products/{handle}</span></h2>
+      <p>左图右信息。变体选择直接决定价格与库存，是这一页最容易出错的地方。</p>
+    </div>
+    <div class="cols">
+      <div class="wf">
+        <div class="annbar">Free shipping over $95 &nbsp;·&nbsp; Lifetime color guarantee &nbsp;·&nbsp; Black Friday −40% <span style="opacity:.6">▸</span></div>
+        <div class="site-hd">
+          <div class="nav"><span>Best Sellers</span><span>Custom</span><span>Sale</span><span>New</span><span>Necklaces</span><span>Rings</span><span>Pearls</span><span>Earrings</span><span>Bracelets</span><span>Anklets</span><span>Gifts</span></div>
+          <div class="logo">Wildkind</div>
+          <div class="tools"><span></span><span></span><span></span></div>
+        </div>
+        <div class="pad" style="padding-bottom:0"><div class="cap">Home / Necklaces / Foxtrot Pendant</div></div>
+        <div class="row gap20 pad">
+          <div style="width:54%">
+            <div class="row gap10">
+              <div class="col gap6" style="width:44px">
+                <div class="ph" style="aspect-ratio:1/1">1</div>
+                <div class="ph" style="aspect-ratio:1/1">2</div>
+                <div class="ph" style="aspect-ratio:1/1">3</div>
+              </div>
+              <div class="ph" style="flex:1;aspect-ratio:4/5">main image 4:5</div>
+            </div>
+          </div>
+          <div style="width:46%" class="col gap14">
+            <div class="col gap6">
+              <div class="t d" style="width:80%;height:14px"></div>
+              <div class="row gap6"><div class="cap">★★★★★</div><div class="cap">128 reviews</div></div>
+              <div class="row gap8" style="align-items:center"><div class="t d" style="width:56px;height:11px"></div><div class="t" style="width:36px;height:11px;background:#e8e6e1"></div><div class="tagx">SAVE $18</div></div>
+              <div class="col gap6" style="border-top:1px solid #e2e0db;border-bottom:1px solid #e2e0db;padding:10px 0;margin:2px 0">
+                <div class="row gap8" style="align-items:center"><span class="dot"></span><span style="font-size:10px;font-weight:600;color:#3a3733;letter-spacing:.02em">Lifetime Color Guarantee</span></div>
+                <div class="row gap8" style="align-items:center"><span class="dot"></span><span style="font-size:10px;font-weight:600;color:#3a3733;letter-spacing:.02em">Waterproof &amp; Tarnish-Free</span></div>
+                <div class="row gap8" style="align-items:center"><span class="dot"></span><span style="font-size:10px;font-weight:600;color:#3a3733;letter-spacing:.02em">Hypoallergenic 316L Steel</span></div>
+                <div class="row gap8" style="align-items:center"><span class="dot"></span><span style="font-size:10px;font-weight:600;color:#3a3733;letter-spacing:.02em">Free Shipping over $95</span></div>
+              </div>
+              <div class="t" style="width:92%"></div><div class="t" style="width:70%"></div>
+            </div>
+            <div class="col gap6 bd-t" style="padding-top:10px">
+              <div class="lbl">Metal</div>
+              <div class="row gap8"><div class="pill on">Gold</div><div class="pill">Silver</div><div class="pill" style="opacity:.4">Two-tone</div></div>
+            </div>
+            <div class="col gap6">
+              <div class="lbl">Length</div>
+              <div class="row gap8"><div class="pill on">40 cm</div><div class="pill">45 cm</div><div class="pill">50 cm</div></div>
+            </div>
+            <div class="row gap8" style="align-items:center"><div class="tagx">Only 4 left</div><div class="cap">Ships in 1–2 days</div></div>
+            <div class="row gap8" style="align-items:center">
+              <div class="row" style="border:1px solid #c9c7c2"><div class="b" style="border:0;padding:6px 10px">−</div><div class="b" style="border:0;padding:6px 12px">1</div><div class="b" style="border:0;padding:6px 10px">+</div></div>
+              <div class="b fill" style="flex:1;padding:10px">Add to bag</div>
+            </div>
+            <div class="cap">Free shipping on orders over $95 · Duties included</div>
+            <div class="col bd-t" style="padding-top:6px">
+              <div class="row" style="justify-content:space-between;padding:8px 0;border-bottom:1px solid #eeece8"><div class="cap" style="color:#4a453f">Materials &amp; craft</div><div class="cap">+</div></div>
+              <div class="row" style="justify-content:space-between;padding:8px 0;border-bottom:1px solid #eeece8"><div class="cap" style="color:#4a453f">Size &amp; fit</div><div class="cap">+</div></div>
+              <div class="row" style="justify-content:space-between;padding:8px 0;border-bottom:1px solid #eeece8"><div class="cap" style="color:#4a453f">Shipping &amp; duties</div><div class="cap">+</div></div>
+              <div class="row" style="justify-content:space-between;padding:8px 0"><div class="cap" style="color:#4a453f">Returns</div><div class="cap">+</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="pad bd-t">
+          <div class="row" style="justify-content:space-between;align-items:flex-end;margin-bottom:10px">
+            <div>
+              <div class="lbl">Reviews</div>
+              <div class="row gap8" style="align-items:center;margin-top:6px"><span style="font-size:13px;font-weight:600">4.7</span><span class="cap">★★★★★ · 128 published</span></div>
+            </div>
+            <div class="row gap6"><div class="pill on">All</div><div class="pill">5★</div><div class="pill">4★</div><div class="pill">≤3★</div><div class="pill">With photo</div></div>
+          </div>
+          <div class="row gap14">
+            <div class="col gap6" style="flex:1;border:1px solid #e8e6e1;padding:10px">
+              <div class="row gap8" style="align-items:center"><span class="cap">★★★★★</span><span class="tagx">Verified</span></div>
+              <div class="t" style="width:96%"></div><div class="t" style="width:88%"></div><div class="t" style="width:52%"></div>
+              <div class="row gap8" style="align-items:center;margin-top:4px"><div class="ph" style="width:34px;height:34px;font-size:7px">img</div><div class="ph" style="width:34px;height:34px;font-size:7px">img</div></div>
+              <div class="cap">Mia K. · Nov 3</div>
+            </div>
+            <div class="col gap6" style="flex:1;border:1px solid #e8e6e1;padding:10px">
+              <div class="row gap8" style="align-items:center"><span class="cap">★★★★★</span><span class="tagx">Verified</span></div>
+              <div class="t" style="width:94%"></div><div class="t" style="width:82%"></div><div class="t" style="width:60%"></div>
+              <div class="cap" style="margin-top:14px">Sarah L. · Oct 28</div>
+            </div>
+            <div class="col gap6" style="flex:1;border:1px solid #e8e6e1;padding:10px">
+              <div class="row gap8" style="align-items:center"><span class="cap">★★★★☆</span><span class="tagx">Verified</span></div>
+              <div class="t" style="width:90%"></div><div class="t" style="width:86%"></div><div class="t" style="width:44%"></div>
+              <div class="cap" style="margin-top:14px">Dana P. · Oct 21</div>
+            </div>
+          </div>
+          <div class="row" style="justify-content:space-between;align-items:center;margin-top:10px">
+            <div class="cap">只显示已审核通过的评价；待审核评价前台不可见</div>
+            <div class="b" style="padding:5px 10px">Write a review</div>
+          </div>
+        </div>
+        <div class="pad bd-t">
+          <div class="lbl" style="margin-bottom:10px">You may also like · 4</div>
+          <div class="row gap14">
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:4/5">r1</div><div class="t" style="width:80%"></div></div>
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:4/5">r2</div><div class="t" style="width:80%"></div></div>
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:4/5">r3</div><div class="t" style="width:80%"></div></div>
+            <div class="col gap6" style="flex:1"><div class="ph" style="aspect-ratio:4/5">r4</div><div class="t" style="width:80%"></div></div>
+          </div>
+        </div>
+      </div>
+      <aside class="anno">
+        <h3>标注</h3>
+        <ol>
+          <li>图库：主图 + 缩略图条，结构不限张数，首版 ≥6 张<em>FR-S-050</em></li>
+          <li>标题 / 评分 / 价格 / 划线价<em>FR-S-051</em></li>
+          <li class="hl">价格下方<b>平铺 4 条加粗卖点</b>，不折叠，首条为终身颜色保证<em>FR-S-052</em></li>
+          <li>变体：金属 + 长度，不可选置灰<em>FR-S-053</em></li>
+          <li>库存提示：≤5 件显示「仅剩 N」，0 件转到货提醒<em>FR-S-054</em></li>
+          <li>数量 1–10 + 加购；成功后抽屉自动打开（与卡片直购区分）<em>FR-S-055</em></li>
+          <li>四个手风琴，含「退换与终身颜色保证」<em>FR-S-056</em></li>
+          <li class="hl">评价区：4.7 分 + 星级分布筛选 + 晒图；只显示 published<em>FR-S-057 / FR-S-130~135</em></li>
+          <li>关联推荐 4 款，排除当前商品<em>FR-S-058</em></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ S-05 购物车 ============ -->
+  <section class="screen" id="s-s05">
+    <div class="scr__hd">
+      <h2>购物车抽屉<span>S-05 · 全局组件</span></h2>
+      <p>加购后自动展开，不跳页。抽屉是主入口，独立购物车页作为兜底。</p>
+    </div>
+    <div class="cols">
+      <div class="wf">
+        <div class="site-hd" style="opacity:.35">
+          <div class="nav"><span>Best Sellers</span><span>Custom</span><span>Sale</span><span>New</span><span>Necklaces</span><span>Rings</span><span>Pearls</span><span>Earrings</span><span>Bracelets</span><span>Anklets</span><span>Gifts</span></div>
+          <div class="logo">Wildkind</div>
+          <div class="tools"><span></span><span></span><span></span></div>
+        </div>
+        <div class="row" style="position:relative;min-height:420px">
+          <div class="ph" style="flex:1;opacity:.5">页面内容（被遮罩）</div>
+          <div style="position:absolute;inset:0;background:rgba(0,0,0,.06)"></div>
+          <div class="col" style="width:330px;background:#fff;border-left:1px solid #c9c7c2;margin-left:auto;position:relative">
+            <div class="row pad bd" style="justify-content:space-between;align-items:center">
+              <div class="cap" style="font-weight:600;letter-spacing:.1em">YOUR BAG (2)</div>
+              <div class="cap">✕</div>
+            </div>
+            <div class="pad bd" style="background:#f7f5f1">
+              <div class="row gap8" style="align-items:center;margin-bottom:5px">
+                <span style="font-size:11px">🎁</span>
+                <span style="font-size:9px;letter-spacing:.06em;color:#3a3733">Free Mystery Earrings unlocked</span>
+              </div>
+              <div style="width:100%;height:4px;background:#e0ddd6;margin-bottom:9px"><div style="width:100%;height:4px;background:#8a857d"></div></div>
+              <div class="row gap8" style="align-items:center;margin-bottom:5px">
+                <span style="font-size:11px">🚚</span>
+                <span style="font-size:9px;letter-spacing:.06em;color:#3a3733">Free shipping unlocked (over $95)</span>
+              </div>
+              <div style="width:100%;height:4px;background:#e0ddd6"><div style="width:100%;height:4px;background:#8a857d"></div></div>
+              <div class="cap" style="margin-top:6px;font-size:8.5px">门槛按折后商品小计判定，不含运费与税</div>
+            </div>
+            <div class="col gap10 pad bd">
+              <div class="row gap10">
+                <div class="ph" style="width:58px;aspect-ratio:4/5">img</div>
+                <div class="col gap6" style="flex:1">
+                  <div class="t" style="width:85%"></div><div class="cap">Gold / 45 cm</div>
+                  <div class="row" style="justify-content:space-between;align-items:center;margin-top:4px">
+                    <div class="row" style="border:1px solid #c9c7c2"><div class="b" style="border:0;padding:2px 6px;font-size:9px">−</div><div class="b" style="border:0;padding:2px 7px;font-size:9px">1</div><div class="b" style="border:0;padding:2px 6px;font-size:9px">+</div></div>
+                    <div class="cap">$88.00</div>
+                  </div>
+                </div>
+              </div>
+              <div class="row gap10">
+                <div class="ph" style="width:58px;aspect-ratio:4/5">img</div>
+                <div class="col gap6" style="flex:1">
+                  <div class="t" style="width:70%"></div><div class="cap">Silver / One size</div>
+                  <div class="row" style="justify-content:space-between;align-items:center;margin-top:4px">
+                    <div class="row" style="border:1px solid #c9c7c2"><div class="b" style="border:0;padding:2px 6px;font-size:9px">−</div><div class="b" style="border:0;padding:2px 7px;font-size:9px">1</div><div class="b" style="border:0;padding:2px 6px;font-size:9px">+</div></div>
+                    <div class="cap">$80.00</div>
+                  </div>
+                </div>
+              </div>
+              <div class="row gap10" style="border-top:1px dashed #e2e0db;padding-top:8px">
+                <div class="ph" style="width:58px;aspect-ratio:4/5">gift</div>
+                <div class="col gap6" style="flex:1">
+                  <div class="row gap6" style="align-items:center"><div class="t" style="width:60%"></div><span class="tagx">GIFT</span></div>
+                  <div class="cap">Free · qty fixed</div>
+                  <div class="row" style="justify-content:space-between;align-items:center;margin-top:4px">
+                    <div class="cap" style="font-size:8.5px">达标自动加车</div>
+                    <div class="cap" style="font-weight:600">$0.00</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="pad bd">
+              <div class="row gap8" style="align-items:center">
+                <div class="b" style="flex:1;text-align:left;color:#a8a49d;font-size:9px;text-transform:none;letter-spacing:0">Discount code</div>
+                <div class="b" style="padding:6px 10px">Apply</div>
+              </div>
+              <div class="cap" style="margin-top:6px;font-size:8.5px">四种结果：生效 −$X / 不存在 / 已过期 / 未达门槛（差 $X）</div>
+            </div>
+            <div class="pad col gap10">
+              <div class="row" style="justify-content:space-between"><div class="cap">Subtotal</div><div class="cap" style="color:#3a3733;font-weight:600">$168.00</div></div>
+              <div class="row" style="justify-content:space-between"><div class="cap">Promotion −15%</div><div class="cap">−$25.20</div></div>
+              <div class="row" style="justify-content:space-between"><div class="cap">Shipping</div><div class="cap">Free</div></div>
+              <div class="row" style="justify-content:space-between;border-top:1px solid #e2e0db;padding-top:6px"><div class="cap" style="font-weight:600">Estimated total</div><div class="cap" style="font-weight:600">$142.80</div></div>
+              <div class="b fill" style="width:100%;padding:10px">Checkout</div>
+              <div class="cap" style="text-align:center">Continue shopping</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="anno">
+        <h3>标注</h3>
+        <ol>
+          <li>加购后自动展开，遮罩可点关闭，Esc 关闭<em>FR-S-006 / FR-S-070</em></li>
+          <li>商品行：图 / 名 / 变体 / 数量 / 小计 / 删除<em>FR-S-070</em></li>
+          <li class="hl">赠品进度条：按折后商品小计判定，达标文案切换<em>FR-S-113 · BR-16</em></li>
+          <li class="hl">赠品行：$0、GIFT 标、不可改数量、只能通过降额移除<em>FR-S-114</em></li>
+          <li>免邮进度条，门槛取后台设置（$95）<em>FR-S-071 · BR-09</em></li>
+          <li class="hl">优惠码入口：四种结果分别给明确文案<em>FR-S-110 / 111</em></li>
+          <li class="hl">摘要区分行展示 Promotion / Coupon / Shipping，应付金额单一来源<em>FR-S-116 · BR-17</em></li>
+          <li>购物车 30 天持久化；小计即时重算<em>FR-S-072</em></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ S-06 结算 ============ -->
+  <section class="screen" id="s-s06">
+    <div class="scr__hd">
+      <h2>结算<span>S-06 · /checkout</span></h2>
+      <p>单页分步，右侧摘要常驻。访客可直接下单，不要求注册。</p>
+    </div>
+    <div class="cols">
+      <div class="wf">
+        <div class="row" style="justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e0db">
+          <div class="logo" style="font-size:13px">Wildkind</div>
+          <div class="cap">Secure checkout · Stripe</div>
+        </div>
+        <div class="row">
+          <div class="col gap14 pad" style="width:56%">
+            <div class="lbl">1 / Contact</div>
+            <div class="row gap8"><div class="b" style="flex:1;color:#a8a49d">Email</div></div>
+            <div class="lbl" style="margin-top:6px">2 / Shipping address</div>
+            <div class="row gap8"><div class="b" style="flex:1;color:#a8a49d">First name</div><div class="b" style="flex:1;color:#a8a49d">Last name</div></div>
+            <div class="b" style="color:#a8a49d">Address</div>
+            <div class="row gap8"><div class="b" style="flex:1;color:#a8a49d">City</div><div class="b" style="flex:1;color:#a8a49d">State</div><div class="b" style="flex:1;color:#a8a49d">ZIP</div></div>
+            <div class="lbl" style="margin-top:6px">3 / Delivery</div>
+            <div class="col gap6">
+              <div class="row" style="border:1px solid #8f8b84;padding:8px;justify-content:space-between"><div class="cap">Standard · 7–12 days</div><div class="cap">Free</div></div>
+              <div class="row" style="border:1px solid #e2e0db;padding:8px;justify-content:space-between"><div class="cap">Express · 3–5 days</div><div class="cap">$18.00</div></div>
+            </div>
+            <div class="lbl" style="margin-top:6px">4 / Payment</div>
+            <div class="b" style="color:#a8a49d">Card number</div>
+            <div class="row gap8"><div class="b" style="flex:1;color:#a8a49d">MM / YY</div><div class="b" style="flex:1;color:#a8a49d">CVC</div></div>
+            <div class="b fill" style="width:100%;padding:11px;margin-top:4px">Pay $110.00</div>
+            <div class="cap">Apple Pay / Google Pay 按钮位在其上方</div>
+          </div>
+          <div class="col gap10 pad" style="width:44%;background:#faf9f7;border-left:1px solid #e2e0db">
+            <div class="lbl">Order summary</div>
+            <div class="row gap8" style="align-items:center"><div class="ph" style="width:38px;aspect-ratio:4/5">i</div><div class="col gap4" style="flex:1"><div class="t" style="width:80%"></div><div class="cap">Gold / 45 cm · ×1</div></div><div class="cap">$68</div></div>
+            <div class="row gap8" style="align-items:center"><div class="ph" style="width:38px;aspect-ratio:4/5">i</div><div class="col gap4" style="flex:1"><div class="t" style="width:70%"></div><div class="cap">Silver · ×1</div></div><div class="cap">$68</div></div>
+            <div class="col gap4 bd-t" style="padding-top:8px">
+              <div class="row" style="justify-content:space-between"><div class="cap">Subtotal</div><div class="cap">$110.00</div></div>
+              <div class="row" style="justify-content:space-between"><div class="cap">Shipping</div><div class="cap">Free</div></div>
+              <div class="row" style="justify-content:space-between"><div class="cap">Tax</div><div class="cap">—</div></div>
+              <div class="row" style="justify-content:space-between;margin-top:4px"><div class="cap" style="color:#3a3733;font-weight:600">Total</div><div class="cap" style="color:#3a3733;font-weight:600">$110.00 USD</div></div>
+            </div>
+            <div class="b" style="margin-top:6px;font-size:9px">Have a discount code? ▾</div>
+          </div>
+        </div>
+      </div>
+      <aside class="anno">
+        <h3>标注</h3>
+        <ol>
+          <li>四段式：联系 → 地址 → 配送 → 支付<em>FR-S-043</em></li>
+          <li>访客可下单，只收邮箱 + 地址<em>FR-S-044</em></li>
+          <li>配送两档，切换实时改总额<em>FR-S-045 · BR-09</em></li>
+          <li>Stripe 内嵌表单 + 钱包按钮<em>FR-S-046</em></li>
+          <li>右侧摘要常驻，含折扣码入口<em>FR-A-014 · Q6</em></li>
+          <li>提交后按钮置灰防重复<em>FR-S-049</em></li>
+          <li>错误定位到字段，附可读原因<em>FR-S-043</em></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ S-08 订单查询 ============ -->
+  <section class="screen" id="s-s08">
+    <div class="scr__hd">
+      <h2>订单查询<span>S-08 · /orders/lookup</span></h2>
+      <p>没有账户体系时，这是唯一的售后入口。安全上要防止撞库探测他人订单。</p>
+    </div>
+    <div class="cols">
+      <div class="wf">
+        <div class="annbar">Free shipping over $95 &nbsp;·&nbsp; Lifetime color guarantee &nbsp;·&nbsp; Black Friday −40% <span style="opacity:.6">▸</span></div>
+        <div class="site-hd">
+          <div class="nav"><span>Best Sellers</span><span>Custom</span><span>Sale</span><span>New</span><span>Necklaces</span><span>Rings</span><span>Pearls</span><span>Earrings</span><span>Bracelets</span><span>Anklets</span><span>Gifts</span></div>
+          <div class="logo">Wildkind</div>
+          <div class="tools"><span></span><span></span><span></span></div>
+        </div>
+        <div class="pad col gap14" style="align-items:center;padding:40px 16px">
+          <div class="t d" style="width:200px;height:14px"></div>
+          <div class="t" style="width:280px"></div>
+          <div class="col gap10" style="width:340px;margin-top:8px">
+            <div class="b" style="color:#a8a49d;text-align:left">Order number (WK-2611-0042)</div>
+            <div class="b" style="color:#a8a49d;text-align:left">Email used at checkout</div>
+            <div class="b fill" style="padding:10px">Find my order</div>
+            <div class="cap" style="text-align:center">未匹配时统一提示「No order found」，不区分订单号错还是邮箱错</div>
+          </div>
+        </div>
+        <div class="pad bd-t" style="background:#faf9f7">
+          <div class="lbl" style="margin-bottom:8px">查询成功后的结果区（示意）</div>
+          <div class="row" style="justify-content:space-between;align-items:center;border:1px solid #e2e0db;background:#fff;padding:10px 12px">
+            <div class="col gap4"><div class="cap" style="color:#3a3733;font-weight:600">WK-2611-0042</div><div class="cap">Placed 11 Nov · 2 items · $148.00</div></div>
+            <div class="pill on">Fulfilled</div>
+          </div>
+          <div class="row gap10" style="margin-top:10px;align-items:center">
+            <div class="ph" style="width:40px;aspect-ratio:4/5">i</div>
+            <div class="col gap4" style="flex:1"><div class="t" style="width:60%"></div><div class="cap">Gold / 45 cm · ×1</div></div>
+            <div class="cap">$68.00</div>
+          </div>
+          <div class="cap" style="margin-top:8px">Tracking: 1Z999AA10123456784 · Carrier: UPS</div>
+        </div>
+      </div>
+      <aside class="anno">
+        <h3>标注</h3>
+        <ol>
+          <li>订单号 + 邮箱双因子，缺一不可<em>FR-S-048</em></li>
+          <li>失败统一文案，避免探测订单是否存在<em>FR-S-048</em></li>
+          <li>接口限流：同 IP 每分钟 5 次<em>SDD 9</em></li>
+          <li>结果区含状态、明细、物流单号<em>FR-S-048</em></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ S-01m 移动首页 ============ -->
+  <section class="screen" id="s-s01m">
+    <div class="scr__hd">
+      <h2>首页（移动）<span>S-01m · 390px</span></h2>
+      <p>断点 &lt;768 的主要变化：导航收进汉堡、Hero 上下堆叠、按钮占满宽、USP 转 2×2。</p>
+    </div>
+    <div class="cols">
+      <div>
+        <div class="mob">
+          <div class="annbar">Free shipping over $95 &nbsp;·&nbsp; Lifetime color</div>
+          <div class="site-hd">
+            <div class="cap">☰</div>
+            <div class="logo" style="text-align:center">Wildkind</div>
+            <div class="row gap6"><div style="width:12px;height:12px;border:1px solid #a8a49d;border-radius:50%"></div><div style="width:12px;height:12px;border:1px solid #a8a49d;border-radius:50%"></div><div style="width:12px;height:12px;border:1px solid #a8a49d;border-radius:50%"></div></div>
+          </div>
+          <div class="col gap8" style="padding:26px 16px">
+            <div class="lbl">New season · stainless steel</div>
+            <div class="t d" style="width:92%;height:18px;margin-top:6px"></div>
+            <div class="t d" style="width:66%;height:18px"></div>
+            <div class="col gap6" style="margin-top:10px"><div class="t" style="width:100%"></div><div class="t" style="width:94%"></div><div class="t" style="width:60%"></div></div>
+            <div class="b fill" style="width:100%;padding:10px;margin-top:10px">Shop best sellers</div>
+            <div class="b" style="width:100%;padding:10px">See what's new</div>
+            <div class="row gap14 bd-t" style="margin-top:14px;padding-top:10px;flex-wrap:wrap">
+              <div><div class="cap" style="font-weight:600;color:#5c574f">316L</div><div class="cap">steel</div></div>
+              <div><div class="cap" style="font-weight:600;color:#5c574f">PVD</div><div class="cap">finish</div></div>
+              <div><div class="cap" style="font-weight:600;color:#5c574f">30 days</div><div class="cap">returns</div></div>
+            </div>
+          </div>
+          <div class="ph" style="aspect-ratio:4/5">Hero image</div>
+          <div class="row" style="border-top:1px solid #e2e0db;border-bottom:1px solid #e2e0db">
+            <div class="col gap4" style="flex:1;align-items:center;padding:12px 6px;border-right:1px solid #e2e0db"><div class="ph" style="width:14px;height:14px;border-radius:50%"></div><div class="cap" style="font-size:8px">Free ship</div></div>
+            <div class="col gap4" style="flex:1;align-items:center;padding:12px 6px;border-right:1px solid #e2e0db"><div class="ph" style="width:14px;height:14px;border-radius:50%"></div><div class="cap" style="font-size:8px">Hypoall.</div></div>
+            <div class="col gap4" style="flex:1;align-items:center;padding:12px 6px;border-right:1px solid #e2e0db"><div class="ph" style="width:14px;height:14px;border-radius:50%"></div><div class="cap" style="font-size:8px">30d return</div></div>
+            <div class="col gap4" style="flex:1;align-items:center;padding:12px 6px"><div class="ph" style="width:14px;height:14px;border-radius:50%"></div><div class="cap" style="font-size:8px">Recycled</div></div>
+          </div>
+          <div class="pad">
+            <div class="row" style="justify-content:space-between;align-items:center"><div class="lbl">Best sellers</div><div class="cap">→</div></div>
+            <div class="row gap10" style="margin-top:10px;overflow:hidden">
+              <div class="col gap4" style="width:46%"><div class="ph" style="aspect-ratio:4/5">img</div><div class="t" style="width:80%"></div></div>
+              <div class="col gap4" style="width:46%"><div class="ph" style="aspect-ratio:4/5">img</div><div class="t" style="width:70%"></div></div>
+              <div class="col gap4" style="width:46%"><div class="ph" style="aspect-ratio:4/5">img</div><div class="t" style="width:75%"></div></div>
+            </div>
+          </div>
+          <div class="pad" style="border-top:1px solid #e2e0db">
+            <div class="lbl" style="margin-bottom:8px">Shop by mood</div>
+            <div class="row gap8" style="flex-wrap:wrap">
+              <div class="ph" style="width:calc(50% - 4px);aspect-ratio:1/1">Ocean</div>
+              <div class="ph" style="width:calc(50% - 4px);aspect-ratio:1/1">Woodland</div>
+              <div class="ph" style="width:calc(50% - 4px);aspect-ratio:1/1">Celestial</div>
+              <div class="ph" style="width:calc(50% - 4px);aspect-ratio:1/1">Floral</div>
+            </div>
+          </div>
+          <div class="pad dark" style="text-align:center;padding:22px">
+            <div class="t" style="width:60%;height:10px;background:#5b564e;margin:0 auto"></div>
+            <div class="b" style="border-color:#8f8b84;color:#d9d5cf;width:100%;margin-top:10px">email</div>
+          </div>
+        </div>
+      </div>
+      <aside class="anno">
+        <h3>标注</h3>
+        <ol>
+          <li>导航收入汉堡，抽屉内展开 11 项 + 二级分组<em>FR-S-001 / FR-S-008</em></li>
+          <li>Hero 改为上下堆叠，图在文之后<em>FR-S-010</em></li>
+          <li>两个 CTA 占满宽，垂直排列<em>FR-S-010</em></li>
+          <li>三项信任指标自动换行，不溢出<em>FR-S-008</em></li>
+          <li>USP 2×2<em>FR-S-011</em></li>
+          <li>横滑区露出第三张卡的一角，暗示可滑<em>FR-S-012</em></li>
+          <li>全站 390px 无横向滚动为硬指标<em>FR-S-008 · 验收清单</em></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ A-01 登录 ============ -->
+  <section class="screen" id="s-a01">
+    <div class="scr__hd">
+      <h2>后台登录<span>A-01 · /admin/login</span></h2>
+      <p>左侧品牌图，右侧表单。首版单账号。</p>
+    </div>
+    <div class="cols">
+      <div class="wf">
+        <div class="row" style="min-height:360px">
+          <div class="ph" style="width:48%">brand image</div>
+          <div class="col gap10 pad" style="width:52%;justify-content:center;padding:32px">
+            <div class="cap" style="letter-spacing:.16em">WILDKIND · ADMIN</div>
+            <div class="t d" style="width:50%;height:14px"></div>
+            <div class="t" style="width:80%"></div>
+            <div class="lbl" style="margin-top:10px">Email</div>
+            <div class="b" style="color:#a8a49d;text-align:left">studio@wildkind.co</div>
+            <div class="lbl">Password</div>
+            <div class="b" style="color:#a8a49d;text-align:left">••••••••</div>
+            <div class="b fill" style="width:100%;padding:10px;margin-top:6px">Sign in</div>
+            <div class="cap">连续失败 5 次锁定 10 分钟</div>
+          </div>
+        </div>
+      </div>
+      <aside class="anno">
+        <h3>标注</h3>
+        <ol>
+          <li>邮箱 + 密码，服务端哈希校验<em>FR-A-001</em></li>
+          <li>会话 24h，HttpOnly + SameSite<em>FR-A-001 · SDD 9</em></li>
+          <li>失败限流与锁定<em>FR-A-001</em></li>
+          <li>未登录访问任意后台页跳回此处<em>FR-A-001</em></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ A-02 概览 ============ -->
+  <section class="screen" id="s-a02">
+    <div class="scr__hd">
+      <h2>后台概览<span>A-02 · /admin</span></h2>
+      <p>进来先看四个数：卖了多少钱、多少单、每单多少、退了多少。下面是趋势与结构。</p>
+    </div>
+    <div class="cols">
+      <div class="wf">
+        <div class="adm">
+          <div class="adm__side">
+            <div class="cap" style="color:#8d8880;padding:6px 12px;letter-spacing:.14em">WILDKIND</div>
+            <div class="on">Overview</div><div>Orders</div><div>Products</div><div>Inventory</div><div>Collections</div><div>Customers</div><div>Content</div><div>Marketing</div><div>Reviews</div><div>Custom requests</div><div>Settings</div>
+          </div>
+          <div class="adm__main">
+            <div class="adm__top">
+              <div class="row gap10" style="align-items:center"><div class="cap" style="font-weight:600">Overview</div><div class="pill on">30 days</div><div class="pill">7 days</div><div class="pill">90 days</div></div>
+              <div class="row gap8" style="align-items:center"><div class="cap">studio@wildkind.co</div><div style="width:18px;height:18px;border-radius:50%;background:#e0dcd4"></div></div>
+            </div>
+            <div class="pad col gap10">
+              <div class="row gap10">
+                <div class="kpi" style="flex:1"><span>GMV</span><b>$14,480</b><div class="cap">+12.4% vs 上期</div></div>
+                <div class="kpi" style="flex:1"><span>Orders</span><b>172</b><div class="cap">+8 单</div></div>
+                <div class="kpi" style="flex:1"><span>AOV</span><b>$84.19</b><div class="cap">+3.1%</div></div>
+                <div class="kpi" style="flex:1"><span>Refund rate</span><b>6.5%</b><div class="cap">-1.2pt</div></div>
+              </div>
+              <div style="border:1px solid #e2e0db;background:#fff;padding:10px">
+                <div class="row" style="justify-content:space-between"><div class="lbl">Revenue trend</div><div class="cap">30d</div></div>
+                <div style="height:88px;margin-top:8px;border-left:1px solid #eeece8;border-bottom:1px solid #eeece8;position:relative">
+                  <svg viewBox="0 0 400 88" preserveAspectRatio="none" style="width:100%;height:100%">
+                    <polyline points="0,70 30,62 60,66 90,48 120,54 150,40 180,44 210,30 240,36 270,24 300,30 330,18 360,24 400,12" fill="none" stroke="#8a857d" stroke-width="1.6"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="row gap10">
+                <div style="flex:1;border:1px solid #e2e0db;background:#fff;padding:10px">
+                  <div class="lbl" style="margin-bottom:6px">Top products</div>
+                  <div class="row" style="justify-content:space-between;padding:4px 0;border-bottom:1px solid #f2f0ec"><div class="cap">Foxtrot Pendant</div><div class="cap">$1,240</div></div>
+                  <div class="row" style="justify-content:space-between;padding:4px 0;border-bottom:1px solid #f2f0ec"><div class="cap">Sea Turtle</div><div class="cap">$980</div></div>
+                  <div class="row" style="justify-content:space-between;padding:4px 0"><div class="cap">Moonlit Hare</div><div class="cap">$760</div></div>
+                </div>
+                <div style="flex:1;border:1px solid #e2e0db;background:#fff;padding:10px">
+                  <div class="lbl" style="margin-bottom:6px">Low stock alert</div>
+                  <div class="row" style="justify-content:space-between;padding:4px 0;border-bottom:1px solid #f2f0ec"><div class="cap">WK-104 · Gold</div><div class="cap">3 left</div></div>
+                  <div class="row" style="justify-content:space-between;padding:4px 0"><div class="cap">WK-302 · Silver</div><div class="cap">5 left</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="anno">
+        <h3>标注</h3>
+        <ol>
+          <li>四个核心指标，可切 7/30/90 天<em>FR-A-002</em></li>
+          <li>趋势折线 + Top 商品 + 低库存提醒<em>FR-A-003</em></li>
+          <li>左栏 8 个模块，当前项高亮<em>FR-A-002~013</em></li>
+          <li>指标口径与订单列表可对账<em>FR-A-002</em></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ A-03 订单列表 ============ -->
+  <section class="screen" id="s-a03">
+    <div class="scr__hd">
+      <h2>订单列表<span>A-03 · /admin/orders</span></h2>
+      <p>日常用得最多的一屏。筛完直接能改状态、填运单。</p>
+    </div>
+    <div class="cols">
+      <div class="wf">
+        <div class="adm">
+          <div class="adm__side">
+            <div class="cap" style="color:#8d8880;padding:6px 12px;letter-spacing:.14em">WILDKIND</div>
+            <div>Overview</div><div class="on">Orders</div><div>Products</div><div>Inventory</div><div>Collections</div><div>Customers</div><div>Content</div><div>Marketing</div><div>Reviews</div><div>Custom requests</div><div>Settings</div>
+          </div>
+          <div class="adm__main">
+            <div class="adm__top"><div class="cap" style="font-weight:600">Orders</div><div class="cap">186 total</div></div>
+            <div class="pad col gap10">
+              <div class="row gap6" style="flex-wrap:wrap;align-items:center">
+                <div class="pill on">All</div><div class="pill">Paid</div><div class="pill">Fulfilling</div><div class="pill">Fulfilled</div><div class="pill">Refunded</div>
+                <div style="flex:1"></div>
+                <div class="pill">Last 30 days ▾</div><div class="pill">Export CSV</div>
+              </div>
+              <table class="tbl">
+                <tr><th>Order</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th></th></tr>
+                <tr><td class="k">WK-2611-0042</td><td>11 Nov</td><td>emma@…</td><td>2</td><td>$110.00</td><td><span class="tagx">Fulfilled</span></td><td class="cap">View</td></tr>
+                <tr><td class="k">WK-2611-0041</td><td>11 Nov</td><td>liam@…</td><td>1</td><td>$68.00</td><td><span class="tagx">Fulfilling</span></td><td class="cap">Ship</td></tr>
+                <tr><td class="k">WK-2611-0040</td><td>10 Nov</td><td>olivia@…</td><td>3</td><td>$186.00</td><td><span class="tagx">Paid</span></td><td class="cap">Ship</td></tr>
+                <tr><td class="k">WK-2611-0039</td><td>10 Nov</td><td>noah@…</td><td>1</td><td>$68.00</td><td><span class="tagx">Refunded</span></td><td class="cap">View</td></tr>
+                <tr><td class="k">WK-2611-0038</td><td>09 Nov</td><td>ava@…</td><td>2</td><td>$128.00</td><td><span class="tagx">Fulfilled</span></td><td class="cap">View</td></tr>
+                <tr><td class="k">WK-2611-0037</td><td>09 Nov</td><td>will@…</td><td>1</td><td>$54.00</td><td><span class="tagx">Cancelled</span></td><td class="cap">View</td></tr>
+              </table>
+              <div class="row" style="justify-content:space-between;align-items:center">
+                <div class="cap">Showing 1–20 of 186</div>
+                <div class="row gap6"><div class="pill">Prev</div><div class="pill on">1</div><div class="pill">2</div><div class="pill">Next</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="anno">
+        <h3>标注</h3>
+        <ol>
+          <li>状态筛选 + 时间范围 + 关键词<em>FR-A-004</em></li>
+          <li>列表字段：单号 / 日期 / 客户 / 件数 / 金额 / 状态<em>FR-A-004</em></li>
+          <li>行内快捷操作：发货 / 查看<em>FR-A-006</em></li>
+          <li>分页 20 条，导出 CSV<em>FR-A-004 / FR-A-015</em></li>
+          <li>点单号进详情，看成本拆解与状态记录<em>FR-A-005</em></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ A-04 商品编辑 ============ -->
+  <section class="screen" id="s-a04">
+    <div class="scr__hd">
+      <h2>商品编辑<span>A-04 · /admin/products/{id}</span></h2>
+      <p>左表单右图片，集合挂载是重点：一件商品要能同时进 4–6 个集合。</p>
+    </div>
+    <div class="cols">
+      <div class="wf">
+        <div class="adm">
+          <div class="adm__side">
+            <div class="cap" style="color:#8d8880;padding:6px 12px;letter-spacing:.14em">WILDKIND</div>
+            <div>Overview</div><div>Orders</div><div class="on">Products</div><div>Inventory</div><div>Collections</div><div>Customers</div><div>Content</div><div>Marketing</div><div>Reviews</div><div>Custom requests</div><div>Settings</div>
+          </div>
+          <div class="adm__main">
+            <div class="adm__top"><div class="cap" style="font-weight:600">Foxtrot Pendant Necklace</div><div class="row gap6"><div class="pill">Preview</div><div class="pill on">Save</div></div></div>
+            <div class="row gap14 pad">
+              <div class="col gap10" style="flex:1">
+                <div class="col gap4"><div class="lbl">Title</div><div class="b" style="color:#3a3733;text-align:left">Foxtrot Pendant Necklace</div></div>
+                <div class="col gap4"><div class="lbl">Description</div><div class="b" style="color:#a8a49d;text-align:left;height:52px">富文本编辑器</div></div>
+                <div class="row gap8">
+                  <div class="col gap4" style="flex:1"><div class="lbl">Price</div><div class="b" style="color:#3a3733">$68.00</div></div>
+                  <div class="col gap4" style="flex:1"><div class="lbl">Compare at</div><div class="b" style="color:#a8a49d">$85.00</div></div>
+                  <div class="col gap4" style="flex:1"><div class="lbl">Cost</div><div class="b" style="color:#3a3733">$21.40</div></div>
+                </div>
+                <div class="col gap4"><div class="lbl">Variants</div>
+                  <div class="row gap6"><div class="pill on">Gold / 40cm</div><div class="pill">Gold / 45cm</div><div class="pill">Silver / 40cm</div><div class="pill">+ Add</div></div>
+                </div>
+                <div class="col gap4"><div class="lbl">Collections（可多选）</div>
+                  <div class="row gap6" style="flex-wrap:wrap"><div class="pill on">Best Sellers</div><div class="pill on">Necklaces</div><div class="pill on">Woodland</div><div class="pill on">Gifts under $95</div><div class="pill">New</div><div class="pill">Sale</div></div>
+                </div>
+                <div class="row gap8">
+                  <div class="col gap4" style="flex:1"><div class="lbl">SEO title</div><div class="b" style="color:#a8a49d"></div></div>
+                  <div class="col gap4" style="flex:1"><div class="lbl">SEO description</div><div class="b" style="color:#a8a49d"></div></div>
+                </div>
+              </div>
+              <div class="col gap8" style="width:190px">
+                <div class="lbl">Images</div>
+                <div class="ph" style="aspect-ratio:4/5">main</div>
+                <div class="row gap6"><div class="ph" style="flex:1;aspect-ratio:1/1">2</div><div class="ph" style="flex:1;aspect-ratio:1/1">3</div><div class="ph" style="flex:1;aspect-ratio:1/1">4</div></div>
+                <div class="b" style="color:#a8a49d">Upload</div>
+                <div class="row" style="justify-content:space-between;align-items:center;margin-top:6px"><div class="lbl">Status</div><div class="pill on">Active</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="anno">
+        <h3>标注</h3>
+        <ol>
+          <li>基础：标题、描述、价格、划线价、成本<em>FR-A-008</em></li>
+          <li>变体矩阵，每个变体独立 SKU 与库存<em>FR-A-008 / BR-08</em></li>
+          <li>集合挂载可多选，不互斥<em>FR-A-008 · BR-14</em></li>
+          <li>SEO 字段独立填写<em>FR-S-053</em></li>
+          <li>图片多张 + 拖拽排序，上传即转码<em>FR-A-008 · SDD 10</em></li>
+          <li>上下架开关，保存后前台立即生效<em>FR-A-008</em></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ A-05 库存 ============ -->
+  <section class="screen" id="s-a05">
+    <div class="scr__hd">
+      <h2>库存<span>A-05 · /admin/inventory</span></h2>
+      <p>SKU 粒度。上面是预警区，下面是全量表格，支持批量改。</p>
+    </div>
+    <div class="cols">
+      <div class="wf">
+        <div class="adm">
+          <div class="adm__side">
+            <div class="cap" style="color:#8d8880;padding:6px 12px;letter-spacing:.14em">WILDKIND</div>
+            <div>Overview</div><div>Orders</div><div>Products</div><div class="on">Inventory</div><div>Collections</div><div>Customers</div><div>Content</div><div>Marketing</div><div>Reviews</div><div>Custom requests</div><div>Settings</div>
+          </div>
+          <div class="adm__main">
+            <div class="adm__top"><div class="cap" style="font-weight:600">Inventory</div><div class="row gap6"><div class="pill">Bulk edit</div><div class="pill">Export</div></div></div>
+            <div class="pad col gap10">
+              <div style="border:1px solid #e8d9b5;background:#fffaf0;padding:8px 10px" class="col gap4">
+                <div class="cap" style="color:#6b5a2c;font-weight:600">3 SKUs below safety stock</div>
+                <div class="cap" style="color:#8a7752">WK-104 Gold · 3 left · WK-302 Silver · 5 left · WK-501 Gold · 4 left</div>
+              </div>
+              <table class="tbl">
+                <tr><th>SKU</th><th>Product</th><th>Variant</th><th>Stock</th><th>Safety</th><th>30d sold</th><th>Status</th></tr>
+                <tr><td class="k">WK-104</td><td>Foxtrot Pendant</td><td>Gold / 40cm</td><td>3</td><td>6</td><td>18</td><td><span class="tagx">Low</span></td></tr>
+                <tr><td class="k">WK-105</td><td>Foxtrot Pendant</td><td>Gold / 45cm</td><td>22</td><td>6</td><td>11</td><td><span class="tagx">OK</span></td></tr>
+                <tr><td class="k">WK-201</td><td>Solstice Sun Ring</td><td>Gold / 7</td><td>41</td><td>8</td><td>9</td><td><span class="tagx">OK</span></td></tr>
+                <tr><td class="k">WK-302</td><td>Sea Turtle Bracelet</td><td>Silver / M</td><td>5</td><td>8</td><td>14</td><td><span class="tagx">Low</span></td></tr>
+                <tr><td class="k">WK-501</td><td>Clover Studs</td><td>Gold</td><td>4</td><td>10</td><td>21</td><td><span class="tagx">Low</span></td></tr>
+              </table>
+              <div class="cap">批量修改需二次确认，并写入操作日志</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="anno">
+        <h3>标注</h3>
+        <ol>
+          <li>顶部预警区，低于安全库存自动进入<em>FR-A-009 · BR-07</em></li>
+          <li>字段：SKU / 商品 / 变体 / 库存 / 安全库存 / 30 天销量<em>FR-A-009</em></li>
+          <li>批量改库存需确认 + 落日志<em>FR-A-009 / FR-A-016</em></li>
+          <li>库存变化与订单扣减口径一致<em>BR-05</em></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ A-10 营销中心 ============ -->
+  <section class="screen" id="s-a10">
+    <div class="scr__hd">
+      <h2>营销中心<span>A-10 · /admin/marketing</span></h2>
+      <p>v1.1 新增。优惠券、自动折扣（补贴）、满额赠品统一在这里配，前台自动生效——这一屏是把"后台控制营销"变成可操作界面的地方。</p>
+    </div>
+    <div class="cols">
+      <div class="wf">
+        <div class="adm">
+          <div class="adm__side">
+            <div class="cap" style="color:#8d8880;padding:6px 12px;letter-spacing:.14em">WILDKIND</div>
+            <div>Overview</div><div>Orders</div><div>Products</div><div>Inventory</div><div>Collections</div><div>Customers</div><div>Content</div><div class="on">Marketing <span style="color:#c9a87c">●</span></div><div>Reviews <span style="color:#d98c7a">●</span></div><div>Custom requests</div><div>Settings</div>
+          </div>
+          <div class="adm__main">
+            <div class="adm__top"><div class="cap" style="font-weight:600">Marketing</div><div class="row gap6"><div class="pill">Preview storefront</div><div class="pill on">+ New campaign</div></div></div>
+            <div class="pad col gap10">
+              <div class="row gap6" style="flex-wrap:wrap">
+                <div class="pill on">All (5)</div><div class="pill">Coupons (2)</div><div class="pill">Promotions (2)</div><div class="pill">Free gifts (1)</div><div class="pill">Archived</div>
+              </div>
+              <table class="tbl">
+                <tr><th>Campaign</th><th>Type</th><th>Window</th><th>Used</th><th>Revenue</th><th>Discount cost</th><th>ROI</th><th>Status</th></tr>
+                <tr>
+                  <td>Black Friday −40%</td><td>Promotion</td><td>Nov 20 – Dec 2</td><td>184</td><td>$16,420</td><td>$6,568</td><td>2.5×</td>
+                  <td><span class="tagx">Live</span></td>
+                </tr>
+                <tr>
+                  <td>WELCOME15</td><td>Coupon · 15%</td><td>Always on</td><td>96</td><td>$8,214</td><td>$1,232</td><td>6.7×</td>
+                  <td><span class="tagx">Live</span></td>
+                </tr>
+                <tr>
+                  <td>Free Mystery Earrings</td><td>Free gift</td><td>Nov 1 – Dec 31</td><td>71</td><td>$9,940</td><td>$1,988</td><td>5.0×</td>
+                  <td><span class="tagx">Live</span></td>
+                </tr>
+                <tr>
+                  <td>FREESHIP95</td><td>Coupon · Free ship</td><td>Always on</td><td>212</td><td>$19,760</td><td>$1,463</td><td>13.5×</td>
+                  <td><span class="tagx">Live</span></td>
+                </tr>
+                <tr>
+                  <td>Cyber Monday −30%</td><td>Promotion</td><td>Dec 1 – Dec 3</td><td>0</td><td>—</td><td>—</td><td>—</td>
+                  <td><span class="tagx">Scheduled</span></td>
+                </tr>
+              </table>
+
+              <div class="row gap14" style="align-items:start;flex-wrap:wrap">
+                <div class="col gap6" style="flex:1;min-width:210px;border:1px solid #e2e0db;background:#fff;padding:10px">
+                  <div class="lbl">Free gift rule</div>
+                  <div class="row" style="justify-content:space-between"><div class="cap">Threshold</div><div class="k">$140.00</div></div>
+                  <div class="row" style="justify-content:space-between"><div class="cap">Gift SKU</div><div class="k">WK-803 Mystery Earrings</div></div>
+                  <div class="row" style="justify-content:space-between"><div class="cap">Per order</div><div class="k">1</div></div>
+                  <div class="row" style="justify-content:space-between"><div class="cap">Gift stock cap</div><div class="k">300 / 71 used</div></div>
+                  <div class="cap" style="margin-top:4px;color:#8a7752">赠品缺货时自动停止赠送，不阻断下单</div>
+                </div>
+                <div class="col gap6" style="flex:1;min-width:210px;border:1px solid #e2e0db;background:#fff;padding:10px">
+                  <div class="lbl">Stacking rules</div>
+                  <div class="row" style="justify-content:space-between;align-items:center"><div class="cap">Promotion + Coupon</div><div class="pill on">Stackable</div></div>
+                  <div class="row" style="justify-content:space-between;align-items:center"><div class="cap">Coupon + Coupon</div><div class="pill">Best one only</div></div>
+                  <div class="row" style="justify-content:space-between;align-items:center"><div class="cap">Min payable guard</div><div class="k">$0.50</div></div>
+                  <div class="row" style="justify-content:space-between;align-items:center"><div class="cap">Budget cap</div><div class="k">$8,000</div></div>
+                  <div class="cap" style="margin-top:4px;color:#8a7752">顺序固定：折扣 → 券 → 免邮 → 赠品</div>
+                </div>
+              </div>
+
+              <div style="border:1px solid #e8d9b5;background:#fffaf0;padding:8px 10px">
+                <div class="cap" style="color:#6b5a2c">Black Friday 预算已用 $6,568 / $8,000（82%），达上限后自动暂停并还原价格</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="anno">
+        <h3>标注</h3>
+        <ol>
+          <li class="hl">三类活动：Coupon / Promotion（自动折扣即补贴）/ Free gift<em>FR-A-020 / 021 / 023 / 024</em></li>
+          <li class="hl">状态机：草稿 → 待生效 → 进行中 → 已结束 / 已暂停，到点自动切换<em>FR-A-020</em></li>
+          <li>每个活动展示 用量 / 营收 / 折扣成本 / ROI<em>FR-A-027</em></li>
+          <li class="hl">赠品规则：门槛、SKU、每单数量、库存上限、缺货降级<em>FR-A-024 · BR-16</em></li>
+          <li class="hl">叠加与优先级可配，但顺序固定不可改<em>FR-A-026 · BR-17</em></li>
+          <li>预算熔断：达上限自动暂停<em>FR-A-029</em></li>
+          <li class="hl">Preview storefront 生成 <code>?preview=token</code> 链接，可提前看真实效果<em>FR-A-028</em></li>
+          <li class="hl">赠品成本必须计入订单毛利，不能算 $0<em>FR-A-030</em></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ A-11 评价审核 ============ -->
+  <section class="screen" id="s-a11">
+    <div class="scr__hd">
+      <h2>评价审核<span>A-11 · /admin/reviews</span></h2>
+      <p>v1.1 新增。自建评价系统的人工关口：先审核、后展示。管理员有权删除任何评价，但删低分必须选原因。</p>
+    </div>
+    <div class="cols">
+      <div class="wf">
+        <div class="adm">
+          <div class="adm__side">
+            <div class="cap" style="color:#8d8880;padding:6px 12px;letter-spacing:.14em">WILDKIND</div>
+            <div>Overview</div><div>Orders</div><div>Products</div><div>Inventory</div><div>Collections</div><div>Customers</div><div>Content</div><div>Marketing <span style="color:#c9a87c">●</span></div><div class="on">Reviews <span style="color:#d98c7a">●</span></div><div>Custom requests</div><div>Settings</div>
+          </div>
+          <div class="adm__main">
+            <div class="adm__top"><div class="cap" style="font-weight:600">Reviews · 3 pending</div><div class="row gap6"><div class="pill">Export</div><div class="pill on">Approve all</div></div></div>
+            <div class="pad col gap10">
+              <div class="row gap6" style="flex-wrap:wrap">
+                <div class="pill on">Pending (3)</div><div class="pill">Published (128)</div><div class="pill">Rejected (4)</div>
+                <div style="flex:1"></div>
+                <div class="pill">All ratings</div><div class="pill">With photo</div>
+              </div>
+
+              <div style="border:1px solid #e2e0db;background:#fff;padding:10px" class="col gap6">
+                <div class="row" style="justify-content:space-between;align-items:flex-start">
+                  <div class="col gap6">
+                    <div class="row gap8" style="align-items:center"><span class="cap" style="font-weight:600">★★☆☆☆</span><span class="tagx">WK-2611-0042</span><span class="cap">Nov 12 · Mia K.</span></div>
+                    <div class="t" style="width:280px"></div><div class="t" style="width:240px"></div>
+                    <div class="row gap8" style="margin-top:4px"><div class="ph" style="width:44px;height:44px;font-size:7px">img</div></div>
+                  </div>
+                  <div class="row gap6"><div class="b" style="padding:4px 8px">Reject</div><div class="b fill" style="padding:4px 8px">Approve</div></div>
+                </div>
+                <div class="row gap8" style="align-items:center;border-top:1px dashed #e8e6e1;padding-top:6px">
+                  <span class="cap">删除原因（删除时必填）</span>
+                  <span class="pill">违规内容</span><span class="pill">广告垃圾</span><span class="pill">无购买凭证</span><span class="pill on">其他…</span>
+                </div>
+              </div>
+
+              <div style="border:1px solid #e2e0db;background:#fff;padding:10px" class="col gap6">
+                <div class="row" style="justify-content:space-between;align-items:flex-start">
+                  <div class="col gap6">
+                    <div class="row gap8" style="align-items:center"><span class="cap" style="font-weight:600">★★★★★</span><span class="tagx">WK-2611-0038</span><span class="cap">Nov 11 · Sarah L.</span></div>
+                    <div class="t" style="width:300px"></div><div class="t" style="width:210px"></div>
+                  </div>
+                  <div class="row gap6"><div class="b" style="padding:4px 8px">Reject</div><div class="b fill" style="padding:4px 8px">Approve</div></div>
+                </div>
+              </div>
+
+              <div style="border:1px solid #e2e0db;background:#fff;padding:10px" class="col gap6">
+                <div class="row" style="justify-content:space-between;align-items:flex-start">
+                  <div class="col gap6">
+                    <div class="row gap8" style="align-items:center"><span class="cap" style="font-weight:600">★★★★☆</span><span class="tagx">WK-2610-0101</span><span class="cap">Nov 10 · Dana P.</span></div>
+                    <div class="t" style="width:260px"></div>
+                  </div>
+                  <div class="row gap6"><div class="b" style="padding:4px 8px">Reject</div><div class="b fill" style="padding:4px 8px">Approve</div></div>
+                </div>
+              </div>
+
+              <div style="border:1px solid #e8d9b5;background:#fffaf0;padding:8px 10px">
+                <div class="cap" style="color:#6b5a2c;font-weight:600">本月已删除 1–2 星评价 2 次</div>
+                <div class="cap" style="color:#8a7752">超过 3 次时概览页出现提示：删低分是有意识的行为，不是把评分修漂亮</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="anno">
+        <h3>标注</h3>
+        <ol>
+          <li class="hl">三个 tab：待审核 / 已发布 / 已拒绝，侧边栏红点显示待审数<em>FR-A-040</em></li>
+          <li class="hl">通过 → 立即前台可见并计入评分<em>FR-A-041 / FR-A-042</em></li>
+          <li class="hl">拒绝 → 必填原因，可选通知用户<em>FR-A-041</em></li>
+          <li class="hl">删除 → 软删 + 原因必填（违规 / 广告 / 无凭证 / 其他）+ 留痕<em>FR-A-043 · BR-19</em></li>
+          <li class="hl">1–2 星删除次数月度统计，超阈值概览告警<em>FR-A-043</em></li>
+          <li>批量审核支持多选，批量拒绝需统一原因<em>FR-A-042</em></li>
+          <li>新增评价的来源靠「签收后 7 天评价邀请邮件」<em>FR-A-047 · SDD 15.1</em></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ A-12 定制需求单 ============ -->
+  <section class="screen" id="s-a12">
+    <div class="scr__hd">
+      <h2>定制需求单<span>A-12 · /admin/custom</span></h2>
+      <p>v1.1 新增。v1.0 里前台提交了定制表单、后台却没有落地端，属于流程悬空；这一屏补上接收端。</p>
+    </div>
+    <div class="cols">
+      <div class="wf">
+        <div class="adm">
+          <div class="adm__side">
+            <div class="cap" style="color:#8d8880;padding:6px 12px;letter-spacing:.14em">WILDKIND</div>
+            <div>Overview</div><div>Orders</div><div>Products</div><div>Inventory</div><div>Collections</div><div>Customers</div><div>Content</div><div>Marketing <span style="color:#c9a87c">●</span></div><div>Reviews <span style="color:#d98c7a">●</span></div><div class="on">Custom requests</div><div>Settings</div>
+          </div>
+          <div class="adm__main">
+            <div class="adm__top"><div class="cap" style="font-weight:600">Custom requests · 4 new</div><div class="row gap6"><div class="pill">Export</div><div class="pill">Filter</div></div></div>
+            <div class="pad col gap10">
+              <div class="row gap6" style="flex-wrap:wrap">
+                <div class="pill on">New (4)</div><div class="pill">Quoted (2)</div><div class="pill">Converted (5)</div><div class="pill">Closed</div>
+              </div>
+              <table class="tbl">
+                <tr><th>ID</th><th>Customer</th><th>Base style</th><th>Text / Note</th><th>Qty</th><th>Due</th><th>Ref image</th><th>Status</th></tr>
+                <tr><td class="k">CR-0042</td><td>mia.k@…</td><td>Foxtrot Pendant</td><td>"M + J, 2026.11"</td><td>2</td><td>Dec 10</td><td><span class="tagx">1 file</span></td><td><span class="tagx">New</span></td></tr>
+                <tr><td class="k">CR-0041</td><td>sarah.l@…</td><td>Custom Name Bar</td><td>"For Grandma"</td><td>1</td><td>Dec 5</td><td><span class="tagx">2 files</span></td><td><span class="tagx">New</span></td></tr>
+                <tr><td class="k">CR-0040</td><td>dana.p@…</td><td>Birthstone Ring</td><td>"March — Aquamarine"</td><td>1</td><td>Nov 28</td><td>—</td><td><span class="tagx">Quoted</span></td></tr>
+                <tr><td class="k">CR-0039</td><td>lee@…</td><td>Bracelet Set</td><td>"Bridesmaid ×6"</td><td>6</td><td>Dec 20</td><td><span class="tagx">1 file</span></td><td><span class="tagx">New</span></td></tr>
+                <tr><td class="k">CR-0038</td><td>ana@…</td><td>Foxtrot Pendant</td><td>"Kid name"</td><td>1</td><td>Nov 20</td><td>—</td><td><span class="tagx">Converted</span></td></tr>
+              </table>
+              <div class="row gap14" style="align-items:start;flex-wrap:wrap">
+                <div class="col gap6" style="flex:1;min-width:200px;border:1px solid #e2e0db;background:#fff;padding:10px">
+                  <div class="lbl">Detail · CR-0042</div>
+                  <div class="cap">Foxtrot Pendant · Gold · 45cm</div>
+                  <div class="cap">Engraving: M + J, 2026.11（两侧，各 ≤12 字符）</div>
+                  <div class="cap">Qty 2 · 客户期望 12/10 前收到</div>
+                  <div class="row gap6" style="margin-top:4px"><div class="b" style="padding:4px 8px">Reply</div><div class="b" style="padding:4px 8px">Quote</div><div class="b fill" style="padding:4px 8px">Convert</div></div>
+                </div>
+                <div class="col gap6" style="flex:1;min-width:200px;border:1px solid #e2e0db;background:#fff;padding:10px">
+                  <div class="lbl">Status flow</div>
+                  <div class="cap">New → Quoted → Converted → Closed</div>
+                  <div class="cap" style="margin-top:4px">每次流转写操作日志；报价不自动发信，需人工确认后发送</div>
+                  <div class="cap" style="color:#8a7752;margin-top:4px">定制款不退不换，下单前需客户书面确认（BR-11）</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="anno">
+        <h3>标注</h3>
+        <ol>
+          <li class="hl">前台 S-09 提交后 5 秒内出现在列表<em>FR-A-019 / FR-S-092</em></li>
+          <li>字段：客户、基础款、刻字内容、数量、期望交期、参考图<em>FR-A-019</em></li>
+          <li>状态：New → Quoted → Converted → Closed<em>FR-A-019</em></li>
+          <li class="hl">Convert to order 直接生成订单，不做在线报价引擎<em>FR-A-019</em></li>
+          <li>参考图存私有对象存储，不落本地盘<em>SDD 9 上传安全</em></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ 说明 ============ -->
+  <section class="screen" id="s-about">
+    <div class="scr__hd">
+      <h2>怎么用这份原型<span>说明</span></h2>
+      <p>它不是最终视觉，也不连数据。用途只有一个：在写代码之前，把"长什么样、怎么走"定下来。</p>
+    </div>
+    <div style="max-width:760px">
+      <h3 style="font-size:15px;margin:0 0 8px">v1.1 相对 v1.0 改了什么</h3>
+      <ul style="color:#4a453f">
+        <li><b>集合页（S-02）</b>：商品卡从"只能看"变成"能直接买"——加了色点切换、SAVE $X 金额、Add to cart 按钮。</li>
+        <li><b>商品页（S-03）</b>：价格下面多了 4 条平铺卖点（首条是终身颜色保证），并加了评价区；手风琴里不再藏卖点。</li>
+        <li><b>购物车（S-05）</b>：顶部两条进度条（赠品 + 免邮）、赠品行、优惠码入口、摘要区分行显示折扣。</li>
+        <li><b>后台新增三屏</b>：A-10 营销中心（券 / 补贴 / 赠品 / 叠加规则）、A-11 评价审核、A-12 定制需求单。</li>
+        <li><b>价格带</b>：全部示例价格改为 $58–$143，免邮门槛改为 $95，筛选区间同步重划。</li>
+      </ul>
+      <h3 style="font-size:15px;margin:24px 0 8px">请重点给这几处意见</h3>
+      <ul style="color:#4a453f">
+        <li><b>营销中心</b>这一屏是不是你想要的控制粒度？优惠券 / 补贴 / 赠品三类够不够，还要不要加"阶梯满减"？</li>
+        <li><b>评价审核</b>：删除低分必须选原因这条，是否接受？会不会觉得麻烦？</li>
+        <li><b>商品卡直购</b>：卡片上加了 4 行内容（标题 / 价格 / 色点 / 按钮），会不会太挤？</li>
+        <li><b>首页</b>：数字背书条与出生石月度区块要不要保留？</li>
+        <li><b>定制单</b>：Convert to order 直接建单够用，还是需要在线报价？</li>
+      </ul>
+      <h3 style="font-size:15px;margin:24px 0 8px">边界说明</h3>
+      <p style="color:#4a453f;font-size:13px">灰色斜纹块 = 图片位置；灰条 = 文字；细线框 = 输入框或按钮。真正的颜色、字体、图片质感会在视觉方案里给，不在这份原型里。</p>
+      <p style="color:#4a453f;font-size:13px">右侧标注里<b>加粗棕色</b>的条目，是 v1.1 相较 v1.0 新增或改动的部分，方便你只看变化。</p>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<script>
+(function () {
+  var screens = Array.prototype.slice.call(document.querySelectorAll('.screen'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('.side a'));
+  function show(hash) {
+    var id = (hash || '').replace('#', '') || 'a-s01';
+    var target = document.getElementById('s-' + id.slice(2));
+    if (!target) target = screens[0];
+    screens.forEach(function (s) { s.classList.toggle('on', s === target); });
+    links.forEach(function (a) {
+      a.classList.toggle('on', a.getAttribute('href') === '#' + id);
+    });
+    document.querySelector('.main').scrollTop = 0;
+  }
+  window.addEventListener('hashchange', function () { show(location.hash); });
+  show(location.hash);
+})();
+</script>
+</body>
+</html>

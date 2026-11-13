@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>功能需求说明书 · WK-FRD-001 v1.0（评审稿）</title>
+<style>
+  :root{
+    --ink:#1c1c1c; --ink2:#3d3a36; --muted:#6d6862; --line:#e2ddd5; --line2:#efeae3;
+    --bone:#f8f7f2; --cream:#f3e8de; --white:#fff; --accent:#8a6a40;
+    --r:#b3261e; --y:#b06f00; --g:#2f7a1f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font:15px/1.75 -apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    color:var(--ink); background:var(--bone);
+  }
+  .layout{display:grid; grid-template-columns:250px minmax(0,1fr); align-items:start}
+  /* ---------- toc ---------- */
+  .toc{position:sticky; top:0; height:100vh; overflow:auto; border-right:1px solid var(--line); background:var(--white)}
+  .toc__in{padding:28px 20px 40px}
+  .toc__t{font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin:0 0 14px}
+  .toc a{display:block; padding:5px 0; font-size:13px; color:var(--ink2); text-decoration:none; border-bottom:1px solid transparent}
+  .toc a:hover{color:var(--accent)}
+  .toc a.sub{padding-left:12px; font-size:12.5px; color:var(--muted)}
+  /* ---------- page ---------- */
+  .doc{max-width:920px; padding:56px 60px 120px; background:var(--bone)}
+  /* cover */
+  .cover{border:1px solid var(--line); background:var(--white); padding:56px 48px; margin-bottom:44px}
+  .cover__kicker{font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); margin:0 0 22px}
+  .cover h1{font-size:40px; line-height:1.12; letter-spacing:-.02em; margin:0 0 14px; font-weight:600}
+  .cover h1 small{display:block; font-size:17px; font-weight:400; color:var(--muted); letter-spacing:0; margin-top:12px}
+  .meta{display:grid; grid-template-columns:repeat(2,1fr); gap:0; margin-top:34px; border-top:1px solid var(--line2)}
+  .meta div{padding:12px 0; border-bottom:1px solid var(--line2); font-size:13.5px}
+  .meta div:nth-child(odd){color:var(--muted)}
+  .badge{display:inline-block; font-size:11px; letter-spacing:.1em; padding:3px 9px; background:var(--cream); color:#7a5a30}
+  h2{font-size:24px; margin:64px 0 8px; letter-spacing:-.01em; font-weight:600; padding-top:18px; border-top:1px solid var(--line)}
+  h2 .n{color:var(--accent); font-weight:400; margin-right:10px}
+  h3{font-size:17px; margin:34px 0 10px; font-weight:600}
+  h4{font-size:14px; margin:22px 0 6px; font-weight:600; letter-spacing:.02em}
+  p{margin:10px 0}
+  ul,ol{margin:10px 0; padding-left:22px}
+  li{margin:5px 0}
+  code{background:var(--cream); padding:1px 6px; font-size:13px; font-family:ui-monospace,Menlo,Consolas,monospace}
+  .lede{font-size:16px; color:var(--ink2)}
+  .note{border-left:2px solid var(--accent); background:var(--white); padding:14px 18px; margin:18px 0; font-size:14px}
+  .note b{color:var(--accent)}
+  table{width:100%; border-collapse:collapse; margin:16px 0 22px; font-size:13.5px; background:var(--white)}
+  th,td{border:1px solid var(--line); padding:9px 12px; text-align:left; vertical-align:top}
+  th{background:#faf8f4; font-weight:600; font-size:12.5px; letter-spacing:.03em; white-space:nowrap}
+  td.id{white-space:nowrap; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px; color:var(--ink2)}
+  .p1{color:var(--r); white-space:nowrap; font-weight:600}
+  .p2{color:var(--y); white-space:nowrap}
+  .p3{color:var(--g); white-space:nowrap}
+  .tag{display:inline-block; font-size:11px; padding:1px 7px; border:1px solid var(--line); color:var(--muted); margin-left:6px; vertical-align:1px}
+  .flow{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:18px 0; font-size:13px}
+  .flow span{border:1px solid var(--line); background:var(--white); padding:6px 12px}
+  .flow i{color:var(--muted); font-style:normal}
+  hr{border:0; border-top:1px solid var(--line2); margin:36px 0}
+  .small{font-size:12.5px; color:var(--muted)}
+  @media print{
+    .toc{display:none}
+    .layout{display:block}
+    body{background:#fff}
+    .doc{max-width:none; padding:0; background:#fff}
+    h2{page-break-after:avoid; page-break-before:auto}
+    table,.note,.cover{page-break-inside:avoid}
+    @page{margin:18mm}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside class="toc"><div class="toc__in">
+  <p class="toc__t">目录</p>
+  <a href="#s1">1 项目概述</a>
+  <a href="#s2">2 范围边界</a>
+  <a href="#s3">3 用户角色与权限</a>
+  <a href="#s4">4 信息架构</a>
+  <a href="#s5">5 前台功能需求</a>
+  <a href="#s5-1" class="sub">5.1 全局框架</a>
+  <a href="#s5-2" class="sub">5.2 首页</a>
+  <a href="#s5-3" class="sub">5.3 集合与搜索</a>
+  <a href="#s5-4" class="sub">5.4 商品详情</a>
+  <a href="#s5-5" class="sub">5.5 交易链路</a>
+  <a href="#s5-6" class="sub">5.6 内容与辅助</a>
+  <a href="#s6">6 后台功能需求</a>
+  <a href="#s7">7 业务规则</a>
+  <a href="#s8">8 订单状态机</a>
+  <a href="#s9">9 非功能需求</a>
+  <a href="#s10">10 验收清单</a>
+  <a href="#s11">11 待确认问题</a>
+</div></aside>
+
+<main class="doc">
+
+<div class="cover">
+  <p class="cover__kicker">Wildkind · Cross-border Jewellery DTC</p>
+  <h1>功能需求说明书
+    <small>Functional Requirements Document · 跨境饰品独立站（前台 + 后台）</small>
+  </h1>
+  <div class="meta">
+    <div>文档编号</div><div>WK-FRD-001</div>
+    <div>版本</div><div>v1.0 评审稿（<span class="badge">待审核</span>）</div>
+    <div>编写日期</div><div>2026-11-12</div>
+    <div>依据</div><div>参考站结构拆解（atoleajewelry.com）+ 既有市场调研结论</div>
+    <div>适用范围</div><div>网站前台（消费者侧）与后台（商家侧）</div>
+    <div>本轮交付</div><div>仅文档与原型，不含开发实现</div>
+  </div>
+</div>
+
+<h2 id="s1"><span class="n">1</span>项目概述</h2>
+
+<h3>1.1 背景</h3>
+<p class="lede">面向北美市场的不锈钢饰品 DTC 独立站。产品为 316L 不锈钢 + PVD 镀层，主打"低敏、可长期佩戴、可碰水"，价格带 <b>$35–$85</b>，首批 100 款 SKU。渠道策略是<b>用主题化集合替代导航深度</b>：一件商品同时挂进品类、题材、送礼对象、榜单等多个集合，让用户从任意入口都能落到商品。</p>
+
+<h3>1.2 本轮目标</h3>
+<ol>
+  <li>把参考站（Atolea Jewelry）的信息架构、页面构成、交互模式<b>完整还原</b>，作为我们自己的基线。</li>
+  <li>明确前台与后台的<b>功能边界、字段、状态、业务规则</b>，作为开发与验收的唯一依据。</li>
+  <li>用线框原型把结构先确定下来，<b>避免在视觉与代码上返工</b>。</li>
+</ol>
+
+<h3>1.3 阅读方式</h3>
+<p>每条需求有唯一编号（<code>FR-S-xxx</code> 前台 / <code>FR-A-xxx</code> 后台），带优先级与验收标准。<b>优先级标注：🔴 高（MVP 必须）/ 🟡 中（首版应有）/ 🟢 低（可后置）</b>。凡标注"<span class="tag">待确认</span>"的条目，需你确认后才进入设计。</p>
+
+<h2 id="s2"><span class="n">2</span>范围边界</h2>
+
+<h3>2.1 本期包含</h3>
+<ul>
+  <li>前台：首页、集合页、商品详情、搜索、购物车、结算、订单完成、订单查询、内容页、404。</li>
+  <li>后台：登录、概览、订单、商品、库存、集合、客户、内容、设置。</li>
+  <li>交易：Stripe 支付、订单邮件、库存扣减、退款登记。</li>
+</ul>
+
+<h3>2.2 本期明确不做</h3>
+<ul>
+  <li>用户注册与登录体系（首版<b>仅访客下单</b>，订单号 + 邮箱查询）。<span class="tag">待确认</span></li>
+  <li>多语言、多币种（首版<b>仅英文 + USD</b>）。<span class="tag">待确认</span></li>
+  <li>会员积分、优惠券裂变、拼团、直播、社区。</li>
+  <li>自建仓配系统（对接第三方海外仓，仅做发货回填）。</li>
+  <li>站内 AI 客服（首版用邮件 + FAQ）。</li>
+</ul>
+
+<div class="note"><b>关于"结构完全一样"：</b>参考站的一级导航 11 项、mega menu 分组、商品卡信息密度、集合页筛选维度，我们都按原结构复刻；但<b>文案、图片、配色</b>会替换成我们自己的品牌资产，不涉及版权素材。</div>
+
+<h2 id="s3"><span class="n">3</span>用户角色与权限</h2>
+<table>
+  <tr><th>角色</th><th>说明</th><th>可见范围</th><th>关键操作</th></tr>
+  <tr><td>访客消费者</td><td>未登录，占流量 95% 以上</td><td>全部前台公开页</td><td>浏览、搜索、加购、结算、用订单号查单</td></tr>
+  <tr><td>下单客户</td><td>已完成至少一笔订单（仍无账户）</td><td>同上 + 邮件里的订单链接</td><td>查单、申请退换（走邮件）</td></tr>
+  <tr><td>运营（后台）</td><td>你本人 / 助理</td><td>后台全部模块</td><td>商品上下架、改价、订单发货、库存调整、内容维护</td></tr>
+  <tr><td>财务（后台）</td><td>可选，v2 引入</td><td>订单、成本、导出</td><td>对账、导出、退款审批 <span class="tag">待确认</span></td></tr>
+</table>
+<p class="small">首版后台为<b>单角色全权限</b>，不做权限矩阵；如需多人协作再拆角色。</p>
+
+<h2 id="s4"><span class="n">4</span>信息架构</h2>
+
+<h3>4.1 一级导航（11 项，与参考站一致）</h3>
+<div class="flow">
+  <span>Best Sellers</span><i>·</i><span>Custom</span><i>·</i><span>SALE</span><i>·</i><span>• New</span><i>·</i>
+  <span>Necklaces</span><i>·</i><span>Rings</span><i>·</i><span>Pearls</span><i>·</i><span>Earrings</span><i>·</i>
+  <span>Bracelets</span><i>·</i><span>Anklets</span><i>·</i><span>GIFTS</span>
+</div>
+<p>导航项<b>不是</b>树状层级，而是"入口集合"：点击后进入集合页。mega menu 里按主题/对象二次分组，形成横向铺开而非纵向下钻。</p>
+
+<h3>4.2 页面清单</h3>
+<table>
+  <tr><th>编号</th><th>页面</th><th>路径（建议）</th><th>优先级</th><th>说明</th></tr>
+  <tr><td class="id">S-01</td><td>首页</td><td><code>/</code></td><td class="p1">🔴</td><td>9 个区块，见 5.2</td></tr>
+  <tr><td class="id">S-02</td><td>集合页</td><td><code>/collections/{handle}</code></td><td class="p1">🔴</td><td>筛选 + 排序 + 商品网格</td></tr>
+  <tr><td class="id">S-03</td><td>商品详情</td><td><code>/products/{handle}</code></td><td class="p1">🔴</td><td>图库 + 变体 + 加购</td></tr>
+  <tr><td class="id">S-04</td><td>搜索结果</td><td><code>/search?q=</code></td><td class="p1">🔴</td><td>复用集合页网格</td></tr>
+  <tr><td class="id">S-05</td><td>购物车</td><td>抽屉 + <code>/cart</code></td><td class="p1">🔴</td><td>抽屉为主，独立页兜底</td></tr>
+  <tr><td class="id">S-06</td><td>结算</td><td><code>/checkout</code></td><td class="p1">🔴</td><td>单页分步，Stripe 内嵌</td></tr>
+  <tr><td class="id">S-07</td><td>订单完成</td><td><code>/orders/{no}/confirm</code></td><td class="p1">🔴</td><td>下单成功落地页</td></tr>
+  <tr><td class="id">S-08</td><td>订单查询</td><td><code>/orders/lookup</code></td><td class="p1">🔴</td><td>访客模式：订单号 + 邮箱</td></tr>
+  <tr><td class="id">S-09</td><td>定制流程</td><td><code>/pages/custom</code></td><td class="p2">🟡</td><td>表单 + 人工报价</td></tr>
+  <tr><td class="id">S-10</td><td>内容页（8 个）</td><td><code>/pages/{slug}</code></td><td class="p1">🔴</td><td>About / Materials / Care / Shipping / Returns / FAQ / Size Guide / Contact</td></tr>
+  <tr><td class="id">S-11</td><td>404 / 异常</td><td>—</td><td class="p2">🟡</td><td>含返回首页与推荐商品</td></tr>
+  <tr><td class="id">A-01</td><td>后台登录</td><td><code>/admin/login</code></td><td class="p1">🔴</td><td>邮箱 + 密码</td></tr>
+  <tr><td class="id">A-02</td><td>概览</td><td><code>/admin</code></td><td class="p1">🔴</td><td>核心指标 + 趋势</td></tr>
+  <tr><td class="id">A-03</td><td>订单</td><td><code>/admin/orders</code></td><td class="p1">🔴</td><td>列表 + 详情 + 状态流转</td></tr>
+  <tr><td class="id">A-04</td><td>商品</td><td><code>/admin/products</code></td><td class="p1">🔴</td><td>列表 + 编辑</td></tr>
+  <tr><td class="id">A-05</td><td>库存</td><td><code>/admin/inventory</code></td><td class="p1">🔴</td><td>SKU 粒度 + 预警</td></tr>
+  <tr><td class="id">A-06</td><td>集合</td><td><code>/admin/collections</code></td><td class="p2">🟡</td><td>规则与排序</td></tr>
+  <tr><td class="id">A-07</td><td>客户</td><td><code>/admin/customers</code></td><td class="p2">🟡</td><td>由订单聚合</td></tr>
+  <tr><td class="id">A-08</td><td>内容</td><td><code>/admin/content</code></td><td class="p2">🟡</td><td>首页区块与内容页</td></tr>
+  <tr><td class="id">A-09</td><td>设置</td><td><code>/admin/settings</code></td><td class="p1">🔴</td><td>品牌 / 费用 / 仓库</td></tr>
+</table>
+
+<h2 id="s5"><span class="n">5</span>前台功能需求</h2>
+
+<h3 id="s5-1">5.1 全局框架</h3>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-S-001</td><td>页头：左侧汉堡（仅移动端）+ 11 项一级导航，品牌 logo 居中，右侧搜索 / 账户 / 购物袋三个图标</td><td class="p1">🔴</td><td>1440px 下 11 项不换行、不压 logo；1024px 下收起为汉堡</td></tr>
+  <tr><td class="id">FR-S-002</td><td>mega menu：鼠标悬停一级项展开二级分组，含图片位与"查看全部"入口</td><td class="p1">🔴</td><td>展开无跳动，键盘 Tab 可遍历，Esc 关闭</td></tr>
+  <tr><td class="id">FR-S-003</td><td>页头吸顶：滚动超过一屏后导航条吸附顶部，高度收窄</td><td class="p2">🟡</td><td>吸顶时 logo 与购物袋仍可见</td></tr>
+  <tr><td class="id">FR-S-004</td><td>顶部公告栏：可配置单条文案，后台可开关</td><td class="p2">🟡</td><td>后台关闭后前台立即消失</td></tr>
+  <tr><td class="id">FR-S-005</td><td>搜索：点击图标展开浮层，输入即时联想（标题 / 集合 / 题材），回车进结果页</td><td class="p1">🔴</td><td>输入 2 字符后 300ms 出现联想；无结果有空态</td></tr>
+  <tr><td class="id">FR-S-006</td><td>购物袋图标显示件数角标，点击打开购物车抽屉</td><td class="p1">🔴</td><td>加购后角标即时 +1，无需刷新</td></tr>
+  <tr><td class="id">FR-S-007</td><td>页脚：四栏（Shop / Help / About / 订阅）+ 社媒图标 + 支付方式图标 + 版权与政策链接</td><td class="p1">🔴</td><td>政策链接可达，移动端折叠为手风琴</td></tr>
+  <tr><td class="id">FR-S-008</td><td>响应式：≥1280 桌面 / 768–1279 平板 / &lt;768 移动，三个断点布局均不出现横向滚动</td><td class="p1">🔴</td><td>390 / 768 / 1440 三档实测无横向溢出</td></tr>
+</table>
+
+<h3 id="s5-2">5.2 首页 S-01</h3>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-S-010</td><td>Hero：左文（眉标 / 主标题 / 正文 / 两个 CTA / 三项信任指标）右图（4:5）</td><td class="p1">🔴</td><td>文案可由后台修改；移动端上下堆叠，按钮占满宽</td></tr>
+  <tr><td class="id">FR-S-011</td><td>USP 四栏：物流 / 材质 / 退换 / 环保，图标 + 标题 + 一句说明</td><td class="p1">🔴</td><td>移动端 2×2 排列</td></tr>
+  <tr><td class="id">FR-S-012</td><td>Best Sellers 横滑区：展示 8 款，左右箭头 + 拖拽滑动</td><td class="p1">🔴</td><td>取后台"Best Sellers"集合；滑动无卡顿</td></tr>
+  <tr><td class="id">FR-S-013</td><td>题材磁贴：4 个大图入口（Ocean / Woodland / Celestial / Floral）</td><td class="p1">🔴</td><td>点击进对应集合页</td></tr>
+  <tr><td class="id">FR-S-014</td><td>品牌故事区块：图文左右交替，一段主张 + 一个次级 CTA</td><td class="p2">🟡</td><td>图片可后台替换</td></tr>
+  <tr><td class="id">FR-S-015</td><td>定制入口：3–4 个可定制的款，带"可定制"标记</td><td class="p2">🟡</td><td>点击进定制流程 S-09</td></tr>
+  <tr><td class="id">FR-S-016</td><td>评价墙：≥6 条真人评价，含星级、姓名、购买款</td><td class="p2">🟡</td><td>数据可后台维护；无评价时不显示空壳</td></tr>
+  <tr><td class="id">FR-S-017</td><td>Journal：3 篇文章卡片（图 + 标题 + 摘要）</td><td class="p3">🟢</td><td>点击进文章页</td></tr>
+  <tr><td class="id">FR-S-018</td><td>订阅框：邮箱校验、防重复提交、成功后原地提示</td><td class="p2">🟡</td><td>非法邮箱有行内报错；重复邮箱提示已订阅</td></tr>
+</table>
+
+<h3 id="s5-3">5.3 集合与搜索 S-02 / S-04</h3>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-S-020</td><td>集合页头部：面包屑 + 集合名 + 一句描述 + 商品数量</td><td class="p1">🔴</td><td>描述为空时不占位</td></tr>
+  <tr><td class="id">FR-S-021</td><td>筛选：金属色（金 / 银 / 双色）、价格区间、库存状态（仅看有货）</td><td class="p1">🔴</td><td>多选生效，URL 可分享，刷新后保留</td></tr>
+  <tr><td class="id">FR-S-022</td><td>排序：推荐 / 最新 / 销量 / 价格升 / 价格降</td><td class="p1">🔴</td><td>切换后不整页跳动，滚动位置保持</td></tr>
+  <tr><td class="id">FR-S-023</td><td>商品网格：桌面 4 列 / 平板 3 列 / 移动 2 列</td><td class="p1">🔴</td><td>图片统一 4:5，不拉伸</td></tr>
+  <tr><td class="id">FR-S-024</td><td>商品卡：主图 + 悬停换次图、标签（New / Sale / 仅剩 N 件）、标题、价格与划线价、可选色点</td><td class="p1">🔴</td><td>移动端无悬停时显示主图；标签不超过 2 个</td></tr>
+  <tr><td class="id">FR-S-025</td><td>分页：每页 24 件，"加载更多"或页码（二选一）<span class="tag">待确认</span></td><td class="p2">🟡</td><td>SEO 友好优先，建议页码</td></tr>
+  <tr><td class="id">FR-S-026</td><td>空态：无商品时显示说明 + 推荐集合，不留白屏</td><td class="p1">🔴</td><td>筛选无结果时也给出"清除筛选"</td></tr>
+  <tr><td class="id">FR-S-027</td><td>搜索结果页复用网格，顶部显示关键词与命中数；0 结果给替代推荐</td><td class="p1">🔴</td><td>搜索"star"能命中题材与标题</td></tr>
+</table>
+
+<h3 id="s5-4">5.4 商品详情 S-03</h3>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-S-030</td><td>图库：左侧主图 + 缩略图列（桌面两图并排，移动单图滑动）</td><td class="p1">🔴</td><td>≥3 张；点击缩略图切换，支持手势滑动</td></tr>
+  <tr><td class="id">FR-S-031</td><td>信息区：标题、评分与评价数、价格（含划线价与折扣标签）、简短卖点</td><td class="p1">🔴</td><td>折扣价与划线价同时展示，颜色符合促销规范</td></tr>
+  <tr><td class="id">FR-S-032</td><td>变体选择：金属色（金 / 银）、尺寸（可无）；不可选组合置灰并说明</td><td class="p1">🔴</td><td>选中态清晰，切换后价格与库存同步</td></tr>
+  <tr><td class="id">FR-S-033</td><td>库存提示：可售显示"现货"，≤5 件显示"仅剩 N 件"，0 件显示"到货提醒"</td><td class="p2">🟡</td><td>到货提醒需收集邮箱</td></tr>
+  <tr><td class="id">FR-S-034</td><td>加购：数量步进（1–10）+ 加入购物袋，成功后抽屉自动打开</td><td class="p1">🔴</td><td>加购后角标与抽屉同步，库存不足时拦截</td></tr>
+  <tr><td class="id">FR-S-035</td><td>手风琴：材质与工艺 / 尺寸与佩戴 / 配送与关税 / 退换政策</td><td class="p1">🔴</td><td>默认全部收起，首项可配置默认展开</td></tr>
+  <tr><td class="id">FR-S-036</td><td>关联推荐：同集合 4 款（优先同题材）</td><td class="p2">🟡</td><td>不推荐当前商品本身</td></tr>
+  <tr><td class="id">FR-S-037</td><td>结构化数据：Product / Offer / AggregateRating，用于 Google 富摘要</td><td class="p2">🟡</td><td>Rich Results 测试无错误</td></tr>
+</table>
+
+<h3 id="s5-5">5.5 交易链路 S-05 / S-06 / S-07 / S-08</h3>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-S-040</td><td>购物车抽屉：商品行（图 / 名 / 变体 / 数量 / 小计）、改数量、删除、小计</td><td class="p1">🔴</td><td>改数量即时重算，不整页刷新</td></tr>
+  <tr><td class="id">FR-S-041</td><td>免邮进度条：提示"再买 $X 免运费"，达标后替换为恭喜文案</td><td class="p2">🟡</td><td>门槛值取后台设置</td></tr>
+  <tr><td class="id">FR-S-042</td><td>购物车持久化：Cookie / 本地存储保留 30 天，换页不丢</td><td class="p1">🔴</td><td>关闭浏览器重开仍在</td></tr>
+  <tr><td class="id">FR-S-043</td><td>结算页：联系邮箱 → 收货地址 → 配送方式 → 支付，单页分步；右侧常驻订单摘要</td><td class="p1">🔴</td><td>任一步校验失败定位到字段并说明原因</td></tr>
+  <tr><td class="id">FR-S-044</td><td>访客结算：无需注册即可下单，仅需邮箱 + 地址</td><td class="p1">🔴</td><td>下单成功即创建客户档案（以邮箱为主键）</td></tr>
+  <tr><td class="id">FR-S-045</td><td>配送方式：标准（免费 / 门槛以下 $6.9，7–12 天）与加急（$18，3–5 天），运费按后台设置</td><td class="p1">🔴</td><td>切换后总额实时更新</td></tr>
+  <tr><td class="id">FR-S-046</td><td>支付：Stripe 内嵌表单（卡号 / 有效期 / CVC），支持 Apple Pay / Google Pay</td><td class="p1">🔴</td><td>支付失败给出可行动提示，可重试</td></tr>
+  <tr><td class="id">FR-S-047</td><td>下单成功后：生成订单号，进入 S-07，同时发送确认邮件</td><td class="p1">🔴</td><td>邮件 1 分钟内送达；重复回调不重复建单</td></tr>
+  <tr><td class="id">FR-S-048</td><td>订单查询：输入订单号 + 下单邮箱，匹配后展示状态、明细、物流号</td><td class="p1">🔴</td><td>邮箱不匹配时统一提示"未找到"，不泄露订单存在性</td></tr>
+  <tr><td class="id">FR-S-049</td><td>防重复提交：下单按钮点击后置灰并显示处理中</td><td class="p1">🔴</td><td>连点 5 次只产生 1 笔订单</td></tr>
+</table>
+
+<h3 id="s5-6">5.6 内容与辅助 S-09 / S-10 / S-11</h3>
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-S-050</td><td>8 个内容页：About / Materials / Care / Shipping / Returns / FAQ / Size Guide / Contact，左侧目录 + 正文</td><td class="p1">🔴</td><td>正文可由后台富文本维护</td></tr>
+  <tr><td class="id">FR-S-051</td><td>定制流程：选款 → 上传参考图 → 填写文字 / 数量 / 期望交期 → 提交，后台生成定制需求单</td><td class="p2">🟡</td><td>提交后邮件回执；后台可见待处理列表</td></tr>
+  <tr><td class="id">FR-S-052</td><td>404：说明 + 返回首页 + 3 款推荐商品</td><td class="p2">🟡</td><td>不出现空白页</td></tr>
+  <tr><td class="id">FR-S-053</td><td>SEO：每页独立 title / description / canonical、sitemap.xml、robots.txt</td><td class="p1">🔴</td><td>集合页与商品页均可被索引</td></tr>
+  <tr><td class="id">FR-S-054</td><td>合规：Cookie 同意条（可拒绝非必要）、隐私政策、条款、退换政策可达</td><td class="p1">🔴</td><td>拒绝后不加载分析脚本</td></tr>
+  <tr><td class="id">FR-S-055</td><td>可访问性：正文对比度 ≥ 4.5:1、图片 alt、焦点可见、键盘可完成加购</td><td class="p2">🟡</td><td>Tab 走完全流程不断链</td></tr>
+  <tr><td class="id">FR-S-056</td><td>性能预算：LCP ≤ 2.5s（4G）、CLS ≤ 0.1、首屏图片 WebP/AVIF</td><td class="p1">🔴</td><td>Lighthouse 移动端 ≥ 85</td></tr>
+</table>
+
+<h2 id="s6"><span class="n">6</span>后台功能需求</h2>
+
+<table>
+  <tr><th>编号</th><th>需求描述</th><th>优先级</th><th>验收标准</th></tr>
+  <tr><td class="id">FR-A-001</td><td>登录：邮箱 + 密码，会话 24 小时，连续失败 5 次锁定 10 分钟</td><td class="p1">🔴</td><td>未登录访问任意后台页均跳登录</td></tr>
+  <tr><td class="id">FR-A-002</td><td>概览：GMV / 订单数 / 客单价 / 退款率四个核心指标（可切 7 / 30 / 90 天）</td><td class="p1">🔴</td><td>指标口径与订单列表可对账</td></tr>
+  <tr><td class="id">FR-A-003</td><td>概览图表：营收趋势折线、订单来源占比、Top 6 商品</td><td class="p1">🔴</td><td>切换周期图表同步刷新</td></tr>
+  <tr><td class="id">FR-A-004</td><td>订单列表：按状态 / 日期 / 金额 / 关键词筛选，可按时间或金额排序，分页 20 条</td><td class="p1">🔴</td><td>筛选条件可组合，刷新后保留</td></tr>
+  <tr><td class="id">FR-A-005</td><td>订单详情：客户与地址、商品明细、金额构成、成本拆解、状态流转记录、备注</td><td class="p1">🔴</td><td>展示毛利与毛利率，数值与设置里的费率一致</td></tr>
+  <tr><td class="id">FR-A-006</td><td>订单操作：标记发货（填承运商 + 运单号）、取消、登记退款</td><td class="p1">🔴</td><td>发货后自动发邮件；退款需二次确认</td></tr>
+  <tr><td class="id">FR-A-007</td><td>商品列表：图 / 名 / SKU / 价格 / 库存 / 状态，支持搜索与筛选</td><td class="p1">🔴</td><td>缺货商品高亮提示</td></tr>
+  <tr><td class="id">FR-A-008</td><td>商品编辑：标题、描述、价格、成本、图片（多张排序）、变体、挂载集合、SEO 字段、上架开关</td><td class="p1">🔴</td><td>保存后前台立即生效；必填项校验</td></tr>
+  <tr><td class="id">FR-A-009</td><td>库存：SKU 粒度库存数、安全库存、预警列表、批量改库存</td><td class="p1">🔴</td><td>低于安全库存进入预警区；批量修改有确认</td></tr>
+  <tr><td class="id">FR-A-010</td><td>集合管理：新建 / 编辑集合、手动选品或条件规则、排序、是否显示在导航、mega menu 分组</td><td class="p2">🟡</td><td>导航开关关闭后前台立即消失</td></tr>
+  <tr><td class="id">FR-A-011</td><td>客户：由订单聚合，展示订单数、累计消费、首末单时间、分层（新客 / 复购 / 高价值）</td><td class="p2">🟡</td><td>复购率与概览口径一致</td></tr>
+  <tr><td class="id">FR-A-012</td><td>内容管理：首页各区块文案与图片、公告栏、8 个内容页正文</td><td class="p2">🟡</td><td>保存后前台刷新即可见</td></tr>
+  <tr><td class="id">FR-A-013</td><td>设置：品牌信息、货币、免邮门槛、费用参数（关税 / 头程 / 仓配 / 支付 / 包装 / 退货计提）、仓库、改密码</td><td class="p1">🔴</td><td>费率改动后新订单按新参数计算，历史订单不变</td></tr>
+  <tr><td class="id">FR-A-014</td><td>折扣码：创建百分比 / 固定额 / 满减码，设置有效期与使用上限</td><td class="p2">🟡</td><td>结算页可校验并实时抵扣 <span class="tag">待确认是否进 v1</span></td></tr>
+  <tr><td class="id">FR-A-015</td><td>数据导出：订单 / 商品 / 客户导出 CSV</td><td class="p2">🟡</td><td>字段完整，中文不乱码</td></tr>
+  <tr><td class="id">FR-A-016</td><td>操作日志：记录登录、改价、改库存、改状态等关键动作</td><td class="p3">🟢</td><td>可按时间与操作人筛选</td></tr>
+</table>
+
+<h2 id="s7"><span class="n">7</span>业务规则</h2>
+
+<h3>7.1 价格与成本</h3>
+<table>
+  <tr><th>编号</th><th>规则</th><th>说明</th></tr>
+  <tr><td class="id">BR-01</td><td>售价</td><td>后台手工填写，不做自动加价公式；划线价仅在促销时填写</td></tr>
+  <tr><td class="id">BR-02</td><td>成本构成</td><td>货品成本 + 关税（税率可配，默认 31%）+ 头程（5.5%）+ 仓配（$9.8/单）+ 支付（3.2% + $0.3）+ 包装（$0.85）+ 退货计提（6%）</td></tr>
+  <tr><td class="id">BR-03</td><td>贡献毛利</td><td>营收 − 上述全部成本；后台订单详情按单展示</td></tr>
+  <tr><td class="id">BR-04</td><td>币种</td><td>全站 USD，不做汇率换算 <span class="tag">待确认</span></td></tr>
+</table>
+
+<h3>7.2 库存与超卖</h3>
+<table>
+  <tr><th>编号</th><th>规则</th><th>说明</th></tr>
+  <tr><td class="id">BR-05</td><td>扣减时机</td><td>支付成功后扣减；下单未支付仅占用 30 分钟 <span class="tag">待确认</span></td></tr>
+  <tr><td class="id">BR-06</td><td>超卖保护</td><td>加购与结算各校验一次，库存不足时阻止提交并提示可购数量</td></tr>
+  <tr><td class="id">BR-07</td><td>低库存阈值</td><td>≤5 件前台提示"仅剩 N 件"；后台安全库存可单独设置</td></tr>
+  <tr><td class="id">BR-08</td><td>SKU 编码</td><td><code>WK-1xx</code> 项链 / <code>2xx</code> 戒指 / <code>3xx</code> 手链 / <code>4xx</code> 脚链 / <code>5xx</code> 耳饰 / <code>6xx</code> 珍珠 / <code>7xx</code> 定制 / <code>8xx</code> 礼盒</td></tr>
+</table>
+
+<h3>7.3 运费、税费与售后</h3>
+<table>
+  <tr><th>编号</th><th>规则</th><th>说明</th></tr>
+  <tr><td class="id">BR-09</td><td>免邮门槛</td><td>满 $75 免标准运费，门槛后台可改</td></tr>
+  <tr><td class="id">BR-10</td><td>税费</td><td>售价不含税；美国部分州由 Stripe Tax 计算 <span class="tag">待确认</span></td></tr>
+  <tr><td class="id">BR-11</td><td>退换窗口</td><td>签收后 30 天内，非定制款可退；定制款不退不换</td></tr>
+  <tr><td class="id">BR-12</td><td>退款方式</td><td>原路退回，后台登记后由 Stripe 发起；不自动处理</td></tr>
+  <tr><td class="id">BR-13</td><td>订单号</td><td><code>WK-</code> + 6 位年月 + 4 位流水，如 <code>WK-2611-0042</code></td></tr>
+  <tr><td class="id">BR-14</td><td>集合归属</td><td>一件商品可同时属于多个集合，不互斥；导航集合按后台排序展示</td></tr>
+</table>
+
+<h2 id="s8"><span class="n">8</span>订单状态机</h2>
+<div class="flow">
+  <span>待支付 pending</span><i>→</i><span>已支付 paid</span><i>→</i><span>配货中 fulfilling</span><i>→</i><span>已发货 fulfilled</span><i>→</i><span>已完成 completed</span>
+</div>
+<div class="flow">
+  <span>待支付</span><i>→</i><span>已取消 cancelled</span><i>（超时 / 用户取消）</i>
+</div>
+<div class="flow">
+  <span>已支付 / 已发货</span><i>→</i><span>退款中 refunding</span><i>→</i><span>已退款 refunded</span>
+</div>
+<table>
+  <tr><th>状态</th><th>触发</th><th>可执行操作</th><th>客户可见</th></tr>
+  <tr><td>pending</td><td>创建订单未支付</td><td>取消</td><td>待支付</td></tr>
+  <tr><td>paid</td><td>支付回调成功</td><td>配货、取消并退款</td><td>已支付</td></tr>
+  <tr><td>fulfilling</td><td>后台开始配货</td><td>填运单发货</td><td>备货中</td></tr>
+  <tr><td>fulfilled</td><td>填写运单号</td><td>登记退款</td><td>已发货 + 物流号</td></tr>
+  <tr><td>completed</td><td>签收后自动或手动</td><td>登记退款</td><td>已完成</td></tr>
+  <tr><td>refunded</td><td>退款完成</td><td>—</td><td>已退款</td></tr>
+  <tr><td>cancelled</td><td>取消</td><td>—</td><td>已取消</td></tr>
+</table>
+<p class="small">部分退款、部分发货是否纳入首版，见第 11 节待确认项。</p>
+
+<h2 id="s9"><span class="n">9</span>非功能需求</h2>
+<table>
+  <tr><th>维度</th><th>要求</th></tr>
+  <tr><td>性能</td><td>移动端 LCP ≤ 2.5s、CLS ≤ 0.1；后台首屏 ≤ 1.5s</td></tr>
+  <tr><td>可用性</td><td>核心链路（浏览→加购→支付）可用性 ≥ 99.9%</td></tr>
+  <tr><td>安全</td><td>后台强制鉴权、登录限流、CSRF 防护、输入校验；支付走 Stripe 托管，不接触卡号</td></tr>
+  <tr><td>合规</td><td>GDPR / CCPA 同意与删除请求通道；隐私政策、条款、退换政策齐备；欧盟 IOSS 税号展示 <span class="tag">待确认</span></td></tr>
+  <tr><td>数据</td><td>数据库每日备份，保留 30 天；订单与客户数据加密传输</td></tr>
+  <tr><td>可维护</td><td>商品与内容均可在后台维护，改文案不需要改代码</td></tr>
+  <tr><td>可观测</td><td>接入错误监控与访问日志；支付失败单独告警</td></tr>
+</table>
+
+<h2 id="s10"><span class="n">10</span>验收清单</h2>
+<ul>
+  <li>11 项一级导航在 1440 / 1024 / 390 三档下均正确呈现，无换行、无横向滚动。</li>
+  <li>从首页进入某题材集合 → 筛选金属色 → 进商品 → 选变体 → 加购 → 结算 → 支付成功，全链路无阻断。</li>
+  <li>下单后后台订单列表出现新订单，库存相应扣减，金额与前台一致。</li>
+  <li>用订单号 + 邮箱可查到刚下的订单；邮箱错误时查不到。</li>
+  <li>后台改价、改库存、改首页文案，前台刷新后立即生效。</li>
+  <li>连续点击下单按钮 5 次，只产生 1 笔订单。</li>
+  <li>移动端 390px 全站无横向溢出。</li>
+</ul>
+
+<h2 id="s11"><span class="n">11</span>待确认问题</h2>
+<table>
+  <tr><th>#</th><th>问题</th><th>我的建议</th><th>影响</th></tr>
+  <tr><td>Q1</td><td>品牌正式名称与域名？当前用 Wildkind 占位</td><td>确认后全局替换</td><td>影响文案、SEO、邮件模板</td></tr>
+  <tr><td>Q2</td><td>首版是否只做英文 + USD？</td><td>是，多语言后置</td><td>影响路由与数据结构</td></tr>
+  <tr><td>Q3</td><td>是否真的不做账户体系？</td><td>不做，访客 + 订单查询足够</td><td>影响结算页与邮件</td></tr>
+  <tr><td>Q4</td><td>Stripe 账号是否已开通、支持哪些支付方式？</td><td>需尽早开通测试号</td><td>影响结算实现</td></tr>
+  <tr><td>Q5</td><td>定制业务是否进首版？</td><td>进，但只做需求收集表单，不做在线报价</td><td>影响后台是否需要定制单模块</td></tr>
+  <tr><td>Q6</td><td>折扣码是否进首版？</td><td>建议进，促销必备</td><td>多一个模块</td></tr>
+  <tr><td>Q7</td><td>库存扣减时机：支付成功扣，还是下单即占？</td><td>支付成功扣 + 30 分钟占用</td><td>影响并发与超卖处理</td></tr>
+  <tr><td>Q8</td><td>集合分页用页码还是加载更多？</td><td>页码，SEO 更友好</td><td>影响前端实现</td></tr>
+  <tr><td>Q9</td><td>商品图来源：自拍 / AI 生成 / 供应商图？</td><td>首版可用供应商图 + 统一调色</td><td>影响上线时间</td></tr>
+  <tr><td>Q10</td><td>后台是否需要多人分权限？</td><td>首版单角色</td><td>影响鉴权设计</td></tr>
+</table>
+
+<hr>
+<p class="small">— 文档结束 · WK-FRD-001 v1.0 评审稿 · 待你确认后再进入视觉与开发 —</p>
+
+</main>
+</div>
+</body>
+</html>

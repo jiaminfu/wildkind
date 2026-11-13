@@ -1,0 +1,57 @@
+# ============================================================
+# TIDEGLASS · Docker Compose 生产编排
+# 用法：
+#   cd deploy
+#   cp .env.example .env && nano .env        # 改掉所有 CHANGE_ME
+#   docker compose up -d --build
+#   docker compose logs -f
+#
+# 注意端口只绑 127.0.0.1：外网访问一律走宿主机 Nginx + HTTPS。
+# 直接把 4600 开到公网等于让接口裸奔（没有 HTTPS、没有限流兜底）。
+# ============================================================
+services:
+  tideglass:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: tideglass:1.0.0
+    container_name: tideglass
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    ports:
+      - "127.0.0.1:4600:4600"
+
+    # 数据必须落在卷里。容器重建很频繁，卷不重建。
+    volumes:
+      - tideglass-data:/app/app/server/data
+
+    # 单实例：JSON 存储 + 内存限流 + 内存会话，replicas 只能是 1
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('http').get('http://127.0.0.1:4600/api/v1/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+volumes:
+  tideglass-data:
+    name: tideglass-data

@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wildkind — 项目文档（参考站拆解 · 功能设计说明书 · 系统设计说明书）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Figtree:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14120f;--ink-2:#3c3733;--muted:#736b63;--muted-2:#9a9188;
+  --line:#e6ded4;--line-2:#d5cabf;--bg:#f8f7f2;--paper:#fff;
+  --sand:#f3e8de;--sale:#2f6f0a;--warn:#a5691a;--danger:#a33a2a;
+  --serif:'Fraunces',Georgia,serif;--sans:'Figtree',-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--sans);font-size:14.5px;line-height:1.75;color:var(--ink-2);background:var(--paper);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,p{margin:0}
+a{color:inherit;text-decoration:none}
+code{font-family:var(--mono);font-size:12.5px;background:#f4efe7;padding:1.5px 5px;border-radius:2px;color:#4a3f35}
+::selection{background:#eadfd2}
+
+/* ---------- layout ---------- */
+.shell{display:grid;grid-template-columns:276px 1fr;max-width:1320px;margin:0 auto;gap:0}
+.toc{
+  position:sticky;top:0;height:100vh;overflow-y:auto;padding:34px 26px 40px 32px;
+  border-right:1px solid var(--line);background:var(--bg);font-size:12.5px;
+}
+.toc__brand{font-family:var(--serif);font-size:20px;color:var(--ink);letter-spacing:-.01em;display:block}
+.toc__sub{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted-2);margin-top:5px;display:block}
+.toc__meta{font-size:11px;color:var(--muted-2);margin-top:16px;padding-top:14px;border-top:1px solid var(--line);line-height:1.7}
+.toc__group{margin-top:24px}
+.toc__group>p{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2);margin-bottom:8px}
+.toc a{display:block;padding:4.5px 0;color:var(--muted);border-left:2px solid transparent;padding-left:10px;margin-left:-12px;line-height:1.45}
+.toc a:hover{color:var(--ink)}
+.toc a.lv2{font-size:12px;padding-left:22px;color:var(--muted-2)}
+.toc a.lv2:hover{color:var(--ink-2)}
+
+.main{min-width:0;padding:0 0 100px}
+.doc{padding:0 clamp(28px,5vw,76px)}
+
+/* ---------- cover ---------- */
+.cover{padding:76px 0 54px;border-bottom:1px solid var(--line);margin-bottom:56px}
+.cover__tag{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted-2)}
+.cover h1{font-family:var(--serif);font-weight:400;font-size:clamp(32px,4.2vw,50px);line-height:1.05;letter-spacing:-.03em;color:var(--ink);margin:16px 0 18px}
+.cover p{max-width:62ch;color:var(--muted);font-size:15px}
+.cover__meta{display:flex;flex-wrap:wrap;gap:34px;margin-top:34px;padding-top:22px;border-top:1px solid var(--line)}
+.cover__meta div{font-size:11px;letter-spacing:.06em;color:var(--muted-2)}
+.cover__meta b{display:block;font-family:var(--serif);font-size:16px;color:var(--ink);font-weight:400;letter-spacing:0;margin-top:2px}
+
+/* ---------- headings ---------- */
+h2{
+  font-family:var(--serif);font-weight:400;font-size:27px;letter-spacing:-.02em;color:var(--ink);
+  margin:56px 0 18px;padding-top:20px;border-top:1px solid var(--line);line-height:1.2;
+}
+h2 .num{font-family:var(--mono);font-size:11px;color:var(--muted-2);letter-spacing:.1em;display:block;margin-bottom:8px;font-weight:400}
+h3{font-family:var(--serif);font-weight:400;font-size:19px;letter-spacing:-.01em;color:var(--ink);margin:32px 0 10px}
+h4{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--ink);margin:24px 0 8px}
+p{margin-bottom:14px;max-width:74ch}
+ul,ol{margin:0 0 16px;padding-left:0;list-style:none;max-width:74ch}
+li{position:relative;padding-left:18px;margin-bottom:7px}
+li::before{content:"";position:absolute;left:3px;top:11px;width:6px;height:1px;background:var(--muted-2)}
+ol{counter-reset:n}
+ol li::before{counter-increment:n;content:counter(n)".";background:none;width:auto;height:auto;left:0;top:0;font-size:11.5px;color:var(--muted-2);font-family:var(--mono)}
+ol li{padding-left:22px}
+strong{color:var(--ink);font-weight:600}
+
+/* ---------- table ---------- */
+table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:12.5px}
+th{
+  text-align:left;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted-2);font-weight:500;padding:9px 11px;border-bottom:1px solid var(--line-2);
+  background:#fcfbf8;white-space:nowrap;
+}
+td{padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.55}
+tbody tr:hover{background:#fcfbf8}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td code{font-size:11.5px;background:none;padding:0;color:#5d4d3d}
+
+/* ---------- blocks ---------- */
+.callout{
+  border:1px solid var(--line);border-left:2px solid var(--ink);background:#fcfbf8;
+  padding:16px 20px;margin:22px 0;font-size:13.5px;max-width:78ch;
+}
+.callout p:last-child{margin-bottom:0}
+.callout__t{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);margin-bottom:6px}
+.callout--warn{border-left-color:var(--warn);background:#fdf9f2}
+.callout--good{border-left-color:var(--sale);background:#f7faf3}
+
+.req{border:1px solid var(--line);margin-bottom:12px;background:#fff}
+.req__head{display:flex;align-items:baseline;gap:10px;padding:11px 16px;border-bottom:1px solid var(--line);background:#fcfbf8;flex-wrap:wrap}
+.req__id{font-family:var(--mono);font-size:10.5px;color:var(--muted-2);letter-spacing:.06em}
+.req__title{font-size:13.5px;font-weight:600;color:var(--ink);flex:1}
+.req__p{font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border:1px solid var(--line-2);color:var(--muted)}
+.req__p.hi{color:#8f2f1f;border-color:#e8cdc7;background:#fdf3f1}
+.req__p.mid{color:var(--warn);border-color:#e6d9b0;background:#fdf8e9}
+.req__body{padding:12px 16px;font-size:13px}
+.req__body p{margin-bottom:6px;font-size:13px}
+.req__body .ac{font-size:12px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+.req__body .ac b{color:var(--ink-2);font-weight:500}
+
+pre{
+  background:#f7f3ec;border:1px solid var(--line);padding:14px 16px;overflow-x:auto;
+  font-family:var(--mono);font-size:11.5px;line-height:1.7;color:#4a3f35;margin:14px 0 22px;max-width:100%;
+}
+.fig{margin:26px 0 30px}
+.fig svg{width:100%;height:auto;display:block;border:1px solid var(--line);background:#fff}
+.fig figcaption{font-size:11px;color:var(--muted-2);margin-top:8px;letter-spacing:.02em}
+
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);margin:20px 0 26px}
+.kv>div{padding:14px 16px;border-left:1px solid var(--line);border-top:1px solid var(--line)}
+.kv>div:nth-child(-n+3){border-top:0}
+.kv>div:nth-child(3n+1){border-left:0}
+.kv dt{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2)}
+.kv dd{margin:5px 0 0;font-family:var(--serif);font-size:19px;color:var(--ink);letter-spacing:-.01em}
+.kv dd small{font-family:var(--sans);font-size:11px;color:var(--muted);display:block;letter-spacing:0;margin-top:2px}
+
+.tag{display:inline-block;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border:1px solid var(--line-2);color:var(--muted);margin-right:5px}
+.tag--ok{color:var(--sale);border-color:#cfe0c2;background:#f3f8ec}
+.tag--no{color:var(--danger);border-color:#e8cdc7;background:#fdf3f1}
+
+hr{border:0;border-top:1px solid var(--line);margin:40px 0}
+.mono{font-family:var(--mono);font-size:12px;letter-spacing:.01em}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin:18px 0 24px}
+.two>div{min-width:0}
+
+@media (max-width:1000px){
+  .shell{grid-template-columns:1fr}
+  .toc{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:24px}
+  .two{grid-template-columns:1fr}
+  .kv{grid-template-columns:1fr}
+  .kv>div{border-left:0}
+  .kv>div:nth-child(2){border-top:1px solid var(--line)}
+}
+@media print{
+  .toc{display:none}
+  .shell{display:block;max-width:none}
+  .doc{padding:0}
+  body{font-size:11pt}
+  h2{page-break-after:avoid;break-after:avoid}
+  table,.req,.fig,pre{page-break-inside:avoid;break-inside:avoid}
+  .cover{page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<aside class="toc">
+  <span class="toc__brand">Wildkind</span>
+  <span class="toc__sub">Project documentation</span>
+  <p class="toc__meta">
+    版本 v1.0 · 2026-11-12<br>
+    编制：产品 / 技术<br>
+    状态：待评审
+  </p>
+
+  <div class="toc__group">
+    <p>文档 A · 参考站拆解</p>
+    <a href="#a1">A1 站点定位与商业模式</a>
+    <a href="#a2">A2 信息架构全表</a>
+    <a href="#a3">A3 页面模板清单</a>
+    <a href="#a4">A4 视觉系统规格</a>
+    <a href="#a5">A5 商品与定价结构</a>
+    <a href="#a6">A6 转化机制拆解</a>
+    <a href="#a7">A7 学什么 / 不学什么</a>
+  </div>
+
+  <div class="toc__group">
+    <p>文档 B · 功能设计说明书</p>
+    <a href="#b0">0 版本与修订记录</a>
+    <a href="#b1">1 概述与范围</a>
+    <a href="#b2">2 角色与权限</a>
+    <a href="#b3">3 信息架构</a>
+    <a href="#b4">4 前台功能需求</a>
+    <a href="#b4-1" class="lv2">4.1 全局导航与搜索</a>
+    <a href="#b4-2" class="lv2">4.2 首页</a>
+    <a href="#b4-3" class="lv2">4.3 集合页</a>
+    <a href="#b4-4" class="lv2">4.4 商品详情</a>
+    <a href="#b4-5" class="lv2">4.5 购物车与结算</a>
+    <a href="#b4-6" class="lv2">4.6 订单查询</a>
+    <a href="#b4-7" class="lv2">4.7 内容页</a>
+    <a href="#b5">5 后台功能需求</a>
+    <a href="#b5-1" class="lv2">5.1 数据看板</a>
+    <a href="#b5-2" class="lv2">5.2 订单管理</a>
+    <a href="#b5-3" class="lv2">5.3 商品管理</a>
+    <a href="#b5-4" class="lv2">5.4 库存管理</a>
+    <a href="#b5-5" class="lv2">5.5 分类与店面</a>
+    <a href="#b5-6" class="lv2">5.6 客户与设置</a>
+    <a href="#b6">6 业务规则</a>
+    <a href="#b7">7 非功能需求</a>
+    <a href="#b8">8 验收清单</a>
+  </div>
+
+  <div class="toc__group">
+    <p>文档 C · 系统设计说明书</p>
+    <a href="#c1">1 架构总览</a>
+    <a href="#c2">2 技术选型</a>
+    <a href="#c3">3 模块划分</a>
+    <a href="#c4">4 数据模型</a>
+    <a href="#c5">5 接口设计</a>
+    <a href="#c6">6 关键流程与财务模型</a>
+    <a href="#c7">7 安全设计</a>
+    <a href="#c8">8 性能与 SEO</a>
+    <a href="#c9">9 部署与演进</a>
+    <a href="#c10">10 测试与风险</a>
+  </div>
+</aside>
+
+<main class="main">
+
+<!-- ============================ 文档 A ============================ -->
+<article class="doc">
+<section class="cover">
+  <p class="cover__tag">Document A</p>
+  <h1>参考站拆解<br>atoleajewelry.com</h1>
+  <p>本文档是重建前台与后台之前的输入物。拆解目的不是复制，而是<b>确认哪些结构是行业最优解、哪些只是对方的偶然选择</b>，并据此确定 Wildkind 的一级信息架构、页面模板与视觉规则。</p>
+  <div class="cover__meta">
+    <div>拆解对象<b>Atolea Jewelry</b></div>
+    <div>站点类型<b>Shopify DTC</b></div>
+    <div>价格带<b>$47 – $135</b></div>
+    <div>核心承诺<b>Lifetime colour warranty</b></div>
+    <div>拆解日期<b>2026-11-12</b></div>
+  </div>
+</section>
+
+<h2 id="a1"><span class="num">A1</span>站点定位与商业模式</h2>
+
+<p>Atolea 卖的不是"首饰"，是<b>一个可验证的承诺</b>：<em>防水、不掉色、终身保色</em>。标题、公告栏、产品页、FAQ 全部围绕这一句展开。它的品类词是 "waterproof jewelry"，而不是 "gold necklace"——这是典型的<b>以痛点而非品类做定位</b>，好处是转化率高、复购强，坏处是溢价天花板明显（主力价位停在 $75–$102）。</p>
+
+<div class="kv">
+  <div><dt>价格带</dt><dd>$47–135<small>主力 $75–102</small></dd></div>
+  <div><dt>材质</dt><dd>316L 不锈钢<small>+ 18k 金 PVD 镀层</small></dd></div>
+  <div><dt>SKU 规模</dt><dd>约 200+<small>核心在售约 60</small></dd></div>
+  <div><dt>变体体系</dt><dd>4 种金属色<small>Gold / Silver / 14K Gold / Rose Gold</small></dd></div>
+  <div><dt>履约</dt><dd>全球免运<small>海外仓 + 本地派送</small></dd></div>
+  <div><dt>增长引擎</dt><dd>TikTok UGC<small>+ 联盟分销 + 订阅盒</small></dd></div>
+</div>
+
+<p>它的收入结构有三个明显的复利点，值得单独记住：<b>①定制化</b>（Initial / Birthstone / Name）把客单价从 $75 拉到 $95+；<b>②订阅盒与降临历</b>（$47.68 盲盒、$321 的 12 天礼盒）把一次性购买变成年度复购；<b>③终身保色</b>几乎消除了"便宜货会不会掉色"这一最大购买阻力，使它能对不锈钢材质收取接近银饰的价格。</p>
+
+<h2 id="a2"><span class="num">A2</span>信息架构全表</h2>
+
+<p>以下是 2026-11-12 抓取的线上结构，一级导航共 <b>11 项</b>，全部平铺在页头左侧，logo 居中，右侧为搜索 / 账户 / 购物车三个图标。</p>
+
+<h4>顶部公告栏（3 条轮播）</h4>
+<table>
+  <thead><tr><th style="width:34%">原文</th><th>作用</th></tr></thead>
+  <tbody>
+    <tr><td>Free Shipping Worldwide</td><td>消除运费不确定性，直接影响弃购率</td></tr>
+    <tr><td>Lifetime Color Warranty</td><td>把最核心承诺放在最贵的位置反复曝光</td></tr>
+    <tr><td>1.600.000+ Happy Customers</td><td>社会证明前置，降低首次购买风险感</td></tr>
+  </tbody>
+</table>
+
+<h4>一级导航与下拉结构</h4>
+<table>
+  <thead><tr><th style="width:16%">一级</th><th style="width:12%">路径</th><th>下拉（二级 / 分组）</th></tr></thead>
+  <tbody>
+    <tr><td><b>Best Sellers</b></td><td><code>/collections/waterproof-jewelry</code></td><td>无下拉，直达全站主推集合</td></tr>
+    <tr><td><b>Custom</b></td><td><code>/collections/custom-waterproof-jewelry</code></td><td>Personalized 组：All Custom Jewelry · Initial Jewelry · Birthstone Jewelry · Birthstone Necklaces · Birthstone Rings</td></tr>
+    <tr><td><b>SALE</b></td><td><code>/collections/sale</code></td><td>无下拉；文字为绿色，唯一使用强调色的一级项</td></tr>
+    <tr><td><b>• New</b></td><td><code>?sort_by=created-descending</code></td><td>前置圆点做视觉提示，实际是排序参数而非独立集合</td></tr>
+    <tr><td><b>Necklaces</b></td><td><code>/collections/waterproof-necklaces</code></td><td>Shop by Style 组：Dainty / Layered / Gold Chokers / Greek Necklaces</td></tr>
+    <tr><td><b>RINGS</b></td><td><code>/collections/waterproof-rings</code></td><td>Shop by Style 组：Stacking Rings / Minimalist Gold Rings / Gemstone Rings</td></tr>
+    <tr><td><b>Pearls</b></td><td><code>/collections/freshwater-pearls-jewelry</code></td><td>Pearls 组：Pearl Necklaces / Pearl Earrings / Pearl Bracelets / Mother of Pearl</td></tr>
+    <tr><td><b>Earrings</b></td><td><code>/collections/waterproof-earrings</code></td><td>Shop by Style 组：Huggie / Gold Hoop</td></tr>
+    <tr><td><b>Bracelets</b></td><td><code>/collections/waterproof-bracelet</code></td><td>Shop by Style 组：Thin Gold Bracelets / Waterproof Bangles</td></tr>
+    <tr><td><b>Anklets</b></td><td><code>/collections/waterproof-anklet</code></td><td>无下拉</td></tr>
+    <tr><td><b>GIFTS</b></td><td><code>/collections/gifts</code></td><td>四组并列：<br>Shop by Style（13 项）· Metals（18k Gold / 14k Gold / Silver）<br>Ocean and Meaning（Sun / Evil Eye / Christian / Celestial / Protection / Sea Turtle）<br>Gifts and Occasions（For Him / Gifts for Mom / Mother Daughter / New Mom / Bridesmaid / Meaningful / Advent Calendar）</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <p class="callout__t">结构洞察</p>
+  <p>真正的矩阵藏在 <b>GIFTS 下拉</b>里：它同时承载了「按风格」「按材质」「按寓意」「按送礼对象」四条正交轴。这意味着同一件商品会被四个入口命中——一件太阳项链同时出现在 Sun Jewelry、Celestial、Gifts for Mom、Best Sellers。Shopify 用 tag 做集合，本质是<b>用内容运营替代导航深度</b>，这是单人团队最省力的做法。</p>
+</div>
+
+<h4>页脚分组</h4>
+<table>
+  <thead><tr><th style="width:22%">分组</th><th>条目</th></tr></thead>
+  <tbody>
+    <tr><td>品牌区</td><td>logo + 一句话定位 + Instagram / TikTok / Pinterest</td></tr>
+    <tr><td>Help</td><td>Shipping · Returns · FAQ · Track order · Contact · Size guide · Care</td></tr>
+    <tr><td>About</td><td>Our story · Materials · Sustainability · Affiliate program · Reviews</td></tr>
+    <tr><td>Legal</td><td>Privacy · Terms · Accessibility · Cookie settings</td></tr>
+    <tr><td>底部条</td><td>货币切换（15 种）· 版权 · 支付图标（Visa / MC / Amex / Apple Pay / PayPal）</td></tr>
+  </tbody>
+</table>
+
+<h2 id="a3"><span class="num">A3</span>页面模板清单</h2>
+
+<p>全站只有 9 个模板，重复使用度高。这是 Shopify 主题的典型特征：模板少、区块可配。我们的重建也按这个粒度划分，不做多余页面。</p>
+
+<table>
+  <thead><tr><th style="width:8%">#</th><th style="width:26%">模板</th><th>关键区块（自上而下）</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><b>Home</b></td><td>公告栏 → 页头 → 满宽 Hero（图 + 居中标题 + CTA）→ 信任条 → Best Sellers 横滑 → 分类磁贴 → 大图编辑区（TikTok UGC）→ Custom 区 → 评价墙 → Instagram 网格 → Newsletter → 页脚</td></tr>
+    <tr><td>2</td><td><b>Collection</b></td><td>面包屑 → 标题 + 描述 → 筛选条（In stock / Price / Metal / Style）→ 排序 → 4 列网格 → 分页/加载更多</td></tr>
+    <tr><td>3</td><td><b>Product</b></td><td>面包屑 → 左图片画廊（主图 + 佩戴图）/ 右信息栏（标题、星级、价格、四色金属、尺寸、加购、库存紧迫、三信任点、手风琴）→ 评价 → You may also like → 最近浏览</td></tr>
+    <tr><td>4</td><td><b>Cart</b></td><td>抽屉式（不全屏跳转）+ 独立 /cart 页兜底；免运进度条</td></tr>
+    <tr><td>5</td><td><b>Checkout</b></td><td>单页三步（Contact / Shipping / Payment）+ 右侧订单摘要常驻</td></tr>
+    <tr><td>6</td><td><b>Account</b></td><td>登录 / 注册 / 订单历史 / 地址簿（Atolea 支持账户，我们做访客查询）</td></tr>
+    <tr><td>7</td><td><b>Content</b></td><td>About / FAQ / Shipping / Care / Size guide，统一长文版式</td></tr>
+    <tr><td>8</td><td><b>Search</b></td><td>顶部浮层搜索 + 结果页网格</td></tr>
+    <tr><td>9</td><td><b>404 / Password</b></td><td>极简，只留返回入口</td></tr>
+  </tbody>
+</table>
+
+<h2 id="a4"><span class="num">A4</span>视觉系统规格</h2>
+
+<p>从线上 CSS 变量直接读取，不是目测。这套数值是我们重建时的基线。</p>
+
+<h4>字体</h4>
+<table>
+  <thead><tr><th style="width:26%">用途</th><th style="width:34%">字体</th><th>规格</th></tr></thead>
+  <tbody>
+    <tr><td>标题 / Display</td><td><b>Awesome Serif</b>（粗衬线）</td><td>字重 Bold，<code>text-transform: uppercase</code>，字距紧（-0.02em）</td></tr>
+    <tr><td>正文 / UI</td><td><b>Figtree</b></td><td>400/500/600，14–16px，行高 1.6–1.75</td></tr>
+    <tr><td>导航 / 标签</td><td>Figtree</td><td>10–11px，uppercase，字距 0.08–0.14em</td></tr>
+  </tbody>
+</table>
+
+<h4>色板</h4>
+<table>
+  <thead><tr><th style="width:20%">色值</th><th style="width:22%">用途</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><span class="mono">#FFFFFF</span></td><td>主背景</td><td>大面积留白的基底</td></tr>
+    <tr><td><span class="mono">#F8F7F2</span></td><td>次级背景（暖白）</td><td>区块交替、图片承载底</td></tr>
+    <tr><td><span class="mono">#F3E8DE / #F5E9DF</span></td><td>奶油底</td><td>编辑区块、礼盒区</td></tr>
+    <tr><td><span class="mono">#1C1C1C / #000000</span></td><td>正文与按钮</td><td>黑底白字按钮，uppercase</td></tr>
+    <tr><td><span class="mono">#CFC5BD / #D9D2C9</span></td><td>描边</td><td>1px 发丝线，暖灰而非中性灰</td></tr>
+    <tr><td><span class="mono">#307A07</span></td><td>折扣 / 成功</td><td>唯一的绿色，只用于 SAVE 与成功态</td></tr>
+    <tr><td><span class="mono">#FFD200</span></td><td>评分星</td><td>仅此一处使用高饱和色</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <p class="callout__t">视觉结论</p>
+  <p>这套视觉的高级感来自三个约束，而不是装饰：<b>①只有黑白 + 一个奶油底，没有第三种彩色</b>；<b>②所有圆角为 0 或 2px</b>，没有胶囊按钮（除筛选 chip）；<b>③层次全靠字号对比与留白，不靠阴影和色块分割</b>。重建时我们沿用这三条，但把标题字体换成 Fraunces（同为粗衬线，Google Fonts 免费，字面更柔和），把 hero 从满宽图改为左文右图以承载更多信息。</p>
+</div>
+
+<h2 id="a5"><span class="num">A5</span>商品与定价结构</h2>
+
+<p>抓取 Best Sellers 集合 40 个在售 SKU，价格分布如下。这个分布决定了我们的选品区间。</p>
+
+<table>
+  <thead><tr><th style="width:18%">价格带</th><th class="num" style="width:14%">SKU 数</th><th style="width:20%">代表商品</th><th>策略含义</th></tr></thead>
+  <tbody>
+    <tr><td>$40–59</td><td class="num">5</td><td>Cozumel Paperclip Bracelet $61</td><td>引流款，承担首单转化</td></tr>
+    <tr><td>$60–79</td><td class="num">14</td><td>Rainbow Choker $75、Golden Sun $80</td><td><b>主力价格带</b>，占销量 60%+</td></tr>
+    <tr><td>$80–99</td><td class="num">13</td><td>Baroque Pearl $84、Name Bracelet $87</td><td>利润款，定制与珍珠为主</td></tr>
+    <tr><td>$100–135</td><td class="num">6</td><td>Locket $108、Rings Set $96</td><td>价格锚点，拉高感知价值</td></tr>
+    <tr><td>$300+</td><td class="num">2</td><td>12 天礼盒 $321</td><td>节日季限量，纯利润</td></tr>
+  </tbody>
+</table>
+
+<h4>变体与徽章体系</h4>
+<ul>
+  <li><b>金属变体</b>：Gold（18k PVD）为默认，Silver、14K Gold、Rose Gold 依次加价。同一款式最多 4 个色，用文字标签而非色块（文字更易搜索，也更像"材质"而非"颜色"）。</li>
+  <li><b>徽章四类</b>：<code>BEST SELLER</code>（社会证明）、<code>LOW STOCK</code>（稀缺）、<code>Customizable</code>（差异化）、<code>Sale | SAVE $14</code>（<b>用绝对金额而非百分比</b>——$14 比 16% 更有感）。</li>
+  <li><b>定价技巧</b>：几乎所有商品都有 compare-at price，折扣幅度固定在 $12–$39（约 15–30%），形成"常年有折扣但从不深折"的定价认知。</li>
+</ul>
+
+<h2 id="a6"><span class="num">A6</span>转化机制拆解</h2>
+
+<p>按页面出现顺序，Atolea 一共用了 12 个转化机制。左侧标注我们是否采用。</p>
+
+<table>
+  <thead><tr><th style="width:6%">#</th><th style="width:34%">机制</th><th style="width:34%">具体做法</th><th>Wildkind</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>核心承诺前置</td><td>公告栏 + 标题 + 第一屏副标题三处重复"lifetime colour warranty"</td><td><span class="tag tag--ok">采用</span></td></tr>
+    <tr><td>2</td><td>免运门槛</td><td>满额免运，购物车显示「还差 $X」进度条</td><td><span class="tag tag--ok">采用 · $75</span></td></tr>
+    <tr><td>3</td><td>库存紧迫</td><td>LOW STOCK 角标 + 详情页「Only N left」</td><td><span class="tag tag--ok">采用</span></td></tr>
+    <tr><td>4</td><td>绝对金额折扣</td><td>SAVE $14 而非 -16%</td><td><span class="tag tag--ok">采用</span></td></tr>
+    <tr><td>5</td><td>双图悬停</td><td>产品卡主图 → 佩戴图，悬停切换</td><td><span class="tag tag--ok">采用</span></td></tr>
+    <tr><td>6</td><td>UGC 评价</td><td>带姓名 + Verified 标记，强调"游泳/健身也戴着"</td><td><span class="tag tag--ok">采用</span></td></tr>
+    <tr><td>7</td><td>信任三连</td><td>详情页固定三条：免运 / 终身保色 / 30 天退换</td><td><span class="tag tag--ok">采用</span></td></tr>
+    <tr><td>8</td><td>定制加价</td><td>Initial / Birthstone / Name 三条定制线，溢价 10–25%</td><td><span class="tag tag--ok">采用</span></td></tr>
+    <tr><td>9</td><td>礼品化</td><td>礼盒、降临历、盲盒订阅</td><td><span class="tag tag--ok">采用 · 礼盒</span></td></tr>
+    <tr><td>10</td><td>多轴集合</td><td>一商品挂 4–6 个集合，扩大曝光面</td><td><span class="tag tag--ok">采用</span></td></tr>
+    <tr><td>11</td><td>联盟分销</td><td>15–20% 佣金，KOC 大量铺量</td><td><span class="tag tag--no">二期</span></td></tr>
+    <tr><td>12</td><td>满屏弹窗</td><td>首访弹 10% off 邮箱收集</td><td><span class="tag tag--no">不做</span></td></tr>
+  </tbody>
+</table>
+
+<div class="callout callout--warn">
+  <p class="callout__t">第 12 条为什么不做</p>
+  <p>弹窗能提升 3–5% 的邮箱收集率，但会让首屏 LCP 变差、移动端跳出率上升。对单人团队来说，邮件列表的价值低于首单转化率。我们改用页脚订阅 + 订单后订阅，把收集成本放到用户已经付钱之后。</p>
+</div>
+
+<h2 id="a7"><span class="num">A7</span>学什么 / 不学什么</h2>
+
+<div class="two">
+  <div>
+    <h4>必须学</h4>
+    <ul>
+      <li><b>单一承诺</b>：一个能被验证的承诺（防水不掉色），而不是四个形容词</li>
+      <li><b>11 项一级导航全平铺</b>：让用户两步内到达任何品类，减少点击成本</li>
+      <li><b>用 tag 做集合</b>：一件商品挂多个入口，靠运营而非开发扩曝光</li>
+      <li><b>绝对金额折扣</b>：SAVE $16 比 -20% 直观</li>
+      <li><b>材质叙事</b>：把 316L + PVD 讲成技术优势，支撑 $62 的不锈钢项链</li>
+      <li><b>定制线</b>：Initial / Birthstone 是最低成本的 AOV 提升手段</li>
+    </ul>
+  </div>
+  <div>
+    <h4>不学 / 要改</h4>
+    <ul>
+      <li><b>满宽 hero 纯图</b>：信息密度太低，第一屏没讲清"卖什么、多少钱、为什么信你"</li>
+      <li><b>4 种金属变体</b>：单人库存压力大，我们只做 Gold + Silver 两色</li>
+      <li><b>常年全站折扣</b>：会训练用户等折扣，我们只在季末做两次</li>
+      <li><b>订阅盒</b>：供应链与选品复杂度远超单人产能，二期再评估</li>
+      <li><b>15 种货币</b>：只做 USD，减少支付与定价复杂度</li>
+      <li><b>账户体系</b>：访客下单 + 订单号查询，砍掉注册流失</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout callout--good">
+  <p class="callout__t">我们的差异化落点</p>
+  <p>Atolea 的题材是"地名 + 极简几何"（Ios、Saona、Positano），我们做的是<b>具体动植物与天体</b>——狐狸、野兔、海龟、蕨类、月相。这在搜索端有天然优势（"fox necklace"、"sea turtle jewelry" 是明确的长尾词），在内容端可讲故事（每种动物一段来源）。代价是设计成本更高：每款要重新造型，不能靠改链子长度出新 SKU。<b>这正是护城河所在</b>——Atolea 的模式可以被任何人复制，具体造型的原创性不能。</p>
+</div>
+</article>
+
+<!-- ============================ 文档 B ============================ -->
+<article class="doc">
+<section class="cover">
+  <p class="cover__tag">Document B</p>
+  <h1>功能设计说明书</h1>
+  <p>Functional Requirements Document。本文档定义 Wildkind 独立站<b>前台与后台的全部功能边界</b>，每条需求带唯一编号、优先级与可执行验收标准。开发与验收均以本文档为准，不以实现现状反推需求。</p>
+  <div class="cover__meta">
+    <div>文档编号<b>WK-FRD-001</b></div>
+    <div>版本<b>v1.0</b></div>
+    <div>需求条目<b>48 条</b></div>
+    <div>优先级<b>P0 / P1 / P2</b></div>
+    <div>评审状态<b>待评审</b></div>
+  </div>
+</section>
+
+<h2 id="b0"><span class="num">0</span>版本与修订记录</h2>
+
+<table>
+  <thead><tr><th style="width:12%">版本</th><th style="width:16%">日期</th><th style="width:20%">作者</th><th>变更说明</th></tr></thead>
+  <tbody>
+    <tr><td>v0.1</td><td>2026-11-12</td><td>产品</td><td>初稿：参考站拆解、信息架构、前台功能清单</td></tr>
+    <tr><td>v0.2</td><td>2026-11-12</td><td>产品</td><td>补充后台 8 个模块、业务规则、非功能需求</td></tr>
+    <tr><td>v1.0</td><td>2026-11-12</td><td>产品</td><td>对齐原型实现，补齐验收标准与权限矩阵，提交评审</td></tr>
+  </tbody>
+</table>
+
+<h2 id="b1"><span class="num">1</span>概述与范围</h2>
+
+<h3>1.1 项目背景</h3>
+<p>Wildkind 是面向北美市场的自然主题不锈钢饰品品牌，单人运营，供应链位于东莞长安（距深圳工作室 40 分钟），履约通过美国俄勒冈州 3PL 完成。现有站点的核心问题不是缺功能，而是<b>信息架构不成体系</b>：一级分类按"手链/项链"平铺，但缺少风格、寓意、送礼对象三条正交维度，导致同一件商品只能被一个入口命中，曝光面被压缩。</p>
+<p>本项目的目标是用一套对齐行业最优解（Atolea Jewelry）的信息架构，重建前台购物流程与后台运营系统，使<b>一个人可以在 30 分钟内完成每日运营</b>（看数据、处理订单、补库存、改文案）。</p>
+
+<h3>1.2 项目目标（可量化）</h3>
+<table>
+  <thead><tr><th style="width:32%">指标</th><th class="num" style="width:18%">基线</th><th class="num" style="width:18%">目标（上线 90 天）</th><th>衡量方式</th></tr></thead>
+  <tbody>
+    <tr><td>转化率</td><td class="num">1.2%</td><td class="num">1.8%</td><td>订单数 / 会话数</td></tr>
+    <tr><td>客单价 AOV</td><td class="num">$72</td><td class="num">$82</td><td>净营收 / 订单数</td></tr>
+    <tr><td>加购率</td><td class="num">6.5%</td><td class="num">9.0%</td><td>加购会话 / 商品页会话</td></tr>
+    <tr><td>贡献毛利率</td><td class="num">58%</td><td class="num">62%</td><td>(营收 − 全部可变成本) / 营收</td></tr>
+    <tr><td>日均运营耗时</td><td class="num">90 min</td><td class="num">30 min</td><td>后台操作计时</td></tr>
+    <tr><td>移动端 LCP</td><td class="num">—</td><td class="num">&lt; 2.5 s</td><td>Lighthouse 移动模拟</td></tr>
+  </tbody>
+</table>
+
+<h3>1.3 范围</h3>
+<div class="two">
+  <div>
+    <h4>本期包含（In scope）</h4>
+    <ul>
+      <li>前台 9 个模板：首页 / 集合 / 商品 / 购物车 / 结算 / 订单查询 / 内容页 / 搜索 / 404</li>
+      <li>后台 8 个模块：看板 / 订单 / 商品 / 库存 / 分类 / 客户 / 店面内容 / 设置</li>
+      <li>访客下单（无账户体系）、订单号 + 邮箱查询</li>
+      <li>美元单币种、美加英三国配送、DDP 完税交付</li>
+      <li>后台鉴权、订单状态流转、库存扣减</li>
+    </ul>
+  </div>
+  <div>
+    <h4>本期不包含（Out of scope）</h4>
+    <ul>
+      <li>用户注册登录、会员等级、积分体系</li>
+      <li>多币种、多语言（仅 en-US / USD）</li>
+      <li>优惠券引擎、满减、拼团（仅单品 compare-at price）</li>
+      <li>真实支付（Stripe 接入在 M2，原型用模拟支付）</li>
+      <li>真实邮件发送（Resend 在 M2）</li>
+      <li>欧盟市场（GPSR 授权代表未就绪）</li>
+      <li>联盟分销、订阅盒</li>
+    </ul>
+  </div>
+</div>
+
+<h3>1.4 术语表</h3>
+<table>
+  <thead><tr><th style="width:22%">术语</th><th>定义</th></tr></thead>
+  <tbody>
+    <tr><td>Collection（集合）</td><td>商品的逻辑分组。一件商品可同时属于多个集合，集合是曝光入口而非分类归属</td></tr>
+    <tr><td>Handle</td><td>集合与商品的 URL 唯一标识，小写连字符，创建后不可修改</td></tr>
+    <tr><td>Variant（变体）</td><td>同一商品的属性组合，本期只有 metal（Gold/Silver）与 size 两维</td></tr>
+    <tr><td>Compare-at price</td><td>划线原价。存在时前台显示 SAVE 金额</td></tr>
+    <tr><td>Contribution profit</td><td>营收减去全部可变成本（货品、关税、头程、仓配、支付费、包装、退货计提）</td></tr>
+    <tr><td>Weeks of cover</td><td>当前库存 ÷ 周均销量，低于 3 周触发补货</td></tr>
+    <tr><td>DDP</td><td>Delivered Duty Paid，关税由卖家承担，买家签收不再付费</td></tr>
+    <tr><td>PVD</td><td>Physical Vapour Deposition，真空镀膜，颜色与基材结合而不覆盖</td></tr>
+  </tbody>
+</table>
+
+<h2 id="b2"><span class="num">2</span>角色与权限</h2>
+
+<table>
+  <thead><tr><th style="width:16%">角色</th><th style="width:14%">身份</th><th>权限范围</th><th style="width:16%">鉴权方式</th></tr></thead>
+  <tbody>
+    <tr><td><b>访客</b><br>Visitor</td><td>未登录</td><td>浏览全部商品与集合、搜索、加购、下单、凭订单号+邮箱查询订单</td><td>无</td></tr>
+    <tr><td><b>买家</b><br>Customer</td><td>已完成支付</td><td>访客权限 + 查看自己的订单历史（凭邮箱）</td><td>邮箱 + 订单号</td></tr>
+    <tr><td><b>运营者</b><br>Operator</td><td>店主本人</td><td>后台全部读写：订单、商品、库存、分类、客户、店面文案、设置</td><td>密码 + HttpOnly 会话 Cookie</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <p class="callout__t">设计决策：为什么不做账户体系</p>
+  <p>账户注册在 DTC 首饰类目的转化损失约 8–12%，而收益只有"订单历史"这一项。本项目的替代方案是<b>订单号 + 邮箱双因子查询</b>：安全强度足够（两者组合不可枚举），且下单流程少一步。代价是无法做积分与个性化推荐——这两个能力在 M3 之后按需补。</p>
+</div>
+
+<h2 id="b3"><span class="num">3</span>信息架构</h2>
+
+<p>一级导航严格对齐参考站的 11 项，二级按品牌题材替换（自然主题替换 Greek / Christian 等）。</p>
+
+<figure class="fig">
+<svg viewBox="0 0 880 470" role="img" aria-label="站点地图">
+  <defs>
+    <style>
+      .n{font-family:Figtree,sans-serif;font-size:11px;fill:#14120f}
+      .nb{font-family:Figtree,sans-serif;font-size:11px;fill:#14120f;font-weight:600}
+      .ns{font-family:Figtree,sans-serif;font-size:10px;fill:#9a9188}
+      .ln{stroke:#d5cabf;stroke-width:1;fill:none}
+      .bx{fill:#fff;stroke:#e6ded4;stroke-width:1}
+      .bxa{fill:#14120f}
+      .ttl{font-family:Fraunces,Georgia,serif;font-size:13px;fill:#14120f}
+      .tta{font-family:Fraunces,Georgia,serif;font-size:13px;fill:#fff}
+    </style>
+  </defs>
+
+  <!-- root -->
+  <rect x="356" y="16" width="168" height="34" class="bxa" rx="1"/>
+  <text x="440" y="38" class="tta" text-anchor="middle">Wildkind 站点</text>
+  <path d="M440 50 V68 M120 68 H760 M120 68 V84 M300 68 V84 M440 68 V84 M600 68 V84 M760 68 V84" class="ln"/>
+
+  <!-- 5 columns -->
+  <g>
+    <rect x="52" y="84" width="136" height="26" class="bx" rx="1"/>
+    <text x="120" y="101" class="nb" text-anchor="middle">商店（前台）</text>
+    <text x="52" y="132" class="n">/</text>
+    <text x="52" y="150" class="n">/collections/:handle</text>
+    <text x="52" y="168" class="n">/products/:handle</text>
+    <text x="52" y="186" class="n">/search?q=</text>
+    <text x="52" y="204" class="n">/cart</text>
+    <text x="52" y="222" class="n">/checkout</text>
+    <text x="52" y="240" class="n">/order/:number</text>
+    <text x="52" y="258" class="n">/account</text>
+  </g>
+
+  <g>
+    <rect x="232" y="84" width="136" height="26" class="bx" rx="1"/>
+    <text x="300" y="101" class="nb" text-anchor="middle">一级分类 × 11</text>
+    <text x="232" y="132" class="n">Best Sellers</text>
+    <text x="232" y="150" class="n">Custom</text>
+    <text x="232" y="168" class="n">SALE</text>
+    <text x="232" y="186" class="n">New</text>
+    <text x="232" y="204" class="n">Necklaces</text>
+    <text x="232" y="222" class="n">Rings</text>
+    <text x="232" y="240" class="n">Pearls</text>
+    <text x="232" y="258" class="n">Earrings</text>
+    <text x="232" y="276" class="n">Bracelets</text>
+    <text x="232" y="294" class="n">Anklets</text>
+    <text x="232" y="312" class="n">Gifts</text>
+  </g>
+
+  <g>
+    <rect x="372" y="84" width="136" height="26" class="bx" rx="1"/>
+    <text x="440" y="101" class="nb" text-anchor="middle">二级 / 主题</text>
+    <text x="372" y="132" class="ns">Shop by style（项链/戒指/耳饰…）</text>
+    <text x="372" y="150" class="ns">Metals：Gold · Silver</text>
+    <text x="372" y="168" class="ns">Nature &amp; Meaning</text>
+    <text x="372" y="184" class="n">Ocean · Woodland</text>
+    <text x="372" y="202" class="n">Moon &amp; Stars · Floral</text>
+    <text x="372" y="220" class="n">Protection</text>
+    <text x="372" y="244" class="ns">Gifts &amp; Occasions</text>
+    <text x="372" y="262" class="n">For Her · For Him</text>
+    <text x="372" y="280" class="n">Gifts for Mom</text>
+    <text x="372" y="298" class="n">Birthday · Gift Sets</text>
+  </g>
+
+  <g>
+    <rect x="532" y="84" width="136" height="26" class="bx" rx="1"/>
+    <text x="600" y="101" class="nb" text-anchor="middle">内容页</text>
+    <text x="532" y="132" class="n">/pages/about</text>
+    <text x="532" y="150" class="n">/pages/faq</text>
+    <text x="532" y="168" class="n">/pages/shipping</text>
+    <text x="532" y="186" class="n">/pages/care</text>
+    <text x="532" y="204" class="n">/pages/journal</text>
+    <text x="532" y="222" class="n">/pages/privacy</text>
+    <text x="532" y="240" class="n">/pages/terms</text>
+    <text x="532" y="258" class="n">/pages/accessibility</text>
+  </g>
+
+  <g>
+    <rect x="692" y="84" width="136" height="26" class="bx" rx="1"/>
+    <text x="760" y="101" class="nb" text-anchor="middle">后台 /admin</text>
+    <text x="692" y="132" class="n">#/overview</text>
+    <text x="692" y="150" class="n">#/orders</text>
+    <text x="692" y="168" class="n">#/products</text>
+    <text x="692" y="186" class="n">#/inventory</text>
+    <text x="692" y="204" class="n">#/collections</text>
+    <text x="692" y="222" class="n">#/customers</text>
+    <text x="692" y="240" class="n">#/content</text>
+    <text x="692" y="258" class="n">#/settings</text>
+  </g>
+
+  <!-- bottom annotation -->
+  <path d="M52 336 H828" stroke="#e6ded4" stroke-width="1"/>
+  <text x="52" y="360" class="ttl">商品与集合是多对多</text>
+  <text x="52" y="380" class="ns">一件商品平均挂 4 个集合：品类 + 主题 + 送礼对象 + 榜单。这是曝光面的主要来源。</text>
+  <text x="52" y="396" class="ns">例：Foxtrot Pendant Necklace → necklaces, best-sellers, pendant-necklaces, woodland, for-her（5 个）</text>
+
+  <path d="M52 414 H828" stroke="#e6ded4" stroke-width="1"/>
+  <text x="52" y="438" class="ns">导航层级上限为 2 层。第三层不设页面，用集合筛选（metal / price / in-stock）承接。</text>
+  <text x="52" y="456" class="ns">后台为单页应用，hash 路由，不需要额外服务端渲染。</text>
+</svg>
+<figcaption>图 3-1　Wildkind 站点地图：前台 9 个模板 + 后台 8 个模块 + 11 项一级分类</figcaption>
+</figure>
+
+<h2 id="b4"><span class="num">4</span>前台功能需求</h2>
+
+<h3 id="b4-1">4.1 全局导航与搜索</h3>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-001</span><span class="req__title">一级导航平铺与下拉面板</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>页头左侧平铺 11 项一级分类，文字 9.5–10.5px、全大写、字距 0.02em。logo 居中，右侧为搜索 / 账户 / 购物车图标。含二级分类的一级项在 hover 时展开全宽 mega menu，按 <code>menuGroup</code> 分栏；无二级的项目（Best Sellers、SALE、Anklets）直接跳转。SALE 使用绿色文字以区别于其他项。</p>
+    <p class="ac"><b>验收：</b>1440px 视口下 11 项不换行、不与 logo 重叠；hover 300ms 内展开；mega menu 全宽左对齐容器；键盘 Tab 可遍历所有项；&lt;980px 时折叠为汉堡抽屉。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-002</span><span class="req__title">搜索浮层</span><span class="req__p mid">P1</span></div>
+  <div class="req__body">
+    <p>点击搜索图标从顶部下推浮层，输入框自动聚焦。回车跳转 <code>/search?q=</code>，结果页按标题、描述、题材（motif）、集合 handle 做包含匹配。无结果时给出建议关键词。</p>
+    <p class="ac"><b>验收：</b>按 <code>/</code> 键可唤起（输入框聚焦时不触发）；Esc 关闭；结果数量正确显示；零结果展示预设建议词。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-003</span><span class="req__title">公告栏</span><span class="req__p mid">P1</span></div>
+  <div class="req__body">
+    <p>页面顶部深色条，展示后台配置的 3 条信息（免运门槛、终身保色、材质特性），以 <code>·</code> 分隔。移动端只显示第一条。</p>
+    <p class="ac"><b>验收：</b>文案来自 <code>content.announcement</code>，后台修改后刷新即生效；移动端仅一行不溢出。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-004</span><span class="req__title">购物车角标</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>购物车图标右上角显示商品总件数（非行数）。数量为 0 时隐藏角标。任何加购 / 改量 / 删除操作后实时更新，无需刷新页面。</p>
+    <p class="ac"><b>验收：</b>加购 2 件同款，角标显示 2；删除后归零并隐藏；跨页面跳转后状态保持（Cookie 持久化 30 天）。</p>
+  </div>
+</div>
+
+<h3 id="b4-2">4.2 首页</h3>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-010</span><span class="req__title">Hero 首屏</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>左文右图两栏：左侧依次为 eyebrow（材质承诺）、主标题（衬线，允许一个斜体强调词）、正文（≤ 42 字符宽）、两个 CTA（主按钮 + 幽灵按钮）、三个参数位（316L / PVD / 30 days）；右侧为竖构图生活图，左下角叠一句图注。</p>
+    <p class="ac"><b>验收：</b>1440px 下左右比例 46:54，图不变形（object-fit: cover）；文案全部来自后台可编辑；移动端改为上下堆叠，图用 4:5 裁切。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-011</span><span class="req__title">信任条（USP）</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>四栏等宽，图标 + 标题 + 说明，竖线分隔。内容为免运、终身保色、30 天退换、1% 捐赠。移动端 2×2，去掉左右边框改上下边框。</p>
+    <p class="ac"><b>验收：</b>四栏高度一致；图标与文字垂直居中；&lt;980px 时变 2 列且边框不重复。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-012</span><span class="req__title">Best Sellers 横向滚动</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>横向滚动容器，一次露出 4.35 个卡片（第 5 个露出一角以暗示可滑动）。数据取 <code>featured = true</code> 的商品，最多 8 个。标题右侧有「View all」链接。</p>
+    <p class="ac"><b>验收：</b>卡片宽度按容器计算不写死像素；滚动可用触摸与触控板；浏览器默认滚动条隐藏；点击卡片进详情页。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-013</span><span class="req__title">题材磁贴（Shop by Nature）</span><span class="req__p mid">P1</span></div>
+  <div class="req__body">
+    <p>四个 4:5 竖图磁贴，对应 Ocean / Woodland / Moon &amp; Stars / Floral 四个主题集合。底部叠加深色渐变 + 白色标题，保证在任何图片上都可读。</p>
+    <p class="ac"><b>验收：</b>渐变从底部 0.74 透明度过渡到透明，跨 52% 高度；文字在浅色图片上仍满足 4.5:1 对比度；hover 图片放大 1.05 倍（1.4s 缓动）。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-014</span><span class="req__title">编辑区块与评价墙</span><span class="req__p mid">P1</span></div>
+  <div class="req__body">
+    <p>两个左右分栏的编辑区块（图 + 文案，方向交替），承接"防水"与"定制"两条主线。评价墙四栏，每栏含星级、引文、姓名与"已购买"标记，竖线分隔。</p>
+    <p class="ac"><b>验收：</b>分栏在 &lt;980px 时堆叠且图片在上；评价文案来自 <code>content.testimonials</code>；星级按 1–5 渲染实心/空心。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-015</span><span class="req__title">Newsletter 订阅</span><span class="req__p low">P2</span></div>
+  <div class="req__body">
+    <p>深色区块，邮箱输入 + 箭头按钮。提交后原地替换为成功提示，不跳转、不弹窗。</p>
+    <p class="ac"><b>验收：</b>空值或非法邮箱被浏览器原生校验拦截；成功后表单消失且提示可见；重复提交不报错。</p>
+  </div>
+</div>
+
+<h3 id="b4-3">4.3 集合页</h3>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-020</span><span class="req__title">集合页通用模板</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>同一模板承接全部 45 个集合。自上而下：面包屑、标题、描述、商品数、筛选条、排序、4 列网格。集合不存在时返回 404。</p>
+    <p class="ac"><b>验收：</b>45 个 handle 全部可访问且不报错；空集合显示占位文案与「Clear filters」；商品数随筛选实时变化。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-021</span><span class="req__title">筛选</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>五个胶囊筛选：All / Gold / Silver / Under $60 / $60–80 / In stock。可叠加（金属 + 价格 + 库存）。选中态黑底白字。筛选以 URL query 表达，可分享、可后退。</p>
+    <p class="ac"><b>验收：</b>筛选组合正确求交集；URL 可直接复制打开；浏览器后退恢复上一组筛选；无结果时展示 Clear 入口。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-022</span><span class="req__title">排序</span><span class="req__p mid">P1</span></div>
+  <div class="req__body">
+    <p>下拉选择：Featured（默认，按 featured 权重）、Best selling（按评价数）、Newest（按创建时间）、Price: low to high、Price: high to low。切换即提交，保留当前筛选条件。</p>
+    <p class="ac"><b>验收：</b>排序不丢失已选筛选；下拉宽度不随选项文字变化；选择后页码回到顶部。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-023</span><span class="req__title">商品卡片</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>1:1 图片区（浅米底）、左上角徽章（Best Seller / New / Low stock / Custom / Gift）、双图悬停切换、居中标题、价格（含划线价与 SAVE 金额）、金属色点。</p>
+    <p class="ac"><b>验收：</b>悬停 0.5s 内完成图片交叉淡入；低库存（≤15）且无自定义徽章时自动显示 Low stock；色点最多 3 个；价格格式统一为 $XX 无小数。</p>
+  </div>
+</div>
+
+<h3 id="b4-4">4.4 商品详情</h3>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-030</span><span class="req__title">图片画廊</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>左侧 58% 宽，主图 1:1 占满，下方一张 16:9 佩戴图。图片均为懒加载，第一张不懒加载以保证 LCP。</p>
+    <p class="ac"><b>验收：</b>主图不加 loading="lazy"；图片声明 width/height 避免布局抖动；移动端只显示主图。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-031</span><span class="req__title">信息栏（sticky）</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>含面包屑、标题、星级与评价数、价格（含 SAVE）、描述、金属选择、尺寸选择、数量、加购按钮、库存紧迫提示、三条信任点、四个手风琴。桌面端随滚动吸附在页头下方。</p>
+    <p class="ac"><b>验收：</b>滚动时信息栏保持可见（top: 74px）；金属/尺寸切换实时更新选项标签；尺寸选项来自商品数据，无尺寸商品不渲染该组。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-032</span><span class="req__title">加购</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>点击加购后按「商品 + 金属 + 尺寸」三元组去重：已存在则累加数量，否则新增行。成功后自动打开购物车抽屉，按钮文案在请求期间变为「Adding…」。</p>
+    <p class="ac"><b>验收：</b>同商品不同尺寸视为两行；连续点击不产生重复行；售罄商品按钮禁用且显示 Sold out；数量上限 20。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-033</span><span class="req__title">手风琴（材质 / 配送 / 保养 / 保修）</span><span class="req__p mid">P1</span></div>
+  <div class="req__body">
+    <p>四项，默认展开第一项。展开时 + 号旋转 45° 变为 ×。材质项以定义列表渲染商品的 <code>details</code> 键值对。</p>
+    <p class="ac"><b>验收：</b>同时只允许一项展开；点击已展开项可收起；details 键值数量不固定时布局不破。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-034</span><span class="req__title">关联推荐</span><span class="req__p mid">P1</span></div>
+  <div class="req__body">
+    <p>取与当前商品共享至少一个集合的其它商品，最多 4 个。</p>
+    <p class="ac"><b>验收：</b>不出现当前商品自身；不足 4 个时正常渲染；无共享集合时该区块隐藏。</p>
+  </div>
+</div>
+
+<h3 id="b4-5">4.5 购物车与结算</h3>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-040</span><span class="req__title">购物车抽屉</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>右侧滑出 430px 面板，含行项目（缩略图、标题、金属/尺寸、数量步进、行小计）、免运进度条、小计、Checkout 按钮、View bag 次按钮。空车时显示引导文案与「Shop best sellers」。</p>
+    <p class="ac"><b>验收：</b>滑出动画 0.38s；背景加遮罩且点击遮罩关闭；Esc 关闭；抽屉打开时页面不滚动；数量减到 0 时自动移除该行。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-041</span><span class="req__title">免运进度</span><span class="req__p mid">P1</span></div>
+  <div class="req__body">
+    <p>小计低于 $75 时显示「You are $X from free shipping」与进度条；达到阈值显示「Free shipping unlocked」且进度条满格。</p>
+    <p class="ac"><b>验收：</b>阈值读取 <code>settings.freeShippingThreshold</code>；金额四舍五入到分；进度条不超过 100%。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-042</span><span class="req__title">购物车页</span><span class="req__p mid">P1</span></div>
+  <div class="req__body">
+    <p>独立页面兜底（抽屉被拦截或直接访问）。左列行项目，右列订单摘要（小计 / 运费 / 合计 + Checkout）。</p>
+    <p class="ac"><b>验收：</b>与抽屉数据一致；改量后页面刷新保持；空车显示引导。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-043</span><span class="req__title">结算页</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>单页三段：Contact（邮箱 + 订阅勾选）、Shipping address（姓名、地址、城市、州、邮编、国家）、Payment（卡号、有效期、CVC，模拟）。右侧常驻订单摘要与三条信任点。</p>
+    <p class="ac"><b>验收：</b>必填项未填时浏览器拦截；提交后创建订单、扣减库存、清空购物车、跳转订单确认页；提交期间按钮禁用防重复下单。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-044</span><span class="req__title">订单确认页</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p><code>/order/:number</code> 展示订单号、商品清单、金额明细、配送说明，并提供「在后台查看该订单」的入口（原型期便于验证闭环）。</p>
+    <p class="ac"><b>验收：</b>订单号可被 <code>/account</code> 查询到；金额与小计+运费一致；订单不存在时返回 404。</p>
+  </div>
+</div>
+
+<h3 id="b4-6">4.6 订单查询</h3>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-050</span><span class="req__title">访客订单查询</span><span class="req__p mid">P1</span></div>
+  <div class="req__body">
+    <p>输入订单号与邮箱（两者都填时取交集，只填其一时按该条件匹配），展示订单卡片：订单号、日期、状态徽章、商品行、总额、物流单号。</p>
+    <p class="ac"><b>验收：</b>两个条件都填但属于不同订单时返回空；状态徽章按 paid / fulfilling / fulfilled / refunded 四色区分；无匹配时给出演示提示。</p>
+  </div>
+</div>
+
+<h3 id="b4-7">4.7 内容页</h3>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-S-060</span><span class="req__title">统一长文模板</span><span class="req__p mid">P1</span></div>
+  <div class="req__body">
+    <p>八个内容页共用一套版式：米色页头（eyebrow + 大标题 + 导语）+ 白底正文（h2 / p / ul / img）。FAQ 使用 <code>&lt;details&gt;</code> 原生手风琴。</p>
+    <p class="ac"><b>验收：</b>正文最大宽度 68 字符；标题层级不跳级；FAQ 展开图标用 CSS 伪元素；打印时不分页断裂在标题后。</p>
+  </div>
+</div>
+
+<h2 id="b5"><span class="num">5</span>后台功能需求</h2>
+
+<h3 id="b5-1">5.1 数据看板</h3>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-A-001</span><span class="req__title">五个核心 KPI</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>营收（含订单数与 AOV）、贡献毛利（含毛利率）、售出件数（含客户数与复购率）、转化率（含会话数）、库存（含件数与可售周数）。</p>
+    <p class="ac"><b>验收：</b>切换 7d / 30d / 90d 时全部重算；金额千分位；毛利为扣除关税、头程、仓配、支付费、包装、退货计提后的净值，不是「营收 − 货品成本」。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-A-002</span><span class="req__title">营收面积图</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>按日营收折线 + 面积渐变，四条水平网格线，纵轴自动取峰值 × 1.1，横轴四个日期刻度（首 / 1/3 / 2/3 / 末）。下方为成本明细网格（六项）。</p>
+    <p class="ac"><b>验收：</b>纵轴刻度为整数且最大值不超过数据峰值 15%；横轴首个标签左对齐、末个右对齐不溢出；零数据日显示为 0 而非断线。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-A-003</span><span class="req__title">月度目标进度</span><span class="req__p mid">P1</span></div>
+  <div class="req__body">
+    <p>显示当月营收 / 目标金额、完成百分比、进度条、剩余金额与「按当前 AOV 还需 N 单」。下方为待办三项：待履约订单、退款数、低库存 SKU 数。</p>
+    <p class="ac"><b>验收：</b>目标值来自设置页且可改；超过 100% 时进度条封顶但百分比显示真实值。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-A-004</span><span class="req__title">分类销售与 Top 商品</span><span class="req__p mid">P1</span></div>
+  <div class="req__body">
+    <p>左：按一级分类的营收横条（含金额）。右：按营收排序的 Top 6 商品（缩略图、名称、件数、SKU、金额）。</p>
+    <p class="ac"><b>验收：</b>横条按最大值归一，最短仍保留 2% 宽度可视；商品已下架仍显示（历史数据）；缩略图缺失时显示占位底色。</p>
+  </div>
+</div>
+
+<h3 id="b5-2">5.2 订单管理</h3>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-A-010</span><span class="req__title">订单列表</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>按创建时间倒序。列：订单号、日期、客户（含城市国家）、件数、渠道、金额、状态、操作。顶部分段筛选（All / Paid / Fulfilling / Fulfilled / Refunded，各带数量）+ 关键词搜索（订单号 / 姓名 / 邮箱）。</p>
+    <p class="ac"><b>验收：</b>默认按日期倒序；筛选与搜索可叠加；搜索输入 260ms 防抖；超过 60 行时显示「Showing first 60」提示。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-A-011</span><span class="req__title">订单详情与状态流转</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>弹窗展示客户信息、状态、物流单号、商品行、金额明细。底部按当前状态给出可执行动作：paid → fulfilling / refunded；fulfilling → fulfilled / refunded；fulfilled → refunded；refunded → paid。</p>
+    <p class="ac"><b>验收：</b>状态变更即时写入并刷新列表；不可执行的状态不出现在按钮里；退款按钮使用危险色。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-A-012</span><span class="req__title">前台下单实时进入后台</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>前台结算成功后，订单立刻出现在后台列表首位，状态为 paid，并同步扣减对应商品库存。</p>
+    <p class="ac"><b>验收：</b>下单后刷新后台可见新订单；库存减少量与购买件数一致；并发下单不产生负库存。</p>
+  </div>
+</div>
+
+<h3 id="b5-3">5.3 商品管理</h3>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-A-020</span><span class="req__title">商品表格</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>列：缩略图、名称（含题材与金属）、SKU、所属集合（超 2 个折叠为 +N）、价格（含划线价）、库存（≤20 标红）、状态、编辑。支持按标题或 SKU 搜索。</p>
+    <p class="ac"><b>验收：</b>搜索不区分大小写；库存 0 显示红色 Out；表格在 1024px 下横向滚动不破版。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-A-021</span><span class="req__title">商品编辑</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>弹窗可改：标题、售价、划线价、库存、徽章、状态（active / draft）、是否首页推荐、描述。保存后前台立即生效。</p>
+    <p class="ac"><b>验收：</b>改价后刷新前台商品卡与详情页同步；划线价清空后前台不再显示 SAVE；状态改 draft 后从集合页与搜索中消失。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-A-022</span><span class="req__title">新建商品</span><span class="req__p low">P2</span></div>
+  <div class="req__body">
+    <p>入口已预留（按钮可见），本期不实现完整表单，点击提示后续版本。</p>
+    <p class="ac"><b>验收：</b>点击不报错；提示文案明确说明未开放。</p>
+  </div>
+</div>
+
+<h3 id="b5-4">5.4 库存管理</h3>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-A-030</span><span class="req__title">库存概览</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>四个指标：库存成本值、可售周数、低于阈值 SKU 数、缺货 SKU 数。</p>
+    <p class="ac"><b>验收：</b>成本值 = Σ(库存 × 单件成本)；可售周数 = 在库件数 ÷ 周均销量，无销量时显示 —。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-A-031</span><span class="req__title">SKU 明细与风险信号</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>按库存升序。列：商品、在库、30 天销量、库存值、可售周数、信号。信号规则：库存 0 → Out；无销量 → No sales；&lt;3 周 → Reorder；&lt;6 周 → Watch；其余 → Healthy。</p>
+    <p class="ac"><b>验收：</b>30 天销量覆盖全部 SKU（不只是 Top 6）；Out 与 Reorder 使用红色徽章；No sales 不被误标为 Healthy。</p>
+  </div>
+</div>
+
+<h3 id="b5-5">5.5 分类与店面</h3>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-A-040</span><span class="req__title">分类树管理</span><span class="req__p mid">P1</span></div>
+  <div class="req__body">
+    <p>按一级分类列出，显示 handle、二级分类数量与名称。每个一级项前有可见性开关（勾选 = 显示在导航）。</p>
+    <p class="ac"><b>验收：</b>取消勾选后前台导航不再显示该项，但集合页仍可访问；二级以只读标签展示，隐藏的加删除线。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-A-045</span><span class="req__title">店面文案编辑</span><span class="req__p mid">P1</span></div>
+  <div class="req__body">
+    <p>可编辑 Hero 的 eyebrow、标题、正文、按钮文案与链接，以及公告栏三条、四个 USP 标题。右侧提供实时预览块。</p>
+    <p class="ac"><b>验收：</b>保存后前台首页立刻反映；预览块与前台使用同一字体与色值；长文本不破坏预览布局。</p>
+  </div>
+</div>
+
+<h3 id="b5-6">5.6 客户与设置</h3>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-A-050</span><span class="req__title">客户列表</span><span class="req__p mid">P1</span></div>
+  <div class="req__body">
+    <p>按生命周期价值降序。列：姓名与邮箱、地区、订单数、累计消费、AOV、分层（VIP &gt; $220 / Repeat &gt; 1 单 / New）、最近下单日。顶部四个指标：客户数、复购率、平均 LTV、最高消费。</p>
+    <p class="ac"><b>验收：</b>仅统计有效订单（paid / fulfilled）；同一邮箱合并为一人；复购率 = 多单客户 ÷ 总客户。</p>
+  </div>
+</div>
+
+<div class="req">
+  <div class="req__head"><span class="req__id">FR-A-055</span><span class="req__title">成本模型设置</span><span class="req__p hi">P0</span></div>
+  <div class="req__body">
+    <p>可配置：关税率、头程费率、仓配单均价、支付费率与固定费、退货计提率、包装成本；以及免运门槛、月度目标、后台密码。保存后所有毛利数字重算。</p>
+    <p class="ac"><b>验收：</b>修改关税率后看板毛利率同步变化；输入非法值（负数、空）时拒绝保存并提示；密码修改后旧会话仍有效直至过期。</p>
+  </div>
+</div>
+
+<h2 id="b6"><span class="num">6</span>业务规则</h2>
+
+<table>
+  <thead><tr><th style="width:12%">编号</th><th style="width:26%">规则</th><th>定义与说明</th></tr></thead>
+  <tbody>
+    <tr><td>BR-001</td><td>价格与折扣</td><td>售价为整数美元。存在 compare-at price 时前台显示划线价与 SAVE（绝对金额）。同一商品不同时不叠加折扣</td></tr>
+    <tr><td>BR-002</td><td>免运门槛</td><td>小计 ≥ $75 免运费，否则 $6.90。门槛值可在后台修改，前台进度条与运费计算同步</td></tr>
+    <tr><td>BR-003</td><td>关税与税费</td><td>采用 DDP：关税按「货品成本 × 关税率」计入内部成本，不向买家单列。美国订单无销售税（3PL 位于俄勒冈州）</td></tr>
+    <tr><td>BR-004</td><td>库存扣减</td><td>下单即扣减，取消不自动回补（需人工在后台改回）。库存不允许为负，扣到 0 即置售罄</td></tr>
+    <tr><td>BR-005</td><td>加购去重</td><td>以「商品 ID + 金属 + 尺寸」为唯一键，同键累加数量，上限 20</td></tr>
+    <tr><td>BR-006</td><td>订单编号</td><td>格式 <code>#WK</code> + 4 位递增序号，创建后不变</td></tr>
+    <tr><td>BR-007</td><td>客户归属</td><td>以邮箱为唯一标识。同一邮箱多次下单合并为一个客户，用于计算 LTV 与复购</td></tr>
+    <tr><td>BR-008</td><td>退款</td><td>退款仅改状态为 refunded，不自动回补库存，不计入净营收，但保留在订单总量中用于计算退款率</td></tr>
+    <tr><td>BR-009</td><td>集合归属</td><td>一件商品至少属于 1 个一级分类集合；建议挂 4–6 个集合以扩大曝光</td></tr>
+    <tr><td>BR-010</td><td>定制商品</td><td>定制类（Custom）不参与退货，除非质量问题；发货周期 5–7 个工作日，前台在详情页明示</td></tr>
+  </tbody>
+</table>
+
+<h4>订单状态机</h4>
+<figure class="fig">
+<svg viewBox="0 0 860 220" role="img" aria-label="订单状态机">
+  <defs>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#736b63"/>
+    </marker>
+    <style>
+      .st{font-family:Figtree,sans-serif;font-size:11.5px;fill:#14120f;font-weight:500}
+      .sl{font-family:Figtree,sans-serif;font-size:9.5px;fill:#9a9188}
+      .bx2{fill:#fff;stroke:#d5cabf;stroke-width:1}
+    </style>
+  </defs>
+  <rect x="30" y="72" width="118" height="40" class="bx2" rx="1"/>
+  <text x="89" y="97" class="st" text-anchor="middle">paid</text>
+
+  <rect x="240" y="72" width="118" height="40" class="bx2" rx="1"/>
+  <text x="299" y="97" class="st" text-anchor="middle">fulfilling</text>
+
+  <rect x="450" y="72" width="118" height="40" class="bx2" rx="1"/>
+  <text x="509" y="97" class="st" text-anchor="middle">fulfilled</text>
+
+  <rect x="660" y="72" width="118" height="40" class="bx2" rx="1"/>
+  <text x="719" y="97" class="st" text-anchor="middle">refunded</text>
+
+  <path d="M148 92 H236" stroke="#736b63" stroke-width="1" marker-end="url(#ar)"/>
+  <text x="192" y="84" class="sl" text-anchor="middle">pick &amp; pack</text>
+
+  <path d="M358 92 H446" stroke="#736b63" stroke-width="1" marker-end="url(#ar)"/>
+  <text x="402" y="84" class="sl" text-anchor="middle">ship + tracking</text>
+
+  <path d="M568 92 H656" stroke="#736b63" stroke-width="1" marker-end="url(#ar)"/>
+  <text x="612" y="84" class="sl" text-anchor="middle">refund</text>
+
+  <path d="M148 112 C148 160 500 170 660 112" stroke="#736b63" stroke-width="1" fill="none" stroke-dasharray="3 3" marker-end="url(#ar)"/>
+  <text x="380" y="172" class="sl" text-anchor="middle">refund（未发货直接退）</text>
+
+  <path d="M778 92 C820 92 826 40 89 48" stroke="#c9bfb3" stroke-width="1" fill="none" stroke-dasharray="2 4" marker-end="url(#ar)"/>
+  <text x="430" y="34" class="sl" text-anchor="middle">reopen（演示用，生产环境不开放）</text>
+
+  <text x="30" y="205" class="sl">每次状态变更写入订单记录，前台订单查询页同步显示新状态。</text>
+</svg>
+<figcaption>图 6-1　订单状态机：四个状态，五种转移</figcaption>
+</figure>
+
+<h2 id="b7"><span class="num">7</span>非功能需求</h2>
+
+<table>
+  <thead><tr><th style="width:12%">编号</th><th style="width:20%">类别</th><th style="width:12%">指标</th><th>要求</th></tr></thead>
+  <tbody>
+    <tr><td>NFR-001</td><td>性能</td><td>LCP</td><td>移动端 4G 模拟下 &lt; 2.5s；首屏主图不懒加载，其余图片懒加载并声明尺寸</td></tr>
+    <tr><td>NFR-002</td><td>性能</td><td>CLS</td><td>&lt; 0.1；所有 img 带 width/height；字体使用 display=swap</td></tr>
+    <tr><td>NFR-003</td><td>性能</td><td>首页体积</td><td>HTML &lt; 120KB，CSS &lt; 60KB，JS &lt; 30KB（未压缩）</td></tr>
+    <tr><td>NFR-004</td><td>可访问性</td><td>WCAG</td><td>2.2 AA：正文对比度 ≥ 4.5:1，交互元素键盘可达，焦点可见，语义标签完整</td></tr>
+    <tr><td>NFR-005</td><td>SEO</td><td>元数据</td><td>每页唯一 title / description；商品页含 Product 结构化数据；集合页 canonical</td></tr>
+    <tr><td>NFR-006</td><td>兼容性</td><td>浏览器</td><td>Chrome / Safari / Edge 最近两个大版本；iOS Safari 15+；Android Chrome 100+</td></tr>
+    <tr><td>NFR-007</td><td>响应式</td><td>断点</td><td>1440 / 1180 / 980 / 620 四个断点；320px 宽度下不出现横向滚动</td></tr>
+    <tr><td>NFR-008</td><td>安全</td><td>后台鉴权</td><td>密码比对在服务端；会话 Cookie HttpOnly + SameSite=Lax；所有后台接口二次校验</td></tr>
+    <tr><td>NFR-009</td><td>安全</td><td>输入</td><td>所有用户输入在输出时转义；JSON body 上限 1MB</td></tr>
+    <tr><td>NFR-010</td><td>合规</td><td>隐私</td><td>不设广告追踪 Cookie；仅会话 Cookie 与分析 Cookie，且分析 Cookie 需同意后设置</td></tr>
+    <tr><td>NFR-011</td><td>数据</td><td>持久性</td><td>订单写入后不可丢失；每日自动备份 db.json，保留 30 天</td></tr>
+    <tr><td>NFR-012</td><td>可维护性</td><td>结构</td><td>页面渲染与路由分离；单个文件不超过 600 行；无隐式全局状态</td></tr>
+  </tbody>
+</table>
+
+<h2 id="b8"><span class="num">8</span>验收清单</h2>
+
+<p>上线前逐项勾选，任一项不通过则不予发布。</p>
+
+<table>
+  <thead><tr><th style="width:6%">#</th><th style="width:44%">验收项</th><th style="width:16%">关联需求</th><th>结果</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>11 项一级导航在 1440 / 1280 / 1024 下均不换行不重叠</td><td>FR-S-001</td><td>待测</td></tr>
+    <tr><td>2</td><td>45 个集合页面全部可访问且商品数正确</td><td>FR-S-020</td><td>待测</td></tr>
+    <tr><td>3</td><td>筛选 + 排序可叠加，URL 可分享与后退</td><td>FR-S-021/022</td><td>待测</td></tr>
+    <tr><td>4</td><td>加购三元组去重、角标实时、抽屉动画与关闭正常</td><td>FR-S-032/040</td><td>待测</td></tr>
+    <tr><td>5</td><td>完整下单链路：加购 → 结算 → 订单页 → 后台可见 → 库存扣减</td><td>FR-S-043, FR-A-012</td><td>待测</td></tr>
+    <tr><td>6</td><td>订单状态四态流转按钮正确且即时生效</td><td>FR-A-011</td><td>待测</td></tr>
+    <tr><td>7</td><td>后台改价 / 改库存 / 改文案后前台立即生效</td><td>FR-A-021/045</td><td>待测</td></tr>
+    <tr><td>8</td><td>成本模型修改后毛利率重算正确</td><td>FR-A-055</td><td>待测</td></tr>
+    <tr><td>9</td><td>移动端 375px 无横向滚动，导航折叠为抽屉</td><td>NFR-007</td><td>待测</td></tr>
+    <tr><td>10</td><td>Lighthouse 移动端 Performance ≥ 80、Accessibility ≥ 90</td><td>NFR-001/004</td><td>待测</td></tr>
+  </tbody>
+</table>
+</article>
+
+<!-- ============================ 文档 C ============================ -->
+<article class="doc">
+<section class="cover">
+  <p class="cover__tag">Document C</p>
+  <h1>系统设计说明书</h1>
+  <p>System Design Document。本文档描述 Wildkind 独立站的技术架构、模块边界、数据模型、接口契约与部署方案，并给出从原型到生产的演进路径。<b>原型是可运行的系统，不是图稿</b>——所有接口与数据模型均已在本地实现并验证。</p>
+  <div class="cover__meta">
+    <div>文档编号<b>WK-SDD-001</b></div>
+    <div>版本<b>v1.0</b></div>
+    <div>运行时<b>Node.js 24</b></div>
+    <div>依赖<b>零第三方依赖</b></div>
+    <div>评审状态<b>待评审</b></div>
+  </div>
+</section>
+
+<h2 id="c1"><span class="num">1</span>架构总览</h2>
+
+<p>系统采用<b>服务端渲染 + 轻量客户端增强</b>的分层架构。前台每个页面由服务端拼装完整 HTML 返回（利于首屏与 SEO），交互部分（购物车、筛选、手风琴）由约 250 行原生 JS 接管；后台是单页应用，通过 REST 接口读写数据。原型阶段数据落在单个 JSON 文件，生产阶段替换为 PostgreSQL，<b>上层代码不需要改动结构</b>。</p>
+
+<figure class="fig">
+<svg viewBox="0 0 880 470" role="img" aria-label="系统架构图">
+  <defs>
+    <style>
+      .lbl{font-family:Figtree,sans-serif;font-size:10.5px;fill:#14120f}
+      .lblb{font-family:Figtree,sans-serif;font-size:11px;fill:#14120f;font-weight:600}
+      .lbls{font-family:Figtree,sans-serif;font-size:9.5px;fill:#9a9188}
+      .lblw{font-family:Figtree,sans-serif;font-size:11px;fill:#fff;font-weight:600}
+      .box{fill:#fff;stroke:#e6ded4;stroke-width:1}
+      .boxd{fill:#f8f7f2;stroke:#e6ded4;stroke-width:1}
+      .boxa{fill:#14120f}
+      .flow{stroke:#b8ada2;stroke-width:1;fill:none}
+    </style>
+    <marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#b8ada2"/>
+    </marker>
+  </defs>
+
+  <!-- tier labels -->
+  <text x="24" y="34" class="lbls">CLIENT</text>
+  <text x="24" y="176" class="lbls">SERVER</text>
+  <text x="24" y="330" class="lbls">DATA</text>
+
+  <!-- client -->
+  <rect x="24" y="44" width="270" height="88" class="box"/>
+  <text x="40" y="66" class="lblb">店面前台</text>
+  <text x="40" y="84" class="lbls">SSR HTML + store.js</text>
+  <text x="40" y="100" class="lbls">购物车抽屉 / 筛选 / 手风琴</text>
+  <text x="40" y="116" class="lbls">9 个页面模板</text>
+
+  <rect x="312" y="44" width="270" height="88" class="box"/>
+  <text x="328" y="66" class="lblb">后台控制台</text>
+  <text x="328" y="84" class="lbls">SPA · hash 路由 · admin.js</text>
+  <text x="328" y="100" class="lbls">8 个模块，纯客户端渲染</text>
+  <text x="328" y="116" class="lbls">Cookie 会话鉴权</text>
+
+  <rect x="600" y="44" width="256" height="88" class="box"/>
+  <text x="616" y="66" class="lblb">静态资源</text>
+  <text x="616" y="84" class="lbls">store.css · admin.css</text>
+  <text x="616" y="100" class="lbls">产品图（900×900 PNG）</text>
+  <text x="616" y="116" class="lbls">Cache-Control: 1 天</text>
+
+  <!-- arrows down -->
+  <path d="M159 132 V170" class="flow" marker-end="url(#a2)"/>
+  <path d="M447 132 V170" class="flow" marker-end="url(#a2)"/>
+  <text x="466" y="156" class="lbls">fetch /api/admin/*</text>
+  <text x="170" y="156" class="lbls">GET / POST</text>
+
+  <!-- server block -->
+  <rect x="24" y="186" width="832" height="128" class="boxd"/>
+  <text x="40" y="208" class="lblb">Node.js HTTP Server（server.js · 单进程）</text>
+
+  <rect x="42" y="220" width="180" height="76" class="box"/>
+  <text x="56" y="240" class="lbl">路由层</text>
+  <text x="56" y="258" class="lbls">路径匹配 / 方法校验</text>
+  <text x="56" y="274" class="lbls">Cookie 解析 / body 解析</text>
+  <text x="56" y="290" class="lbls">静态资源服务</text>
+
+  <rect x="240" y="220" width="180" height="76" class="box"/>
+  <text x="254" y="240" class="lbl">页面渲染层</text>
+  <text x="254" y="258" class="lbls">lib/pages-store.js</text>
+  <text x="254" y="274" class="lbls">lib/pages-misc.js</text>
+  <text x="254" y="290" class="lbls">lib/layout.js（壳）</text>
+
+  <rect x="438" y="220" width="180" height="76" class="box"/>
+  <text x="452" y="240" class="lbl">接口层</text>
+  <text x="452" y="258" class="lbls">购物车 / 结算 / 订阅</text>
+  <text x="452" y="274" class="lbls">后台 CRUD（8 组）</text>
+  <text x="452" y="290" class="lbls">JSON 序列化</text>
+
+  <rect x="636" y="220" width="200" height="76" class="box"/>
+  <text x="650" y="240" class="lbl">领域逻辑层</text>
+  <text x="650" y="258" class="lbls">lib/core.js</text>
+  <text x="650" y="274" class="lbls">财务模型 / 指标聚合</text>
+  <text x="650" y="290" class="lbls">集合查询 / 导航树</text>
+
+  <!-- data -->
+  <path d="M690 344 V310" class="flow" marker-end="url(#a2)"/>
+  <rect x="300" y="348" width="280" height="76" class="boxa"/>
+  <text x="316" y="370" class="lblw">数据访问层 core.db()</text>
+  <text x="316" y="388" class="lbls" fill="#b8ada2">文件读取 + mtime 缓存</text>
+  <text x="316" y="404" class="lbls" fill="#b8ada2">mutate() 原子写回</text>
+
+  <rect x="612" y="348" width="244" height="76" class="box"/>
+  <text x="628" y="370" class="lblb">data/db.json</text>
+  <text x="628" y="388" class="lbls">单一数据文件（原型）</text>
+  <text x="628" y="404" class="lbls">生产替换为 PostgreSQL</text>
+
+  <path d="M580 386 H608" class="flow" marker-end="url(#a2)"/>
+
+  <text x="24" y="452" class="lbls">无第三方运行时依赖。启动：node server.js。端口由 env.PORT 控制，默认 4400。</text>
+</svg>
+<figcaption>图 1-1　分层架构：客户端 → 服务端（路由 / 渲染 / 接口 / 领域）→ 数据访问 → 存储</figcaption>
+</figure>
+
+<h3>1.1 关键设计取舍</h3>
+<table>
+  <thead><tr><th style="width:22%">决策</th><th style="width:26%">选择</th><th>理由与代价</th></tr></thead>
+  <tbody>
+    <tr><td>渲染方式</td><td>服务端渲染 HTML</td><td>首屏快、SEO 友好、无需构建。代价：页面切换是全量刷新，交互感弱于 SPA</td></tr>
+    <tr><td>后台形态</td><td>客户端 SPA</td><td>表格筛选、弹窗编辑需要频繁局部更新。代价：首屏需等一次接口</td></tr>
+    <tr><td>数据存储</td><td>JSON 文件 + mtime 缓存</td><td>零依赖、可读、可直接 diff。代价：无并发控制，不适合多人同时写</td></tr>
+    <tr><td>样式方案</td><td>原生 CSS + CSS 变量</td><td>体积极小、无工具链。代价：无作用域隔离，需靠命名约定</td></tr>
+    <tr><td>购物车存储</td><td>Cookie（base64 JSON）</td><td>无需服务端会话、跨页保持、30 天有效。代价：容量上限 4KB，约 20 行</td></tr>
+    <tr><td>图表</td><td>手写 SVG</td><td>无图表库依赖、完全可控、可打印。代价：交互能力有限</td></tr>
+  </tbody>
+</table>
+
+<h2 id="c2"><span class="num">2</span>技术选型</h2>
+
+<table>
+  <thead><tr><th style="width:16%">层</th><th style="width:22%">原型（当前）</th><th style="width:22%">生产（M2）</th><th>迁移成本</th></tr></thead>
+  <tbody>
+    <tr><td>运行时</td><td>Node.js 24 原生 http</td><td>Next.js 16（App Router）</td><td>中：路由与渲染需改写，页面模板可复用为 JSX</td></tr>
+    <tr><td>数据访问</td><td>fs + JSON</td><td>Prisma + PostgreSQL</td><td>低：core.js 的查询函数一一对应 Prisma 调用</td></tr>
+    <tr><td>样式</td><td>原生 CSS</td><td>Tailwind v4 + 设计令牌</td><td>低：CSS 变量可直接映射为 theme token</td></tr>
+    <tr><td>支付</td><td>模拟表单</td><td>Stripe Embedded Checkout</td><td>低：仅替换结算页的提交动作</td></tr>
+    <tr><td>邮件</td><td>无</td><td>Resend（订单确认 / 发货通知）</td><td>低：结算成功后触发</td></tr>
+    <tr><td>图片</td><td>本地 PNG</td><td>对象存储 + CDN + AVIF/WebP</td><td>低：替换图片 URL，加 next/image</td></tr>
+    <tr><td>部署</td><td>本地 node</td><td>Coolify（Docker）</td><td>低</td></tr>
+    <tr><td>搜索</td><td>字符串包含</td><td>Postgres 全文检索 / Meilisearch</td><td>中</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <p class="callout__t">为什么原型不用 Next.js</p>
+  <p>原型的目标是<b>让非技术方能在 5 秒内看到全部页面与后台真实交互</b>。引入 Next.js 需要安装依赖、构建、处理版本兼容，而这些成本不产生任何产品价值。原生 Node 方案零安装即可运行，评审者双击 <code>start.bat</code> 就能看到完整系统。生产阶段再迁移，迁移路径已在第 10 章给出。</p>
+</div>
+
+<h2 id="c3"><span class="num">3</span>模块划分</h2>
+
+<table>
+  <thead><tr><th style="width:26%">文件</th><th style="width:10%">行数</th><th>职责</th><th style="width:18%">对外接口</th></tr></thead>
+  <tbody>
+    <tr><td><code>server.js</code></td><td>约 330</td><td>HTTP 服务、路由分发、Cookie 与 body 解析、静态资源、API 实现</td><td>—</td></tr>
+    <tr><td><code>lib/core.js</code></td><td>约 250</td><td>数据读写与缓存、格式化、查询（商品 / 集合 / 导航）、财务计算、指标聚合</td><td><code>db / save / mutate / money / summary / productsIn …</code></td></tr>
+    <tr><td><code>lib/layout.js</code></td><td>约 200</td><td>页面壳、页头与 mega menu、页脚、购物车抽屉、图标库、商品卡、星级、面包屑</td><td><code>page / header / footer / productCard / starRow</code></td></tr>
+    <tr><td><code>lib/pages-store.js</code></td><td>约 360</td><td>首页、集合页（含筛选排序）、商品详情、搜索结果</td><td><code>home / collection / product / search</code></td></tr>
+    <tr><td><code>lib/pages-misc.js</code></td><td>约 330</td><td>购物车页、结算页、8 个内容页、订单查询、订单确认、404</td><td><code>cartPage / checkout / contentPage / account</code></td></tr>
+    <tr><td><code>lib/admin.js</code></td><td>约 200</td><td>后台壳、登录页、原型总览页</td><td><code>panel / prototypeIndex</code></td></tr>
+    <tr><td><code>public/assets/js/admin.js</code></td><td>约 620</td><td>后台 8 个视图渲染、图表、弹窗、事件委托、hash 路由</td><td>—</td></tr>
+    <tr><td><code>public/assets/js/store.js</code></td><td>约 260</td><td>前台购物车、抽屉、搜索浮层、选项选择、手风琴、表单提交</td><td>—</td></tr>
+    <tr><td><code>public/assets/css/store.css</code></td><td>约 1000</td><td>设计令牌、组件样式、响应式断点</td><td>—</td></tr>
+    <tr><td><code>public/assets/css/admin.css</code></td><td>约 520</td><td>后台布局、表格、KPI、图表、弹窗、登录页</td><td>—</td></tr>
+    <tr><td><code>data/seed.js</code></td><td>约 460</td><td>演示数据生成（36 商品 / 45 集合 / 186 订单 / 121 客户），确定性伪随机</td><td><code>node data/seed.js</code></td></tr>
+    <tr><td><code>tools/pngcrop.js</code></td><td>约 200</td><td>零依赖 PNG 解码 / 裁剪 / 双线性缩放 / 重编码，用于批量处理产品图</td><td><code>processFile()</code></td></tr>
+  </tbody>
+</table>
+
+<h2 id="c4"><span class="num">4</span>数据模型</h2>
+
+<figure class="fig">
+<svg viewBox="0 0 880 400" role="img" aria-label="数据模型 ER 图">
+  <defs>
+    <style>
+      .ent{font-family:Figtree,sans-serif;font-size:11px;fill:#14120f;font-weight:600}
+      .fld{font-family:JetBrains Mono,monospace;font-size:9.5px;fill:#5d4d3d}
+      .rel{font-family:Figtree,sans-serif;font-size:9px;fill:#9a9188}
+      .eb{fill:#fff;stroke:#d5cabf;stroke-width:1}
+      .eh{fill:#14120f}
+      .ehw{font-family:Figtree,sans-serif;font-size:10px;fill:#fff;font-weight:600}
+      .lt{stroke:#b8ada2;stroke-width:1;fill:none}
+    </style>
+  </defs>
+
+  <!-- products -->
+  <rect x="24" y="30" width="234" height="170" class="eb"/>
+  <rect x="24" y="30" width="234" height="26" class="eh"/>
+  <text x="38" y="47" class="ehw">products</text>
+  <text x="38" y="76" class="fld">id            string  PK</text>
+  <text x="38" y="94" class="fld">handle        string  UQ</text>
+  <text x="38" y="112" class="fld">title / desc  string</text>
+  <text x="38" y="130" class="fld">price / compareAt / cost</text>
+  <text x="38" y="148" class="fld">stock         int</text>
+  <text x="38" y="166" class="fld">collections   string[]  →</text>
+  <text x="38" y="184" class="fld">metals / sizes / image</text>
+
+  <!-- collections -->
+  <rect x="24" y="232" width="234" height="140" class="eb"/>
+  <rect x="24" y="232" width="234" height="26" class="eh"/>
+  <text x="38" y="249" class="ehw">collections</text>
+  <text x="38" y="278" class="fld">handle        string  PK</text>
+  <text x="38" y="296" class="fld">title         string</text>
+  <text x="38" y="314" class="fld">level         1 | 2</text>
+  <text x="38" y="332" class="fld">parent        string  → self</text>
+  <text x="38" y="350" class="fld">menuGroup / order / visible</text>
+
+  <!-- orders -->
+  <rect x="330" y="30" width="250" height="196" class="eb"/>
+  <rect x="330" y="30" width="250" height="26" class="eh"/>
+  <text x="344" y="47" class="ehw">orders</text>
+  <text x="344" y="76" class="fld">id / number   string  PK</text>
+  <text x="344" y="94" class="fld">createdAt     iso</text>
+  <text x="344" y="112" class="fld">status        enum(4)</text>
+  <text x="344" y="130" class="fld">items[]       嵌入</text>
+  <text x="344" y="148" class="fld">  productId / qty / price</text>
+  <text x="344" y="166" class="fld">  variant / size / cost</text>
+  <text x="344" y="184" class="fld">customer{}    嵌入</text>
+  <text x="344" y="202" class="fld">subtotal / shipping / total</text>
+
+  <!-- order items note -->
+  <rect x="330" y="252" width="250" height="120" class="eb"/>
+  <rect x="330" y="252" width="250" height="26" class="eh"/>
+  <text x="344" y="269" class="ehw">order_items（内嵌而非独立表）</text>
+  <text x="344" y="298" class="fld">productId → products.id</text>
+  <text x="344" y="316" class="fld">快照字段：title / price / cost</text>
+  <text x="344" y="334" class="fld">下架后仍可回溯价格</text>
+  <text x="344" y="352" class="fld">不随商品改价而变化</text>
+
+  <!-- customers -->
+  <rect x="626" y="30" width="230" height="130" class="eb"/>
+  <rect x="626" y="30" width="230" height="26" class="eh"/>
+  <text x="640" y="47" class="ehw">customers（聚合视图）</text>
+  <text x="640" y="76" class="fld">email         string  PK</text>
+  <text x="640" y="94" class="fld">name / city / country</text>
+  <text x="640" y="112" class="fld">orders / spent</text>
+  <text x="640" y="130" class="fld">first / last</text>
+  <text x="640" y="148" class="fld">由 orders 聚合，不单独维护</text>
+
+  <!-- settings / content -->
+  <rect x="626" y="196" width="230" height="120" class="eb"/>
+  <rect x="626" y="196" width="230" height="26" class="eh"/>
+  <text x="640" y="213" class="ehw">settings / content</text>
+  <text x="640" y="242" class="fld">costs{duty, freight, …}</text>
+  <text x="640" y="260" class="fld">freeShippingThreshold</text>
+  <text x="640" y="278" class="fld">monthlyTarget / adminPassword</text>
+  <text x="640" y="296" class="fld">hero / usps / testimonials</text>
+
+  <!-- relations -->
+  <path d="M258 120 C300 120 300 116 326 116" class="lt"/>
+  <text x="268" y="110" class="rel">1 : N（通过 collections 数组）</text>
+
+  <path d="M258 150 C300 150 300 300 326 300" class="lt"/>
+  <text x="270" y="196" class="rel">M : N</text>
+
+  <path d="M580 120 H622" class="lt"/>
+  <text x="586" y="112" class="rel">email</text>
+
+  <path d="M455 226 V248" class="lt"/>
+  <text x="464" y="242" class="rel">1 : N</text>
+</svg>
+<figcaption>图 4-1　数据模型：5 个实体，products ↔ collections 为多对多，orders 内嵌 items 与 customer</figcaption>
+</figure>
+
+<h3>4.1 数据字典（核心表）</h3>
+
+<h4>products</h4>
+<table>
+  <thead><tr><th style="width:16%">字段</th><th style="width:14%">类型</th><th style="width:12%">约束</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>string</td><td>PK</td><td>SKU 编码，格式 <code>WK-101</code>（三位数：1=项链 2=戒指 3=手链 4=脚链 5=耳饰 6=珍珠 7=定制 8=礼盒）</td></tr>
+    <tr><td><code>handle</code></td><td>string</td><td>UNIQUE</td><td>URL 标识，小写连字符，创建后不可改</td></tr>
+    <tr><td><code>title</code></td><td>string</td><td>NOT NULL</td><td>英文商品名，含题材名（Foxtrot / Solstice / Moonlit）</td></tr>
+    <tr><td><code>collections</code></td><td>string[]</td><td>≥1</td><td>所属集合 handle 数组，平均 4 个</td></tr>
+    <tr><td><code>price</code></td><td>int</td><td>&gt;0</td><td>售价（美元整数，不存小数避免精度问题）</td></tr>
+    <tr><td><code>compareAt</code></td><td>int | null</td><td>&gt;price</td><td>划线价。存在且大于 price 时前台显示 SAVE</td></tr>
+    <tr><td><code>cost</code></td><td>number</td><td>&gt;0</td><td>工厂到岸成本，用于计算贡献毛利</td></tr>
+    <tr><td><code>stock</code></td><td>int</td><td>≥0</td><td>在库件数，下单即扣减</td></tr>
+    <tr><td><code>image / imageAlt</code></td><td>string</td><td>—</td><td>主图与悬停图路径</td></tr>
+    <tr><td><code>motif</code></td><td>string</td><td>—</td><td>题材标识（fox / sun / turtle…），用于搜索与后台展示</td></tr>
+    <tr><td><code>metals</code></td><td>string[]</td><td>—</td><td>可选金属：Gold / Silver / Rose Gold</td></tr>
+    <tr><td><code>sizes</code></td><td>string[] | null</td><td>—</td><td>尺寸选项；null 表示均码，前台不渲染尺寸组</td></tr>
+    <tr><td><code>details</code></td><td>object</td><td>—</td><td>键值对，渲染为详情页材质表（material / pendant / chain / weight）</td></tr>
+    <tr><td><code>status</code></td><td>enum</td><td>active / draft</td><td>draft 不出现在前台任何列表</td></tr>
+    <tr><td><code>featured</code></td><td>0 | 1</td><td>—</td><td>首页 Best Sellers 横滑的入选标记</td></tr>
+  </tbody>
+</table>
+
+<h4>collections</h4>
+<table>
+  <thead><tr><th style="width:16%">字段</th><th style="width:14%">类型</th><th style="width:12%">约束</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><code>handle</code></td><td>string</td><td>PK</td><td>URL 标识</td></tr>
+    <tr><td><code>level</code></td><td>1 | 2</td><td>—</td><td>1 = 一级导航；2 = 下拉项或主题集合</td></tr>
+    <tr><td><code>parent</code></td><td>string | null</td><td>FK self</td><td>二级集合所属的一级</td></tr>
+    <tr><td><code>menuGroup</code></td><td>string</td><td>—</td><td>下拉面板中的分组名（Shop by style / Metals / Nature &amp; Meaning …）</td></tr>
+    <tr><td><code>order</code></td><td>int</td><td>—</td><td>导航与下拉中的排序权重</td></tr>
+    <tr><td><code>nav</code></td><td>bool</td><td>—</td><td>是否出现在页头一级导航</td></tr>
+    <tr><td><code>filter</code></td><td>object | null</td><td>—</td><td>虚拟集合的筛选条件，如 <code>{metal:'Gold'}</code>，不依赖商品挂载</td></tr>
+    <tr><td><code>hero / intro</code></td><td>string</td><td>—</td><td>集合页头图与描述</td></tr>
+  </tbody>
+</table>
+
+<h4>orders</h4>
+<table>
+  <thead><tr><th style="width:16%">字段</th><th style="width:16%">类型</th><th style="width:12%">约束</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>string</td><td>PK</td><td>内部 ID，<code>o_</code> + 8 位 hex</td></tr>
+    <tr><td><code>number</code></td><td>string</td><td>UNIQUE</td><td>对外订单号 <code>#WK1142</code>，4 位递增</td></tr>
+    <tr><td><code>status</code></td><td>enum</td><td>4 值</td><td>paid / fulfilling / fulfilled / refunded</td></tr>
+    <tr><td><code>items[]</code></td><td>array</td><td>≥1</td><td>商品快照：productId、title、variant、size、qty、price、cost</td></tr>
+    <tr><td><code>customer{}</code></td><td>object</td><td>—</td><td>name、email、city、state、country</td></tr>
+    <tr><td><code>subtotal / shipping / discount / total</code></td><td>number</td><td>—</td><td>金额快照，不随后续改价变化</td></tr>
+    <tr><td><code>channel</code></td><td>string</td><td>—</td><td>归因来源：Meta Ads / Organic / Email（原型为随机，生产接 UTM）</td></tr>
+  </tbody>
+</table>
+
+<div class="callout callout--warn">
+  <p class="callout__t">为什么 items 内嵌而不独立成表</p>
+  <p>订单是<b>不可变事实</b>：商品下架、改价、改名之后，历史订单必须保持原样。因此 items 存的是成交瞬间的快照（title / price / cost 全部冗余），而不是外键连接。这样即使商品被删除，订单仍可完整回放。代价是存储冗余——但在订单量级 &lt; 100 万的阶段，这个代价可以忽略。</p>
+</div>
+
+<h2 id="c5"><span class="num">5</span>接口设计</h2>
+
+<p>全部接口返回 JSON，UTF-8。后台接口统一前缀 <code>/api/admin/</code>，除登录外均需会话 Cookie。</p>
+
+<h4>前台接口</h4>
+<table>
+  <thead><tr><th style="width:9%">方法</th><th style="width:26%">路径</th><th style="width:14%">请求</th><th>响应 / 说明</th></tr></thead>
+  <tbody>
+    <tr><td>GET</td><td><code>/api/cart</code></td><td>Cookie</td><td><code>{cart:[], count}</code>，从 Cookie 还原并补全商品信息</td></tr>
+    <tr><td>POST</td><td><code>/api/cart/add</code></td><td><code>{productId, metal, size, qty}</code></td><td>三元组去重后返回新购物车，并 Set-Cookie</td></tr>
+    <tr><td>POST</td><td><code>/api/cart/update</code></td><td><code>{productId, delta}</code></td><td>数量增减；减到 0 自动移除该行</td></tr>
+    <tr><td>POST</td><td><code>/api/cart/remove</code></td><td><code>{productId}</code></td><td>移除整行</td></tr>
+    <tr><td>POST</td><td><code>/api/checkout</code></td><td>地址 + 联系方式</td><td>创建订单、扣库存、清 Cookie，返回 <code>{order, url}</code></td></tr>
+    <tr><td>POST</td><td><code>/api/newsletter</code></td><td><code>{email}</code></td><td>幂等，返回 <code>{ok:true}</code></td></tr>
+  </tbody>
+</table>
+
+<h4>后台接口</h4>
+<table>
+  <thead><tr><th style="width:9%">方法</th><th style="width:26%">路径</th><th style="width:14%">鉴权</th><th>响应 / 说明</th></tr></thead>
+  <tbody>
+    <tr><td>POST</td><td><code>/api/admin/login</code></td><td>—</td><td>校验密码，成功设置 <code>wk_admin</code> 会话 Cookie（24h）</td></tr>
+    <tr><td>POST</td><td><code>/api/admin/logout</code></td><td>—</td><td>清除会话</td></tr>
+    <tr><td>GET</td><td><code>/api/admin/summary?days=30</code></td><td>是</td><td>看板全量指标：营收、毛利、成本分项、日序列、分类销售、Top 商品、库存、复购</td></tr>
+    <tr><td>GET</td><td><code>/api/admin/products</code></td><td>是</td><td><code>{products, collections}</code></td></tr>
+    <tr><td>PATCH</td><td><code>/api/admin/products/:id</code></td><td>是</td><td>白名单字段：title / price / compareAt / stock / badge / status / desc / featured</td></tr>
+    <tr><td>GET</td><td><code>/api/admin/orders</code></td><td>是</td><td>支持 <code>?status=</code> 与 <code>?q=</code>（订单号 / 姓名 / 邮箱）</td></tr>
+    <tr><td>PATCH</td><td><code>/api/admin/orders/:id</code></td><td>是</td><td><code>{status, tracking}</code>，状态不做前端约束校验，由业务规则约束</td></tr>
+    <tr><td>GET</td><td><code>/api/admin/inventory</code></td><td>是</td><td>全部 SKU 的库存、30 天销量、库存值、可售周数</td></tr>
+    <tr><td>GET</td><td><code>/api/admin/customers</code></td><td>是</td><td>按累计消费降序</td></tr>
+    <tr><td>GET / PATCH</td><td><code>/api/admin/collections/:handle</code></td><td>是</td><td>改标题、描述、可见性、排序</td></tr>
+    <tr><td>GET / PATCH</td><td><code>/api/admin/content</code></td><td>是</td><td>Hero、公告栏、USP、评价等店面内容</td></tr>
+    <tr><td>GET / PATCH</td><td><code>/api/admin/settings</code></td><td>是</td><td>成本模型、免运门槛、月度目标、密码</td></tr>
+  </tbody>
+</table>
+
+<h4>错误约定</h4>
+<pre>200 OK             成功
+400 Bad Request    参数缺失或业务前置条件不满足（如空购物车结算）
+401 Unauthorized   未登录或会话过期，客户端应跳转 /admin
+403 Forbidden      路径穿越或越权
+404 Not Found      资源不存在
+500 Server Error   服务端异常，返回 {error: message}</pre>
+
+<h2 id="c6"><span class="num">6</span>关键流程</h2>
+
+<h3>6.1 下单流程（端到端）</h3>
+
+<figure class="fig">
+<svg viewBox="0 0 880 340" role="img" aria-label="下单时序图">
+  <defs>
+    <style>
+      .act{font-family:Figtree,sans-serif;font-size:10.5px;fill:#14120f;font-weight:600}
+      .msgs{font-family:Figtree,sans-serif;font-size:9.5px;fill:#5d4d3d}
+      .life{stroke:#d5cabf;stroke-width:1;stroke-dasharray:3 3}
+      .hdr2{fill:#14120f}
+    </style>
+    <marker id="a3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#736b63"/>
+    </marker>
+  </defs>
+
+  <rect x="30" y="20" width="140" height="24" class="hdr2"/>
+  <text x="100" y="36" class="act" fill="#fff" text-anchor="middle">浏览器</text>
+  <rect x="250" y="20" width="150" height="24" class="hdr2"/>
+  <text x="325" y="36" class="act" fill="#fff" text-anchor="middle">server.js</text>
+  <rect x="480" y="20" width="150" height="24" class="hdr2"/>
+  <text x="555" y="36" class="act" fill="#fff" text-anchor="middle">core.js</text>
+  <rect x="700" y="20" width="150" height="24" class="hdr2"/>
+  <text x="775" y="36" class="act" fill="#fff" text-anchor="middle">db.json</text>
+
+  <path d="M100 44 V320" class="life"/>
+  <path d="M325 44 V320" class="life"/>
+  <path d="M555 44 V320" class="life"/>
+  <path d="M775 44 V320" class="life"/>
+
+  <path d="M100 70 H321" stroke="#736b63" stroke-width="1" marker-end="url(#a3)"/>
+  <text x="110" y="64" class="msgs">POST /api/checkout {email, address, …}</text>
+
+  <path d="M325 96 H551" stroke="#736b63" stroke-width="1" marker-end="url(#a3)"/>
+  <text x="335" y="90" class="msgs">getCart(req) — 从 Cookie 还原行项目</text>
+
+  <path d="M555 122 H771" stroke="#736b63" stroke-width="1" marker-end="url(#a3)"/>
+  <text x="565" y="116" class="msgs">db() — 读取（mtime 缓存命中则直接返回）</text>
+
+  <path d="M555 152 H775" stroke="#736b63" stroke-width="1" marker-end="url(#a3)"/>
+  <text x="565" y="146" class="msgs">推算 subtotal / shipping / total，生成订单号</text>
+
+  <path d="M325 182 H551" stroke="#736b63" stroke-width="1" marker-end="url(#a3)"/>
+  <text x="335" y="176" class="msgs">mutate(): 深拷贝 → 插入订单 → 扣减库存</text>
+
+  <path d="M555 208 H771" stroke="#736b63" stroke-width="1" marker-end="url(#a3)"/>
+  <text x="565" y="202" class="msgs">原子写回 db.json，更新缓存</text>
+
+  <path d="M325 240 H104" stroke="#736b63" stroke-width="1" marker-end="url(#a3)"/>
+  <text x="115" y="234" class="msgs">{order, url:"/order/WK1142"} + Set-Cookie 清空</text>
+
+  <path d="M100 268 H321" stroke="#736b63" stroke-width="1" marker-end="url(#a3)"/>
+  <text x="110" y="262" class="msgs">GET /order/WK1142</text>
+
+  <path d="M325 294 H104" stroke="#736b63" stroke-width="1" marker-end="url(#a3)"/>
+  <text x="115" y="288" class="msgs">200 HTML 订单确认页</text>
+
+  <text x="30" y="330" class="msgs">失败路径：购物车为空 → 400；商品已下架 → 跳过该行并记录告警；写盘失败 → 500，订单不落地。</text>
+</svg>
+<figcaption>图 6-1　下单时序：4 个参与者，7 次消息往返</figcaption>
+</figure>
+
+<h3>6.2 库存扣减一致性</h3>
+<p>原型采用「读 → 改 → 写」的简单模型，扣减逻辑为 <code>stock = max(0, stock − qty)</code>，因此不会出现负库存，但两个并发请求可能丢失一次扣减（写覆盖）。这在本阶段有意接受——单人运营不存在并发下单。</p>
+<p>生产阶段改为数据库事务 + 行级锁：</p>
+<pre>BEGIN;
+  UPDATE products SET stock = stock - $qty
+   WHERE id = $id AND stock >= $qty
+  RETURNING stock;
+  -- affectedRows = 0 表示库存不足，回滚并返回 409
+  INSERT INTO orders (...) VALUES (...);
+COMMIT;</pre>
+
+<h3>6.3 财务指标计算</h3>
+<p>看板的全部数字来自 <code>summary(days)</code> 一次聚合，不依赖任何预计算表。核心逻辑：</p>
+<pre>// 单笔订单
+cogs        = Σ(item.cost × item.qty)
+duty        = cogs × 0.31              // 中国产地仿首饰综合税负
+freight     = cogs × 0.055             // 头程与清关分摊
+fulfillment = 9.80                     // 3PL 仓配 + 尾程（每单固定）
+fees        = total × 0.029 + 0.30     // Stripe
+packaging   = 0.85
+returns     = total × 0.06             // 退货计提
+
+cost   = cogs + duty + freight + fulfillment + fees + packaging + returns
+profit = total − cost
+margin = profit / total
+
+// 区间汇总
+revenue    = Σ(paid + fulfilled 订单的 total)
+refundRate = refunded 订单数 / 区间订单总数
+repeatRate = 多单客户数 / 有效客户数
+weeksCover = 在库件数 / (区间售出件数 / 天数 × 7)</pre>
+
+<div class="callout callout--warn">
+  <p class="callout__t">最容易做错的一处</p>
+  <p>多数看板把「毛利率」算成 <code>(售价 − 工厂成本) / 售价</code>，会得出 88% 这种假数字。真实的贡献毛利必须扣除关税（31%）、头程、仓配（$9.8/单）、支付费（3.2%）、包装与退货计提。同样一款 $62 的项链，两种算法分别是 <b>88%</b> 与 <b>62%</b>——相差 26 个点，足以让一个错误的定价决策发生。</p>
+</div>
+
+<h2 id="c7"><span class="num">7</span>安全设计</h2>
+
+<table>
+  <thead><tr><th style="width:20%">威胁</th><th style="width:34%">对策</th><th>实现位置</th></tr></thead>
+  <tbody>
+    <tr><td>XSS</td><td>所有动态文本经 <code>esc()</code> 转义（&amp; &lt; &gt; " '），不使用 <code>innerHTML</code> 拼接未转义内容</td><td>core.esc / 各渲染函数</td></tr>
+    <tr><td>越权访问后台</td><td>所有 <code>/api/admin/*</code> 在路由入口统一校验会话；页面本身也判断，双保险</td><td>server.js 路由守卫</td></tr>
+    <tr><td>路径穿越</td><td>静态资源解析后校验最终路径必须以 <code>public/assets</code> 开头</td><td>serveStatic</td></tr>
+    <tr><td>请求体炸弹</td><td>body 累计超过 1MB 立即 destroy 连接</td><td>readBody</td></tr>
+    <tr><td>会话劫持</td><td>Cookie 设置 <code>SameSite=Lax</code>；生产环境追加 <code>Secure</code> 与 <code>HttpOnly</code></td><td>setCookie</td></tr>
+    <tr><td>枚举订单</td><td>订单号 4 位递增可被枚举，因此查询强制「订单号 + 邮箱」双因子；仅凭订单号不返回结果</td><td>/account 查询逻辑</td></tr>
+    <tr><td>密码存储</td><td>原型明文（仅本地演示）；生产使用 bcrypt cost 12，且不存于前端可达文件</td><td>settings.adminPassword（待替换）</td></tr>
+  </tbody>
+</table>
+
+<h2 id="c8"><span class="num">8</span>性能与 SEO</h2>
+
+<h3>8.1 性能预算</h3>
+<table>
+  <thead><tr><th style="width:26%">资源</th><th class="num" style="width:16%">预算</th><th class="num" style="width:16%">当前</th><th>措施</th></tr></thead>
+  <tbody>
+    <tr><td>HTML（首页）</td><td class="num">&lt; 120 KB</td><td class="num">约 48 KB</td><td>无内联大图</td></tr>
+    <tr><td>CSS</td><td class="num">&lt; 60 KB</td><td class="num">约 28 KB</td><td>单文件，无框架</td></tr>
+    <tr><td>JS</td><td class="num">&lt; 30 KB</td><td class="num">约 12 KB</td><td>无框架，仅原生</td></tr>
+    <tr><td>首屏图片</td><td class="num">&lt; 400 KB</td><td class="num">约 320 KB</td><td>900×900、懒加载非首屏</td></tr>
+    <tr><td>字体</td><td class="num">2 个家族</td><td class="num">Fraunces + Figtree</td><td>display=swap，preconnect</td></tr>
+  </tbody>
+</table>
+
+<h3>8.2 首屏优化要点</h3>
+<ul>
+  <li>首屏主图<b>不加</b> <code>loading="lazy"</code>，其余图片全部懒加载并声明 <code>width/height</code> 防止 CLS。</li>
+  <li>字体通过 <code>preconnect</code> + <code>display=swap</code>，避免阻塞渲染；断网时回退 Georgia / 系统字体仍可用。</li>
+  <li>CSS 单文件、无 <code>@import</code> 链式请求；JS 用 <code>defer</code> 不阻塞解析。</li>
+  <li>静态资源 <code>Cache-Control: public, max-age=86400</code>；HTML <code>no-store</code> 保证后台改价立即生效。</li>
+</ul>
+
+<h3>8.3 SEO</h3>
+<table>
+  <thead><tr><th style="width:26%">项</th><th>实现</th></tr></thead>
+  <tbody>
+    <tr><td>title / description</td><td>每个页面唯一，商品页用商品名 + 品类，集合页用集合名 + 品牌承诺</td></tr>
+    <tr><td>语义结构</td><td>单一 <code>h1</code>，标题层级不跳级，<code>nav</code> / <code>main</code> / <code>footer</code> 齐全</td></tr>
+    <tr><td>URL</td><td><code>/collections/:handle</code>、<code>/products/:handle</code>，全小写连字符，无参数污染</td></tr>
+    <tr><td>结构化数据</td><td>生产阶段在商品页注入 Product + Offer + AggregateRating（原型未注入）</td></tr>
+    <tr><td>canonical</td><td>筛选与排序参数不产生新 canonical，全部指向集合主 URL</td></tr>
+    <tr><td>图片 alt</td><td>商品图使用商品名，装饰图留空 <code>alt=""</code></td></tr>
+  </tbody>
+</table>
+
+<h2 id="c9"><span class="num">9</span>部署与演进</h2>
+
+<h3>9.1 原型运行</h3>
+<pre># 安装：无依赖，只需 Node.js ≥ 18
+cd wildkind
+node data/seed.js      # 生成演示数据（36 商品 / 186 订单）
+node server.js         # 启动，默认 http://localhost:4400
+
+# Windows 可双击 start.bat</pre>
+
+<h3>9.2 生产拓扑</h3>
+<figure class="fig">
+<svg viewBox="0 0 880 250" role="img" aria-label="生产部署拓扑">
+  <defs>
+    <style>
+      .p1{font-family:Figtree,sans-serif;font-size:10.5px;fill:#14120f;font-weight:600}
+      .p2{font-family:Figtree,sans-serif;font-size:9.5px;fill:#9a9188}
+      .pb{fill:#fff;stroke:#d5cabf;stroke-width:1}
+      .pf{stroke:#b8ada2;stroke-width:1;fill:none}
+    </style>
+    <marker id="a4" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#b8ada2"/>
+    </marker>
+  </defs>
+  <rect x="24" y="60" width="120" height="56" class="pb"/>
+  <text x="84" y="84" class="p1" text-anchor="middle">买家浏览器</text>
+  <text x="84" y="100" class="p2" text-anchor="middle">US / CA / UK</text>
+
+  <rect x="196" y="60" width="120" height="56" class="pb"/>
+  <text x="256" y="84" class="p1" text-anchor="middle">Cloudflare</text>
+  <text x="256" y="100" class="p2" text-anchor="middle">CDN + DNS</text>
+
+  <rect x="368" y="46" width="150" height="84" class="pb"/>
+  <text x="443" y="70" class="p1" text-anchor="middle">Coolify (VPS)</text>
+  <text x="443" y="88" class="p2" text-anchor="middle">Next.js 16 容器</text>
+  <text x="443" y="104" class="p2" text-anchor="middle">+ Stripe Webhook</text>
+  <text x="443" y="120" class="p2" text-anchor="middle">+ Resend 发信</text>
+
+  <rect x="570" y="30" width="130" height="52" class="pb"/>
+  <text x="635" y="52" class="p1" text-anchor="middle">PostgreSQL</text>
+  <text x="635" y="68" class="p2" text-anchor="middle">订单 / 库存 / 客户</text>
+
+  <rect x="570" y="96" width="130" height="52" class="pb"/>
+  <text x="635" y="118" class="p1" text-anchor="middle">对象存储</text>
+  <text x="635" y="134" class="p2" text-anchor="middle">产品图 + CDN</text>
+
+  <rect x="570" y="162" width="130" height="52" class="pb"/>
+  <text x="635" y="184" class="p1" text-anchor="middle">Stripe</text>
+  <text x="635" y="200" class="p2" text-anchor="middle">支付 + 退款</text>
+
+  <rect x="740" y="96" width="116" height="52" class="pb"/>
+  <text x="798" y="118" class="p1" text-anchor="middle">Portland 3PL</text>
+  <text x="798" y="134" class="p2" text-anchor="middle">履约 API</text>
+
+  <path d="M144 88 H192" class="pf" marker-end="url(#a4)"/>
+  <path d="M316 88 H364" class="pf" marker-end="url(#a4)"/>
+  <path d="M518 78 H566" class="pf" marker-end="url(#a4)"/>
+  <path d="M518 110 H566" class="pf" marker-end="url(#a4)"/>
+  <path d="M443 130 C443 188 500 188 566 188" class="pf" marker-end="url(#a4)"/>
+  <path d="M700 122 H736" class="pf" marker-end="url(#a4)"/>
+  <text x="24" y="236" class="p2">VPS 单机即可承载日均 &lt; 500 单。数据库每日快照，图片走对象存储不占服务器磁盘。</text>
+</svg>
+<figcaption>图 9-1　生产部署拓扑（M2 目标）</figcaption>
+</figure>
+
+<h3>9.3 演进路线</h3>
+<table>
+  <thead><tr><th style="width:12%">阶段</th><th style="width:20%">目标</th><th>关键工作</th></tr></thead>
+  <tbody>
+    <tr><td><b>M0</b><br>当前</td><td>结构与视觉定稿</td><td>原型完成（本仓库）：9 个前台模板 + 8 个后台模块，全部可交互，JSON 存储</td></tr>
+    <tr><td><b>M1</b><br>+2 周</td><td>可真实交易</td><td>迁移 Next.js + Prisma + Postgres；接入 Stripe Embedded Checkout；Resend 订单邮件；域名与 SSL</td></tr>
+    <tr><td><b>M2</b><br>+4 周</td><td>可运营</td><td>真实商品 36 款拍摄与上架；3PL 对接；库存同步；GA4 + Meta Pixel；退款流程</td></tr>
+    <tr><td><b>M3</b><br>+8 周</td><td>可增长</td><td>结构化数据、评价系统、优惠券引擎、联盟分销、邮件自动化（弃购挽回）</td></tr>
+    <tr><td><b>M4</b><br>+16 周</td><td>可扩张</td><td>欧盟合规（GPSR + EPR）、多币种、订阅盒、账户体系</td></tr>
+  </tbody>
+</table>
+
+<h2 id="c10"><span class="num">10</span>测试与风险</h2>
+
+<h3>10.1 测试策略</h3>
+<table>
+  <thead><tr><th style="width:16%">层级</th><th style="width:26%">范围</th><th>方式</th></tr></thead>
+  <tbody>
+    <tr><td>冒烟</td><td>12 条核心路径</td><td>每条路由 200、每个集合页有商品、加购→结算→订单可查</td></tr>
+    <tr><td>功能</td><td>48 条需求</td><td>按第 8 章验收清单逐项手工验证，含异常路径（空车结算、售罄加购、无结果筛选）</td></tr>
+    <tr><td>视觉回归</td><td>9 个页面 × 4 断点</td><td>Edge headless 截图对比，重点检查导航不重叠、图片不变形、文字不溢出</td></tr>
+    <tr><td>数据一致性</td><td>下单前后</td><td>断言：订单数 +1、库存 −qty、GMV 增量 = 订单金额</td></tr>
+    <tr><td>性能</td><td>首页 / 集合 / 详情</td><td>Lighthouse 移动模拟，Performance ≥ 80</td></tr>
+  </tbody>
+</table>
+
+<h3>10.2 风险登记</h3>
+<table>
+  <thead><tr><th style="width:8%">#</th><th style="width:26%">风险</th><th style="width:10%">等级</th><th>对策</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>AI 生成产品图与实物不符，上线后需全部替换</td><td><span class="tag tag--no">高</span></td><td>图片目录与商品解耦，命名固定（<code>p-{motif}-{metal}.png</code>），实拍后同名覆盖即可</td></tr>
+    <tr><td>2</td><td>美国关税政策再次变动，成本模型失效</td><td><span class="tag tag--no">高</span></td><td>关税率做成后台可配参数，不写死在代码；每月复核一次</td></tr>
+    <tr><td>3</td><td>JSON 存储在数据量增长后成为瓶颈</td><td><span class="tag">中</span></td><td>订单超过 5,000 时迁移 Postgres；core.js 的查询函数已按可替换方式设计</td></tr>
+    <tr><td>4</td><td>单人运营，后台误操作无审计</td><td><span class="tag">中</span></td><td>M2 增加操作日志表；关键操作（改价、退款）二次确认</td></tr>
+    <tr><td>5</td><td>字体依赖 Google Fonts，国内与部分网络不可达</td><td><span class="tag">中</span></td><td>已配置 Georgia / 系统字体回退，断网时版式不塌</td></tr>
+    <tr><td>6</td><td>导航 11 项在 1280px 以下过密</td><td><span class="tag">中</span></td><td>1300px 降字号，980px 切汉堡；M3 评估合并为 7 项</td></tr>
+    <tr><td>7</td><td>无真实支付，结算流程未经验证</td><td><span class="tag">中</span></td><td>M1 接 Stripe 后跑 20 笔真实小额测试单</td></tr>
+  </tbody>
+</table>
+
+<hr>
+<p style="font-size:11.5px;color:var(--muted-2);text-align:center;margin-top:36px">
+Wildkind · WK-FRD-001 / WK-SDD-001 · v1.0 · 2026-11-12<br>
+本文档与原型代码同仓，文档变更需与实现同步提交
+</p>
+</article>
+</main>
+</div>
+</body>
+</html>

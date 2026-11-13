@@ -1,0 +1,200 @@
+[
+  {
+    "cand": "SEREIA",
+    "domain": "sereia.com",
+    "state": "TAKEN",
+    "note": "注册于 2002-01-09 | 到期 2027-01-09 | GoDaddy.com, LLC"
+  },
+  {
+    "cand": "SEREIA",
+    "domain": "sereia.co",
+    "state": "NO_RDAP",
+    "note": "无 RDAP 服务，需人工查"
+  },
+  {
+    "cand": "SEREIA",
+    "domain": "sereia.shop",
+    "state": "TAKEN",
+    "note": "注册于 2026-08-28 | 到期 2027-08-28 | GNAME.COM PTE. LTD."
+  },
+  {
+    "cand": "SEREIA",
+    "domain": "sereiajewelry.com",
+    "state": "AVAILABLE",
+    "note": ""
+  },
+  {
+    "cand": "SEREIA",
+    "domain": "wearsereia.com",
+    "state": "AVAILABLE",
+    "note": ""
+  },
+  {
+    "cand": "SEREIA",
+    "domain": "sereia.store",
+    "state": "TAKEN",
+    "note": "注册于 2026-07-28 | 到期 2027-07-28 | PDR Ltd. d/b/a PublicDomainRegistry.com"
+  },
+  {
+    "cand": "MAREA",
+    "domain": "marea.com",
+    "state": "TAKEN",
+    "note": "注册于 1997-12-01 | 到期 2026-11-30 | Arsys Internet, S.L. dba NICLINE.COM"
+  },
+  {
+    "cand": "MAREA",
+    "domain": "marea.co",
+    "state": "NO_RDAP",
+    "note": "无 RDAP 服务，需人工查"
+  },
+  {
+    "cand": "MAREA",
+    "domain": "marea.shop",
+    "state": "TAKEN",
+    "note": "注册于 2026-06-24 | 到期 2027-06-24 | GoDaddy.com LLC"
+  },
+  {
+    "cand": "MAREA",
+    "domain": "mareajewelry.com",
+    "state": "TAKEN",
+    "note": "注册于 2024-04-11 | 到期 2027-04-11 | IONOS SE"
+  },
+  {
+    "cand": "MAREA",
+    "domain": "wearmarea.com",
+    "state": "ERR_0",
+    "note": "socket hang up"
+  },
+  {
+    "cand": "MAREA",
+    "domain": "marea.store",
+    "state": "TAKEN",
+    "note": "注册于 2026-08-16 | 到期 2027-08-16 | GoDaddy.com, LLC"
+  },
+  {
+    "cand": "TIDEGLASS",
+    "domain": "tideglass.com",
+    "state": "TAKEN",
+    "note": "注册于 2025-11-16 | 到期 2027-11-16 | Automattic Inc."
+  },
+  {
+    "cand": "TIDEGLASS",
+    "domain": "tideglass.co",
+    "state": "NO_RDAP",
+    "note": "无 RDAP 服务，需人工查"
+  },
+  {
+    "cand": "TIDEGLASS",
+    "domain": "tideglass.shop",
+    "state": "AVAILABLE",
+    "note": ""
+  },
+  {
+    "cand": "TIDEGLASS",
+    "domain": "tideglassjewelry.com",
+    "state": "AVAILABLE",
+    "note": ""
+  },
+  {
+    "cand": "TIDEGLASS",
+    "domain": "tideglass.store",
+    "state": "AVAILABLE",
+    "note": ""
+  },
+  {
+    "cand": "NAIADE",
+    "domain": "naiade.com",
+    "state": "TAKEN",
+    "note": "注册于 2001-07-16 | 到期 2027-07-16 | GoDaddy.com, LLC"
+  },
+  {
+    "cand": "NAIADE",
+    "domain": "naiade.co",
+    "state": "NO_RDAP",
+    "note": "无 RDAP 服务，需人工查"
+  },
+  {
+    "cand": "NAIADE",
+    "domain": "naiade.shop",
+    "state": "TAKEN",
+    "note": "注册于 2025-08-23 | 到期 2027-08-23 | IONOS SE"
+  },
+  {
+    "cand": "NAIADE",
+    "domain": "naidejewelry.com",
+    "state": "AVAILABLE",
+    "note": ""
+  },
+  {
+    "cand": "NAIADE",
+    "domain": "naiade.store",
+    "state": "TAKEN",
+    "note": "注册于 2025-08-23 | 到期 2027-08-23 | IONOS SE"
+  },
+  {
+    "cand": "EVERWAVE",
+    "domain": "everwave.com",
+    "state": "TAKEN",
+    "note": "注册于 2002-10-09 | 到期 2027-10-09 | Network Solutions, LLC"
+  },
+  {
+    "cand": "EVERWAVE",
+    "domain": "everwave.co",
+    "state": "NO_RDAP",
+    "note": "无 RDAP 服务，需人工查"
+  },
+  {
+    "cand": "EVERWAVE",
+    "domain": "everwave.shop",
+    "state": "AVAILABLE",
+    "note": ""
+  },
+  {
+    "cand": "EVERWAVE",
+    "domain": "everwavejewelry.com",
+    "state": "AVAILABLE",
+    "note": ""
+  },
+  {
+    "cand": "EVERWAVE",
+    "domain": "everwave.store",
+    "state": "AVAILABLE",
+    "note": ""
+  },
+  {
+    "cand": "SELKIE",
+    "domain": "selkie.com",
+    "state": "TAKEN",
+    "note": "注册于 1998-11-28 | 到期 2030-11-27 | NameSilo, LLC"
+  },
+  {
+    "cand": "SELKIE",
+    "domain": "selkie.co",
+    "state": "NO_RDAP",
+    "note": "无 RDAP 服务，需人工查"
+  },
+  {
+    "cand": "SELKIE",
+    "domain": "selkie.shop",
+    "state": "TAKEN",
+    "note": "注册于 2026-07-16 | 到期 2027-07-16 | Dynadot Inc."
+  },
+  {
+    "cand": "SELKIE",
+    "domain": "selkiejewelry.com",
+    "state": "TAKEN",
+    "note": "注册于 2015-03-19 | 到期 2030-03-19 | GoDaddy.com, LLC"
+  },
+  {
+    "cand": "SELKIE",
+    "domain": "wearselkie.com",
+    "state": "ERR_0",
+    "note": "socket hang up"
+  },
+  {
+    "cand": "SELKIE",
+    "domain": "selkie.store",
+    "state": "AVAILABLE",
+    "note": ""
+  }
+]

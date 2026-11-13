@@ -1,0 +1,5088 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "TIDEGLASS API",
+    "version": "1.0.0",
+    "description": "TIDEGLASS 跨境饰品独立站接口。\n\n**响应信封**：成功 `{ \"data\": … }`；分页 `{ \"data\": [], \"meta\": {} }`；失败 `{ \"error\": { code, message, details } }`。\n前端必须按 `code` 分支，不要按 `message` 文案匹配。\n\n**两个跨接口机制**：\n- 报价锁：`POST /checkout/quote` 拿 `quoteId`（15 分钟），下单时必须带上；金额不一致返回 `PRICE_CHANGED`。\n- 幂等下单：`POST /orders` 带 `Idempotency-Key` 头，重复提交返回原订单并标记 `replayed: true`。\n\n**权限**：Bearer Token（12 小时，可吊销），按 10 个权限位鉴权，不按角色判断。\n\n详细说明见《API 接口文档 v1.0》。",
+    "license": {
+      "name": "Proprietary"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4600",
+      "description": "本地开发"
+    }
+  ],
+  "tags": [
+    {
+      "name": "系统",
+      "description": "健康检查与首屏聚合"
+    },
+    {
+      "name": "目录",
+      "description": "商品、集合、搜索（公开）"
+    },
+    {
+      "name": "结算",
+      "description": "购物车校验、优惠码、报价（公开）"
+    },
+    {
+      "name": "订单",
+      "description": "下单与访客查单（公开，双因子）"
+    },
+    {
+      "name": "后台 · 认证",
+      "description": "登录 / 登出 / 当前用户"
+    },
+    {
+      "name": "后台 · 看板",
+      "description": "经营指标"
+    },
+    {
+      "name": "后台 · 订单",
+      "description": "订单管理与退款"
+    },
+    {
+      "name": "后台 · 商品",
+      "description": "商品、库存、流水"
+    },
+    {
+      "name": "后台 · 客户",
+      "description": "客户档案"
+    },
+    {
+      "name": "后台 · 营销",
+      "description": "优惠码"
+    },
+    {
+      "name": "后台 · 评价",
+      "description": "评价审核"
+    },
+    {
+      "name": "后台 · 设置",
+      "description": "站点设置与审计日志"
+    }
+  ],
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "系统"
+        ],
+        "summary": "健康检查",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/api/v1/bootstrap": {
+      "get": {
+        "tags": [
+          "系统"
+        ],
+        "summary": "首屏一次性取全（设置 + 导航 + 集合 + 赠品规则）",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bootstrap"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/api/v1/products": {
+      "get": {
+        "tags": [
+          "目录"
+        ],
+        "summary": "商品列表（数组，无分页元信息）",
+        "security": [],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "集合 handle"
+          },
+          {
+            "name": "metal",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Gold",
+                "Silver"
+              ]
+            }
+          },
+          {
+            "name": "price",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "under-70",
+                "70-100",
+                "over-100"
+              ]
+            }
+          },
+          {
+            "name": "stock",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "in"
+              ]
+            },
+            "description": "传 in 只看有货"
+          },
+          {
+            "name": "motif",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "匹配标题 / 描述 / 题材 / 集合"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "featured",
+                "new",
+                "best",
+                "price-asc",
+                "price-desc",
+                "rating"
+              ],
+              "default": "featured"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 48,
+              "default": 24
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Product"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/api/v1/products/search": {
+      "get": {
+        "tags": [
+          "目录"
+        ],
+        "summary": "商品列表（带分页 meta）",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Product"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PageMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/api/v1/products/{handle}": {
+      "get": {
+        "tags": [
+          "目录"
+        ],
+        "summary": "商品详情（含已审核评价与相关推荐）",
+        "security": [],
+        "parameters": [
+          {
+            "name": "handle",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/api/v1/collections": {
+      "get": {
+        "tags": [
+          "目录"
+        ],
+        "summary": "全部可见集合",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Collection"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/api/v1/collections/{handle}": {
+      "get": {
+        "tags": [
+          "目录"
+        ],
+        "summary": "集合详情 + 商品（分页）",
+        "security": [],
+        "parameters": [
+          {
+            "name": "handle",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionProducts"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/api/v1/search": {
+      "get": {
+        "tags": [
+          "目录"
+        ],
+        "summary": "轻量搜索",
+        "security": [],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "maximum": 48
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Product"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/api/v1/cart/validate": {
+      "post": {
+        "tags": [
+          "结算"
+        ],
+        "summary": "购物车校验（返回服务端价格，前端价格字段被忽略）",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CartInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CartValidated"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/components/responses/OutOfStock"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/api/v1/coupons/validate": {
+      "post": {
+        "tags": [
+          "结算"
+        ],
+        "summary": "单独校验优惠码",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "code",
+                  "items"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "items": {
+                    "$ref": "#/components/schemas/CartItemInputList"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponValidated"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "422": {
+            "$ref": "#/components/responses/CouponInvalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/api/v1/checkout/quote": {
+      "post": {
+        "tags": [
+          "结算"
+        ],
+        "summary": "报价：锁定价格 / 库存 / 运费 / 赠品，返回 15 分钟有效的 quoteId",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/components/responses/OutOfStock"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/api/v1/orders": {
+      "post": {
+        "tags": [
+          "订单"
+        ],
+        "summary": "下单（必须带 quoteId；建议带 Idempotency-Key）",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "幂等重放：返回原订单，replayed = true",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderCreated"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/components/responses/OutOfStock"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/api/v1/orders/lookup": {
+      "get": {
+        "tags": [
+          "订单"
+        ],
+        "summary": "访客查单（单号 + 邮箱双因子）",
+        "security": [],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "可带或不带 #"
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/api/v1/orders/{number}": {
+      "get": {
+        "tags": [
+          "订单"
+        ],
+        "summary": "按单号查单（邮箱必须匹配）",
+        "security": [],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/api/v1/orders/{number}/cancel": {
+      "post": {
+        "tags": [
+          "订单"
+        ],
+        "summary": "访客自助取消（仅未发货）",
+        "security": [],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/login": {
+      "post": {
+        "tags": [
+          "后台 · 认证"
+        ],
+        "summary": "登录，返回 12 小时令牌",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/logout": {
+      "post": {
+        "tags": [
+          "后台 · 认证"
+        ],
+        "summary": "登出，服务端吊销令牌",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/me": {
+      "get": {
+        "tags": [
+          "后台 · 认证"
+        ],
+        "summary": "当前登录者与权限位",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/metrics": {
+      "get": {
+        "tags": [
+          "后台 · 看板"
+        ],
+        "summary": "经营看板",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365,
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Metrics"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/orders": {
+      "get": {
+        "tags": [
+          "后台 · 订单"
+        ],
+        "summary": "订单列表（筛选 + 搜索 + 分页）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "paid",
+                "fulfilling",
+                "fulfilled",
+                "completed",
+                "cancelled",
+                "refunded"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "匹配单号 / 邮箱 / 姓名"
+          },
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OrderSummary"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PageMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/orders/{number}": {
+      "get": {
+        "tags": [
+          "后台 · 订单"
+        ],
+        "summary": "订单详情 + allowedTransitions",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/orders/{number}/status": {
+      "patch": {
+        "tags": [
+          "后台 · 订单"
+        ],
+        "summary": "改订单状态（走状态机；refunded 必须走 /refund）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "paid",
+                      "fulfilling",
+                      "fulfilled",
+                      "completed",
+                      "cancelled",
+                      "refunded"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/orders/{number}/refund": {
+      "post": {
+        "tags": [
+          "后台 · 订单"
+        ],
+        "summary": "退款（回补库存 + 释放券 + 冲减客户消费）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "restock": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "amount": {
+                    "type": "number",
+                    "description": "省略表示全额"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/orders/{number}/tracking": {
+      "post": {
+        "tags": [
+          "后台 · 订单"
+        ],
+        "summary": "填运单号（自动把 paid/fulfilling 推进到 fulfilled）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "tracking"
+                ],
+                "properties": {
+                  "tracking": {
+                    "type": "string"
+                  },
+                  "carrier": {
+                    "type": "string",
+                    "default": "USPS"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/products": {
+      "get": {
+        "tags": [
+          "后台 · 商品"
+        ],
+        "summary": "商品列表（含成本与 version）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            },
+            "403": {
+              "$ref": "#/components/responses/Forbidden"
+            },
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminProduct"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/products/{id}": {
+      "patch": {
+        "tags": [
+          "后台 · 商品"
+        ],
+        "summary": "改商品（乐观锁；改价不得低于成本）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminProductEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/products/{id}/variants/{sku}/restock": {
+      "post": {
+        "tags": [
+          "后台 · 商品"
+        ],
+        "summary": "补货（写库存流水）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sku",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "qty"
+                ],
+                "properties": {
+                  "qty": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "reason": {
+                    "type": "string",
+                    "default": "manual-restock"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestockResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/inventory": {
+      "get": {
+        "tags": [
+          "后台 · 商品"
+        ],
+        "summary": "按 SKU 的库存与风险等级",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            },
+            "403": {
+              "$ref": "#/components/responses/Forbidden"
+            },
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/InventoryRow"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/stock-ledger": {
+      "get": {
+        "tags": [
+          "后台 · 商品"
+        ],
+        "summary": "库存流水（倒序，只读）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sku",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            },
+            "403": {
+              "$ref": "#/components/responses/Forbidden"
+            },
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LedgerEntry"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/customers": {
+      "get": {
+        "tags": [
+          "后台 · 客户"
+        ],
+        "summary": "客户列表（按累计消费倒序）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            },
+            "403": {
+              "$ref": "#/components/responses/Forbidden"
+            },
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Customer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/coupons": {
+      "get": {
+        "tags": [
+          "后台 · 营销"
+        ],
+        "summary": "优惠码列表",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            },
+            "403": {
+              "$ref": "#/components/responses/Forbidden"
+            },
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Coupon"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "后台 · 营销"
+        ],
+        "summary": "新建优惠码（立即在前台生效）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CouponInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/coupons/{code}": {
+      "delete": {
+        "tags": [
+          "后台 · 营销"
+        ],
+        "summary": "删除优惠码",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reviews": {
+      "get": {
+        "tags": [
+          "后台 · 评价"
+        ],
+        "summary": "评价列表",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "approved",
+                "rejected"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            },
+            "403": {
+              "$ref": "#/components/responses/Forbidden"
+            },
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminReview"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reviews/{id}": {
+      "patch": {
+        "tags": [
+          "后台 · 评价"
+        ],
+        "summary": "审核评价（只有 approved 会出现在前台）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "approved",
+                      "rejected"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/settings": {
+      "get": {
+        "tags": [
+          "后台 · 设置"
+        ],
+        "summary": "读取站点设置",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "后台 · 设置"
+        ],
+        "summary": "改站点设置（立即反映到前台报价与页面）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsPatchResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/audit-log": {
+      "get": {
+        "tags": [
+          "后台 · 设置"
+        ],
+        "summary": "最近 200 条特权操作",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            },
+            "403": {
+              "$ref": "#/components/responses/Forbidden"
+            },
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AuditEntry"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/collections": {
+      "get": {
+        "tags": [
+          "后台 · 集合"
+        ],
+        "summary": "集合列表（含现算的商品数）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionList"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "后台 · 集合"
+        ],
+        "summary": "新建集合",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/collections/{handle}": {
+      "patch": {
+        "tags": [
+          "后台 · 集合"
+        ],
+        "summary": "改集合（标题 / 描述 / 导航开关 / 排序）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "handle",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "后台 · 集合"
+        ],
+        "summary": "删集合（集合内还有商品时拒绝）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "handle",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "已删除",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/content": {
+      "get": {
+        "tags": [
+          "后台 · 内容"
+        ],
+        "summary": "读取首页文案与内容页标题/导语",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentDoc"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "后台 · 内容"
+        ],
+        "summary": "改首页文案 / 内容页标题与导语",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentDoc"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/custom-requests": {
+      "post": {
+        "tags": [
+          "门店 · 定制"
+        ],
+        "summary": "提交定制需求（匿名，限流 6 次 / 10 分钟）",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomRequestCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "已受理",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomRequestReceiptEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/custom-requests": {
+      "get": {
+        "tags": [
+          "后台 · 定制"
+        ],
+        "summary": "定制需求列表（可按状态筛选）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "new",
+                "quoted",
+                "ordered",
+                "closed"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomRequestList"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/custom-requests/{id}": {
+      "patch": {
+        "tags": [
+          "后台 · 定制"
+        ],
+        "summary": "改状态 / 填报价与内部备注（状态单向）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomRequestPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomRequestEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "后台登录后拿到的令牌，有效期 12 小时"
+      }
+    },
+    "parameters": {
+      "Page": {
+        "name": "page",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "Limit": {
+        "name": "limit",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 48,
+          "default": 24
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "description": "幂等键，同一键重复提交只产生一单"
+      }
+    },
+    "schemas": {
+      "Ok": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "PageMeta": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "page",
+          "limit",
+          "total",
+          "hasMore"
+        ]
+      },
+      "ErrorBody": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "details"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "products": {
+            "type": "integer"
+          },
+          "orders": {
+            "type": "integer"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "status",
+          "version",
+          "products",
+          "orders",
+          "time"
+        ]
+      },
+      "Setting": {
+        "type": "object",
+        "properties": {
+          "brand": {
+            "type": "string"
+          },
+          "tagline": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "freeShippingThreshold": {
+            "type": "number"
+          },
+          "standardShipping": {
+            "type": "number"
+          },
+          "expressShipping": {
+            "type": "number"
+          },
+          "giftThreshold": {
+            "type": "number",
+            "nullable": true
+          },
+          "giftName": {
+            "type": "string",
+            "nullable": true
+          },
+          "announce": {
+            "type": "string"
+          },
+          "heroEyebrow": {
+            "type": "string"
+          },
+          "heroTitle": {
+            "type": "string"
+          },
+          "heroBody": {
+            "type": "string"
+          },
+          "storeOpen": {
+            "type": "boolean"
+          },
+          "returnWindowDays": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "brand",
+          "tagline",
+          "currency",
+          "freeShippingThreshold",
+          "standardShipping",
+          "expressShipping",
+          "giftThreshold",
+          "giftName",
+          "announce",
+          "heroEyebrow",
+          "heroTitle",
+          "heroBody",
+          "storeOpen",
+          "returnWindowDays"
+        ]
+      },
+      "Collection": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "level": {
+            "type": "integer"
+          },
+          "parent": {
+            "type": "string",
+            "nullable": true
+          },
+          "nav": {
+            "type": "boolean"
+          },
+          "visible": {
+            "type": "boolean"
+          },
+          "order": {
+            "type": "integer"
+          },
+          "intro": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
+          },
+          "desc": {
+            "type": "string"
+          },
+          "productCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "handle",
+          "title",
+          "level",
+          "parent",
+          "nav",
+          "visible",
+          "order",
+          "intro",
+          "count",
+          "desc",
+          "productCount"
+        ]
+      },
+      "GiftRule": {
+        "type": "object",
+        "properties": {
+          "threshold": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "sku": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "threshold",
+          "name",
+          "value",
+          "sku"
+        ]
+      },
+      "Bootstrap": {
+        "type": "object",
+        "properties": {
+          "settings": {
+            "$ref": "#/components/schemas/Setting"
+          },
+          "collections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Collection"
+            }
+          },
+          "nav": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Collection"
+            }
+          },
+          "giftRule": {
+            "$ref": "#/components/schemas/GiftRule"
+          }
+        },
+        "required": [
+          "settings",
+          "collections",
+          "nav",
+          "giftRule"
+        ]
+      },
+      "Variant": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string"
+          },
+          "metal": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "inStock": {
+            "type": "boolean"
+          },
+          "stock": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sku",
+          "metal",
+          "price",
+          "inStock",
+          "stock"
+        ]
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "handle": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "compareAt": {
+            "type": "number",
+            "nullable": true
+          },
+          "currency": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "motif": {
+            "type": "string"
+          },
+          "set": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "badge": {
+            "type": "string",
+            "nullable": true
+          },
+          "rating": {
+            "type": "number"
+          },
+          "reviewCount": {
+            "type": "integer"
+          },
+          "description": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object"
+          },
+          "sizes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "collections": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "inStock": {
+            "type": "boolean"
+          },
+          "totalStock": {
+            "type": "integer"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Variant"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "handle",
+          "title",
+          "price",
+          "compareAt",
+          "currency",
+          "images",
+          "motif",
+          "set",
+          "category",
+          "badge",
+          "rating",
+          "reviewCount",
+          "description",
+          "details",
+          "sizes",
+          "collections",
+          "inStock",
+          "totalStock",
+          "variants",
+          "createdAt"
+        ]
+      },
+      "AdminProduct": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "handle": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "cost": {
+            "type": "number"
+          },
+          "stock": {
+            "type": "integer"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Variant"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "handle",
+          "price",
+          "cost",
+          "stock",
+          "active",
+          "version",
+          "variants"
+        ]
+      },
+      "AdminProductEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "product": {
+                "$ref": "#/components/schemas/AdminProduct"
+              }
+            },
+            "required": [
+              "product"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ProductPatch": {
+        "type": "object",
+        "properties": {
+          "price": {
+            "type": "number"
+          },
+          "compareAt": {
+            "type": "number",
+            "nullable": true
+          },
+          "cost": {
+            "type": "number"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "badge": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string"
+          },
+          "desc": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          }
+        },
+        "required": []
+      },
+      "Review": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "verified": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "rating",
+          "title",
+          "body",
+          "createdAt",
+          "verified"
+        ]
+      },
+      "RelatedItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "handle": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "image": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "handle",
+          "title",
+          "price",
+          "image"
+        ]
+      },
+      "ProductDetail": {
+        "type": "object",
+        "properties": {
+          "product": {
+            "$ref": "#/components/schemas/Product"
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Review"
+            }
+          },
+          "related": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatedItem"
+            }
+          }
+        },
+        "required": [
+          "product",
+          "reviews",
+          "related"
+        ]
+      },
+      "CollectionProducts": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Product"
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "collection": {
+                "$ref": "#/components/schemas/Collection"
+              },
+              "page": {
+                "type": "integer"
+              },
+              "limit": {
+                "type": "integer"
+              },
+              "total": {
+                "type": "integer"
+              },
+              "hasMore": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "collection",
+              "page",
+              "limit",
+              "total",
+              "hasMore"
+            ]
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "CartItemInput": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "metal": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string"
+          },
+          "qty": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "productId",
+          "metal",
+          "size",
+          "qty"
+        ]
+      },
+      "CartItemInputList": {
+        "type": "array",
+        "maxItems": 30,
+        "items": {
+          "$ref": "#/components/schemas/CartItemInput"
+        }
+      },
+      "CartInput": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "$ref": "#/components/schemas/CartItemInputList"
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "CartLine": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "handle": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "metal": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string"
+          },
+          "qty": {
+            "type": "integer"
+          },
+          "unitPrice": {
+            "type": "number"
+          },
+          "lineTotal": {
+            "type": "number"
+          },
+          "stock": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "productId",
+          "handle",
+          "title",
+          "metal",
+          "size",
+          "qty",
+          "unitPrice",
+          "lineTotal",
+          "stock"
+        ]
+      },
+      "CartValidated": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "lines": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CartLine"
+                }
+              },
+              "subtotal": {
+                "type": "number"
+              },
+              "currency": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "lines",
+              "subtotal",
+              "currency"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CouponValidated": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "value": {
+                "type": "number"
+              },
+              "discount": {
+                "type": "number"
+              },
+              "subtotal": {
+                "type": "number"
+              },
+              "afterDiscount": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "code",
+              "type",
+              "value",
+              "discount",
+              "subtotal",
+              "afterDiscount"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "QuoteInput": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "$ref": "#/components/schemas/CartItemInputList"
+          },
+          "couponCode": {
+            "type": "string"
+          },
+          "shippingMethod": {
+            "type": "string",
+            "enum": [
+              "Standard",
+              "Express"
+            ],
+            "default": "Standard"
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "GiftLine": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "metal": {
+            "type": "string"
+          },
+          "qty": {
+            "type": "integer"
+          },
+          "isGift": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "image": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "productId",
+          "sku",
+          "title",
+          "metal",
+          "qty",
+          "isGift",
+          "image"
+        ]
+      },
+      "QuoteLine": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "metal": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string"
+          },
+          "qty": {
+            "type": "integer"
+          },
+          "unitPrice": {
+            "type": "number"
+          },
+          "lineTotal": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "productId",
+          "title",
+          "metal",
+          "size",
+          "qty",
+          "unitPrice",
+          "lineTotal"
+        ]
+      },
+      "Quote": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "quoteId": {
+                "type": "string"
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "lines": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/QuoteLine"
+                }
+              },
+              "gift": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/GiftLine"
+                  }
+                ],
+                "nullable": true
+              },
+              "subtotal": {
+                "type": "number"
+              },
+              "discount": {
+                "type": "number"
+              },
+              "shipping": {
+                "type": "number"
+              },
+              "total": {
+                "type": "number"
+              },
+              "shippingMethod": {
+                "type": "string"
+              },
+              "couponCode": {
+                "type": "string"
+              },
+              "freeShipGap": {
+                "type": "number"
+              },
+              "giftGap": {
+                "type": "number"
+              },
+              "currency": {
+                "type": "string"
+              },
+              "dutiesIncluded": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "quoteId",
+              "expiresAt",
+              "lines",
+              "gift",
+              "subtotal",
+              "discount",
+              "shipping",
+              "total",
+              "shippingMethod",
+              "couponCode",
+              "freeShipGap",
+              "giftGap",
+              "currency",
+              "dutiesIncluded"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "OrderItem": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "variant": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "number"
+          },
+          "qty": {
+            "type": "integer"
+          },
+          "isGift": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "productId",
+          "title",
+          "variant",
+          "size",
+          "unitPrice",
+          "qty",
+          "isGift"
+        ]
+      },
+      "Address": {
+        "type": "object",
+        "properties": {
+          "line1": {
+            "type": "string"
+          },
+          "line2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "zip": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "line1",
+          "city",
+          "state",
+          "zip",
+          "country"
+        ]
+      },
+      "Payment": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "last4": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "mode",
+          "reference",
+          "last4"
+        ]
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "statusLabel": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string"
+          },
+          "orderType": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItem"
+            }
+          },
+          "subtotal": {
+            "type": "number"
+          },
+          "shipping": {
+            "type": "number"
+          },
+          "discount": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "address": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "shippingMethod": {
+            "type": "string"
+          },
+          "tracking": {
+            "type": "string"
+          },
+          "carrier": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "note": {
+            "type": "string"
+          },
+          "couponCode": {
+            "type": "string"
+          },
+          "gift": {
+            "type": "object",
+            "nullable": true
+          },
+          "payment": {
+            "$ref": "#/components/schemas/Payment"
+          },
+          "quoteId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "number",
+          "email",
+          "name",
+          "status",
+          "statusLabel",
+          "channel",
+          "orderType",
+          "items",
+          "subtotal",
+          "shipping",
+          "discount",
+          "total",
+          "address",
+          "shippingMethod",
+          "tracking",
+          "carrier",
+          "createdAt",
+          "note",
+          "couponCode",
+          "gift",
+          "payment",
+          "quoteId"
+        ]
+      },
+      "OrderInput": {
+        "type": "object",
+        "properties": {
+          "quoteId": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "address": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "note": {
+            "type": "string"
+          },
+          "payment": {
+            "type": "object",
+            "properties": {
+              "last4": {
+                "type": "string"
+              }
+            },
+            "required": []
+          }
+        },
+        "required": [
+          "quoteId",
+          "email",
+          "firstName",
+          "lastName",
+          "address"
+        ]
+      },
+      "OrderCreated": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "order": {
+                "$ref": "#/components/schemas/Order"
+              },
+              "replayed": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "order",
+              "replayed"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "OrderEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "order": {
+                "$ref": "#/components/schemas/Order"
+              }
+            },
+            "required": [
+              "order"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "OrderSummary": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "statusLabel": {
+            "type": "string"
+          },
+          "total": {
+            "type": "number"
+          },
+          "items": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "shippingMethod": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "number",
+          "email",
+          "name",
+          "status",
+          "statusLabel",
+          "total",
+          "items",
+          "createdAt",
+          "shippingMethod"
+        ]
+      },
+      "OrderDetail": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "order": {
+                "$ref": "#/components/schemas/Order"
+              },
+              "allowedTransitions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "order",
+              "allowedTransitions"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "RefundResult": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "order": {
+                "$ref": "#/components/schemas/Order"
+              },
+              "refunded": {
+                "type": "number"
+              },
+              "restocked": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "order",
+              "refunded",
+              "restocked"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "Staff": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "role",
+          "permissions"
+        ]
+      },
+      "LoginResult": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "token": {
+                "type": "string"
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "staff": {
+                "$ref": "#/components/schemas/Staff"
+              }
+            },
+            "required": [
+              "token",
+              "expiresAt",
+              "staff"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "MeResult": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "staff": {
+                "$ref": "#/components/schemas/Staff"
+              }
+            },
+            "required": [
+              "staff"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "SeriesPoint": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "revenue": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "date",
+          "revenue"
+        ]
+      },
+      "TopProduct": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "units": {
+            "type": "integer"
+          },
+          "revenue": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "title",
+          "units",
+          "revenue"
+        ]
+      },
+      "LowStockRow": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "metal": {
+            "type": "string"
+          },
+          "stock": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sku",
+          "title",
+          "metal",
+          "stock"
+        ]
+      },
+      "Metrics": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "window": {
+                "type": "integer"
+              },
+              "gmv": {
+                "type": "number"
+              },
+              "orders": {
+                "type": "integer"
+              },
+              "units": {
+                "type": "integer"
+              },
+              "aov": {
+                "type": "number"
+              },
+              "refundRate": {
+                "type": "number"
+              },
+              "gmvDelta": {
+                "type": "number",
+                "nullable": true
+              },
+              "series": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SeriesPoint"
+                }
+              },
+              "topProducts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TopProduct"
+                }
+              },
+              "lowStock": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/LowStockRow"
+                }
+              },
+              "pendingReviews": {
+                "type": "integer"
+              },
+              "awaitingShipment": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "window",
+              "gmv",
+              "orders",
+              "units",
+              "aov",
+              "refundRate",
+              "gmvDelta",
+              "series",
+              "topProducts",
+              "lowStock",
+              "pendingReviews",
+              "awaitingShipment"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "InventoryRow": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "metal": {
+            "type": "string"
+          },
+          "stock": {
+            "type": "integer"
+          },
+          "price": {
+            "type": "number"
+          },
+          "risk": {
+            "type": "string",
+            "enum": [
+              "out",
+              "reorder",
+              "healthy"
+            ]
+          },
+          "weeksOfCover": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "productId",
+          "title",
+          "sku",
+          "metal",
+          "stock",
+          "price",
+          "risk",
+          "weeksOfCover"
+        ]
+      },
+      "LedgerEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "delta": {
+            "type": "integer"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "seed",
+              "sale",
+              "refund",
+              "cancelled",
+              "restock",
+              "purchase-order"
+            ]
+          },
+          "refType": {
+            "type": "string",
+            "nullable": true
+          },
+          "refId": {
+            "type": "string",
+            "nullable": true
+          },
+          "balanceAfter": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "sku",
+          "productId",
+          "delta",
+          "reason",
+          "refType",
+          "refId",
+          "balanceAfter",
+          "createdAt"
+        ]
+      },
+      "RestockResult": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "productId": {
+                "type": "string"
+              },
+              "sku": {
+                "type": "string"
+              },
+              "stock": {
+                "type": "integer"
+              },
+              "ledgerId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "productId",
+              "sku",
+              "stock",
+              "ledgerId"
+            ]
+          }
+        },
+        "required": []
+      },
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "orders": {
+            "type": "integer"
+          },
+          "spent": {
+            "type": "number"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "New",
+              "Repeat",
+              "VIP"
+            ]
+          },
+          "last": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "orders",
+          "spent",
+          "tier",
+          "last"
+        ]
+      },
+      "Coupon": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "percent",
+              "fixed"
+            ]
+          },
+          "value": {
+            "type": "number"
+          },
+          "minSubtotal": {
+            "type": "number"
+          },
+          "used": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer",
+            "nullable": true
+          },
+          "startsAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "endsAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "scheduled",
+              "expired",
+              "inactive"
+            ]
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "type",
+          "value",
+          "minSubtotal",
+          "used",
+          "limit",
+          "startsAt",
+          "endsAt",
+          "status",
+          "note"
+        ]
+      },
+      "CouponInput": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "percent",
+              "fixed"
+            ],
+            "default": "percent"
+          },
+          "value": {
+            "type": "number"
+          },
+          "minSubtotal": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "integer",
+            "nullable": true
+          },
+          "startsAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "endsAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "value"
+        ]
+      },
+      "CouponEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Coupon"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "AdminReview": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "productTitle": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ]
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "moderatedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "productId",
+          "productTitle",
+          "name",
+          "rating",
+          "title",
+          "body",
+          "createdAt",
+          "status",
+          "verified",
+          "moderatedAt"
+        ]
+      },
+      "ReviewEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "review": {
+                "$ref": "#/components/schemas/AdminReview"
+              }
+            },
+            "required": [
+              "review"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "SettingsPayload": {
+        "type": "object",
+        "properties": {
+          "brand": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "freeShip": {
+            "type": "number"
+          },
+          "standardShip": {
+            "type": "number"
+          },
+          "expressShip": {
+            "type": "number"
+          },
+          "giftThreshold": {
+            "type": "number",
+            "nullable": true
+          },
+          "lowStockThreshold": {
+            "type": "integer"
+          },
+          "returnWindowDays": {
+            "type": "integer"
+          },
+          "storeOpen": {
+            "type": "boolean"
+          },
+          "content": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "brand",
+          "currency",
+          "freeShip",
+          "standardShip",
+          "expressShip",
+          "giftThreshold",
+          "lowStockThreshold",
+          "returnWindowDays",
+          "storeOpen",
+          "content"
+        ]
+      },
+      "SettingsEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SettingsPayload"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "SettingsPatch": {
+        "type": "object",
+        "properties": {
+          "freeShip": {
+            "type": "number"
+          },
+          "standardShip": {
+            "type": "number"
+          },
+          "expressShip": {
+            "type": "number"
+          },
+          "giftThreshold": {
+            "type": "number"
+          },
+          "lowStockThreshold": {
+            "type": "integer"
+          },
+          "returnWindowDays": {
+            "type": "integer"
+          },
+          "storeOpen": {
+            "type": "boolean"
+          },
+          "content": {
+            "type": "object"
+          }
+        },
+        "required": []
+      },
+      "SettingsPatchResult": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "settings": {
+                "$ref": "#/components/schemas/SettingsPayload"
+              },
+              "giftRule": {
+                "$ref": "#/components/schemas/GiftRule"
+              }
+            },
+            "required": [
+              "settings",
+              "giftRule"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "AuditEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "staffId": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string",
+            "nullable": true
+          },
+          "meta": {
+            "type": "object",
+            "nullable": true
+          },
+          "ip": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "staffId",
+          "email",
+          "action",
+          "target",
+          "meta",
+          "ip"
+        ]
+      },
+      "DeletedResult": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "deleted": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "deleted"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CollectionList": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Collection"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CollectionEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "collection": {
+                "$ref": "#/components/schemas/Collection"
+              }
+            },
+            "required": [
+              "collection"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CollectionCreate": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "handle": {
+            "type": "string",
+            "description": "留空则从标题推导"
+          },
+          "desc": {
+            "type": "string"
+          },
+          "nav": {
+            "type": "boolean"
+          },
+          "order": {
+            "type": "integer"
+          },
+          "level": {
+            "type": "integer"
+          },
+          "parent": {
+            "type": "string",
+            "nullable": true
+          },
+          "menuGroup": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "CollectionPatch": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "desc": {
+            "type": "string"
+          },
+          "nav": {
+            "type": "boolean"
+          },
+          "order": {
+            "type": "integer"
+          },
+          "menuGroup": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "title",
+          "desc",
+          "nav",
+          "order",
+          "menuGroup"
+        ]
+      },
+      "PageDoc": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "intro": {
+            "type": "string",
+            "description": "导语。正文段落仍在 pages.js，不在本接口的可编辑范围"
+          }
+        },
+        "required": [
+          "slug",
+          "title",
+          "intro"
+        ]
+      },
+      "ContentDoc": {
+        "type": "object",
+        "properties": {
+          "brand": {
+            "type": "string"
+          },
+          "tagline": {
+            "type": "string"
+          },
+          "content": {
+            "type": "object",
+            "properties": {
+              "announce": {
+                "type": "string"
+              },
+              "heroEyebrow": {
+                "type": "string"
+              },
+              "heroTitle": {
+                "type": "string"
+              },
+              "heroBody": {
+                "type": "string"
+              },
+              "bestSellersEyebrow": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "announce",
+              "heroEyebrow",
+              "heroTitle",
+              "heroBody",
+              "bestSellersEyebrow"
+            ]
+          },
+          "pages": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PageDoc"
+            }
+          }
+        },
+        "required": [
+          "brand",
+          "tagline",
+          "content",
+          "pages"
+        ]
+      },
+      "ContentPatch": {
+        "type": "object",
+        "properties": {
+          "brand": {
+            "type": "string"
+          },
+          "tagline": {
+            "type": "string"
+          },
+          "content": {
+            "type": "object",
+            "properties": {
+              "announce": {
+                "type": "string"
+              },
+              "heroEyebrow": {
+                "type": "string"
+              },
+              "heroTitle": {
+                "type": "string"
+              },
+              "heroBody": {
+                "type": "string"
+              },
+              "bestSellersEyebrow": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "announce",
+              "heroEyebrow",
+              "heroTitle",
+              "heroBody",
+              "bestSellersEyebrow"
+            ]
+          },
+          "pages": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "intro": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "intro"
+              ]
+            }
+          }
+        },
+        "required": [
+          "brand",
+          "tagline",
+          "content",
+          "pages"
+        ]
+      },
+      "CustomRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "style": {
+            "type": "string"
+          },
+          "qty": {
+            "type": "integer"
+          },
+          "dueDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string"
+          },
+          "refUrls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "quoted",
+              "ordered",
+              "closed"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "quote": {
+            "type": "number",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "style",
+          "qty",
+          "dueDate",
+          "notes",
+          "refUrls",
+          "status",
+          "note",
+          "quote",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CustomRequestCreate": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "name": {
+            "type": "string"
+          },
+          "style": {
+            "type": "string"
+          },
+          "qty": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "dueDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "minLength": 10
+          },
+          "refUrls": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        },
+        "required": [
+          "email",
+          "notes"
+        ]
+      },
+      "CustomRequestReceipt": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "createdAt"
+        ]
+      },
+      "CustomRequestList": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomRequest"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CustomRequestEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "request": {
+                "$ref": "#/components/schemas/CustomRequest"
+              }
+            },
+            "required": [
+              "request"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CustomRequestReceiptEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "request": {
+                "$ref": "#/components/schemas/CustomRequestReceipt"
+              }
+            },
+            "required": [
+              "request"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CustomRequestPatch": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "quoted",
+              "ordered",
+              "closed"
+            ],
+            "description": "单向流转：new→quoted→ordered→closed"
+          },
+          "quote": {
+            "type": "number",
+            "nullable": true
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "quote",
+          "note"
+        ]
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "参数校验失败",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorBody"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未登录或令牌失效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorBody"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "缺少所需权限位",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorBody"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorBody"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "与当前状态冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorBody"
+            }
+          }
+        }
+      },
+      "Unprocessable": {
+        "description": "业务规则不满足（QUOTE_EXPIRED / PRICE_CHANGED / COUPON_INVALID / INVALID_TRANSITION / STORE_CLOSED / PRICE_BELOW_COST）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorBody"
+            }
+          }
+        }
+      },
+      "OutOfStock": {
+        "description": "库存不足，整单拒绝（不部分成交）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorBody"
+            }
+          }
+        }
+      },
+      "CouponInvalid": {
+        "description": "优惠码不可用，details.reason 细分原因",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorBody"
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "超过限流阈值",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorBody"
+            }
+          }
+        }
+      },
+      "Internal": {
+        "description": "服务端未预期错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorBody"
+            }
+          }
+        }
+      }
+    }
+  }
+}

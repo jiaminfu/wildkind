@@ -1,0 +1,39 @@
+# ---------- 运行数据（由 seed.js 生成，不进版本库） ----------
+# db.json 是线上真实业务数据；db.seed.json 是测试基线快照。
+# 两者都含口令 hash 与会话令牌，绝不入库。
+app/server/data/db.json
+app/server/data/db.seed.json
+app/server/data/db.json.tmp
+data/db.json
+
+# ---------- 密钥与环境 ----------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ---------- 日志 ----------
+*.log
+logs/
+npm-debug.log*
+
+# ---------- 临时产物 ----------
+.tmp/
+tmp_*/
+.tmprecovered
+*.tmp
+
+# ---------- 依赖（本项目零依赖，留作以防万一） ----------
+node_modules/
+package-lock.json
+
+# ---------- 编辑器 / 系统 ----------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# ---------- 截图工具中间产物 ----------
+tmp_sweep/

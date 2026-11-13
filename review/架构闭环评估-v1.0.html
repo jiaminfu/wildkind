@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>架构闭环评估 · TG-ARCH-001 v1.0</title>
+<style>
+  :root{--ink:#1c1c1c;--ink2:#3d3a36;--muted:#6d6862;--line:#e2ddd5;--line2:#efeae3;--bone:#f8f7f2;--cream:#f3e8de;--white:#fff;--accent:#1B3A34;--r:#b3261e;--y:#b06f00;--g:#2f7a1f}
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font:15px/1.78 -apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;color:var(--ink);background:var(--bone)}
+  .layout{display:grid;grid-template-columns:250px minmax(0,1fr);align-items:start}
+  .toc{position:sticky;top:0;height:100vh;overflow:auto;border-right:1px solid var(--line);background:var(--white)}
+  .toc__in{padding:28px 20px 40px}
+  .toc__t{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+  .toc a{display:block;padding:5px 0;font-size:13px;color:var(--ink2);text-decoration:none}
+  .toc a:hover{color:var(--accent)}
+  .doc{max-width:940px;padding:56px 60px 120px}
+  .cover{border:1px solid var(--line);background:var(--white);padding:56px 48px;margin-bottom:44px}
+  .cover__kicker{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin:0 0 22px}
+  .cover h1{font-size:38px;line-height:1.15;letter-spacing:-.02em;margin:0 0 14px;font-weight:600}
+  .cover h1 small{display:block;font-size:16.5px;font-weight:400;color:var(--muted);letter-spacing:0;margin-top:12px}
+  .meta{display:grid;grid-template-columns:repeat(2,1fr);margin-top:34px;border-top:1px solid var(--line2)}
+  .meta div{padding:12px 0;border-bottom:1px solid var(--line2);font-size:13.5px}
+  .meta div:nth-child(odd){color:var(--muted)}
+  h2{font-size:24px;margin:64px 0 8px;letter-spacing:-.01em;font-weight:600;padding-top:20px;border-top:1px solid var(--line)}
+  h2 .n{color:var(--accent);font-weight:400;margin-right:10px}
+  h3{font-size:17px;margin:36px 0 8px;font-weight:600}
+  h4{font-size:14px;margin:20px 0 6px;font-weight:600;letter-spacing:.03em;color:var(--ink2)}
+  p{margin:10px 0}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:5px 0}
+  code{background:var(--cream);padding:1px 6px;font-size:13px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .lede{font-size:16px;color:var(--ink2)}
+  .note{border-left:2px solid var(--accent);background:var(--white);padding:14px 18px;margin:18px 0;font-size:14px}
+  .note b{color:var(--accent)}
+  .warn{border-left:2px solid var(--r);background:#fdf6f5;padding:14px 18px;margin:18px 0;font-size:14px}
+  .warn b{color:var(--r)}
+  table{width:100%;border-collapse:collapse;margin:16px 0 22px;font-size:13.5px;background:var(--white)}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:#faf8f4;font-weight:600;font-size:12.5px;letter-spacing:.03em;white-space:nowrap}
+  .ok{color:var(--g);font-weight:600;white-space:nowrap}
+  .brk{color:var(--r);font-weight:600;white-space:nowrap}
+  .kv{display:grid;grid-template-columns:100px 1fr;margin:14px 0;border-top:1px solid var(--line2)}
+  .kv div{padding:9px 0;border-bottom:1px solid var(--line2);font-size:13.5px}
+  .kv div:nth-child(odd){color:var(--muted);font-size:12.5px;letter-spacing:.04em}
+  pre{background:var(--white);border:1px solid var(--line);padding:14px 18px;overflow:auto;font-size:12.5px;line-height:1.7;margin:14px 0}
+  pre code{background:none;padding:0}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0;font-size:12.5px}
+  .flow span{border:1px solid var(--line);background:var(--white);padding:5px 10px}
+  .flow i{color:var(--muted);font-style:normal}
+  @media(max-width:900px){.layout{grid-template-columns:1fr}.toc{display:none}.doc{padding:30px 20px 80px}.cover{padding:32px 24px}.cover h1{font-size:28px}.meta{grid-template-columns:1fr}table{font-size:12.5px}th,td{padding:7px 9px}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc"><div class="toc__in">
+  <p class="toc__t">目录</p>
+  <a href="#s1">1 评估方法</a>
+  <a href="#s2">2 闭环矩阵</a>
+  <a href="#s3">3 十处断点</a>
+  <a href="#s4">4 功能完整性</a>
+  <a href="#s5">5 定稿决定</a>
+  <a href="#s6">6 实施顺序</a>
+</div></nav>
+
+<main class="doc">
+
+<div class="cover">
+  <p class="cover__kicker">TIDEGLASS · Architecture Closure Review</p>
+  <h1>架构闭环评估
+    <small>12 条主链路逐条走通 · 发现 10 处断点 · 补 16 条需求与 4 条业务规则后定稿</small>
+  </h1>
+  <div class="meta">
+    <div>文档编号</div><div>TG-ARCH-001</div>
+    <div>版本</div><div>v1.0（评估稿）</div>
+    <div>日期</div><div>2026-11-13</div>
+    <div>评估对象</div><div>FRD v2.1（154 条）· SDD v2.1（33 张表）· 12 条主链路</div>
+    <div>产出</div><div>FRD v2.2（170 条需求 / 26 条规则）· SDD v2.2（35 张表）</div>
+    <div>结论</div><div>主链路全部可走通，但<b>10 处状态衔接不闭合</b>，其中 4 处会造成真实账务或数据错误</div>
+  </div>
+</div>
+
+<h2 id="s1"><span class="n">1</span>评估方法</h2>
+
+<p class="lede">闭环评估不看功能列得全不全，只看一件事：<b>从一个状态走到下一个状态时，上一状态留下的东西有没有人接手。</b>库存占了没人放、券用了没退、订单完成了但报表还算它——这些都是"看起来能跑、跑一段就出错"的典型。</p>
+
+<p>具体做法是把 12 条主链路画成状态图，对每一对相邻状态问三个问题：</p>
+<ol>
+  <li><b>触发者是谁</b>——用户操作、定时任务、支付回调，还是人工？触发者不存在，链路就是死的。</li>
+  <li><b>副作用谁负责</b>——库存、优惠、预算、通知、归因，每一样都要有明确的责任方。</li>
+  <li><b>异常出口在哪</b>——失败、超时、重复调用时，状态往哪走？没有出口的状态就是死状态。</li>
+</ol>
+
+<div class="note"><b>说明</b>：这里的"断点"不是 bug，而是<b>文档层面没有定义</b>的地方。原型能跑通是因为演示数据不会有退款、换货、部分退款这些分支；真实运营第一个月就会遇到。</div>
+
+<h2 id="s2"><span class="n">2</span>闭环矩阵</h2>
+
+<table>
+  <tr><th>#</th><th>链路</th><th>关键状态</th><th>闭环</th><th>断在哪</th></tr>
+  <tr><td>L1</td><td>浏览 → 加购 → 结算 → 支付 → 发货 → 签收</td><td>pending → paid → fulfilling → fulfilled → completed</td><td class="ok">闭环</td><td>—</td></tr>
+  <tr><td>L2</td><td>支付失败 → 重试 / 放弃</td><td>pending → pending（保留）/ cancelled</td><td class="ok">闭环</td><td>—</td></tr>
+  <tr><td>L3</td><td>超时未付 → 取消 → 释放库存</td><td>pending → cancelled</td><td class="ok">闭环</td><td>—（定时任务负责）</td></tr>
+  <tr><td>L4</td><td>全额退款</td><td>paid / fulfilled → refunding → refunded</td><td class="brk">有断点</td><td>券未释放、预算未回退（B2）</td></tr>
+  <tr><td>L5</td><td>部分退款</td><td>订单状态不变，售后单记录金额</td><td class="brk">有断点</td><td>报表口径未定义（B3）</td></tr>
+  <tr><td>L6</td><td>换新（颜色保证）</td><td>生成 $0 换新单</td><td class="brk">有断点</td><td>$0 单污染订单数与 AOV（B1）</td></tr>
+  <tr><td>L7</td><td>退货 → 入库</td><td>售后单 completed</td><td class="brk">有断点</td><td>回补策略只有"人工决定"（B4）</td></tr>
+  <tr><td>L8</td><td>评价：邀评 → 提交 → 审核 → 展示</td><td>pending → published</td><td class="brk">有断点</td><td>评价后退货如何处理（B5）</td></tr>
+  <tr><td>L9</td><td>优惠：券 / 补贴 / 赠品 / 免邮</td><td>结算时计算，写入 Adjustments</td><td class="ok">闭环</td><td>—</td></tr>
+  <tr><td>L10</td><td>弃购：触发 → 邮件 → 恢复 / 转化</td><td>stage 0→1→2→3 / 9</td><td class="brk">有断点</td><td>转化判定与小订单竞态（B6）</td></tr>
+  <tr><td>L11</td><td>账户：注册 → 登录 → 订单 → 注销</td><td>active → deleted_marked</td><td class="brk">有断点</td><td>注销后自动化仍在发信（B7）</td></tr>
+  <tr><td>L12</td><td>归因：UTM → 订单 → 报表</td><td>cookie → Order.channel</td><td class="brk">有断点</td><td>未同意用户的分母口径（B8）</td></tr>
+</table>
+
+<p class="small">另有两条不在主链路但同样需要闭合：<b>批量改价与进行中活动的冲突</b>（B9）、<b>结算过程中的价格变动</b>（B10）。</p>
+
+<h2 id="s3"><span class="n">3</span>十处断点</h2>
+
+<h3>B1 换新单会污染订单报表 <span class="brk">影响账务</span></h3>
+<div class="kv">
+  <div>现状</div><div>SDD 7.4 规定换新"生成一张 $0 换新发货单"。但它和真实订单同表，订单数 +1、GMV +0、AOV 被拉低</div>
+  <div>影响</div><div>如果一个月换新 20 单、真实订单 500 单，AOV 会被低估约 4%。更麻烦的是"订单数"这个指标失去意义——它同时包含销售与售后</div>
+  <div>方案</div><div>Order 增加 <code>orderType</code>（sale / exchange / reship / gift），<b>所有报表默认只统计 sale</b>；换新单在后台单独一个页签，不计入销售报表</div>
+  <div>落地</div><div>FR-A-062、SDD Order 表加字段</div>
+</div>
+
+<h3>B2 退款后优惠券与活动预算不释放 <span class="brk">影响账务</span></h3>
+<div class="kv">
+  <div>现状</div><div>全额退款后，CouponRedemption 记录还在、Promotion.spent 不减少、GiftRule.usedCount 不减少。文档里没有任何一句提到要回退</div>
+  <div>影响</div><div>① 用户用券下单后退款，perUserLimit 已消耗，<b>他就不能再用这张券了</b>——这是最容易被投诉的一条；② 活动预算被已退款的订单占掉，活动提前熔断；③ 赠品使用次数虚高</div>
+  <div>方案</div><div>退款完成时按规则回退：<b>券的使用次数回退、CouponRedemption 标记 revoked（不物理删，留痕）</b>；活动 <code>spent</code> 回退；赠品 <code>usedCount</code> 回退。<b>但 perUserLimit 的判定要把已 revoked 的记录排除</b>，否则回退无效</div>
+  <div>落地</div><div>FR-A-063、BR-23、SDD 7.4 补步骤</div>
+</div>
+
+<h3>B3 部分退款后 GMV 该算多少 <span class="brk">影响报表</span></h3>
+<div class="kv">
+  <div>现状</div><div>AfterSale 有 partial 类型与金额，订单状态不变（仍 completed），订单 total 不变</div>
+  <div>影响</div><div>GMV 虚高。一个订单 $143 退 $58，报表仍记 $143。月退 15% 的话，GMV 高估 15%——这个数字会直接影响"要不要加投放"的判断</div>
+  <div>方案</div><div>引入<b>净营收（netRevenue）= total − 已退款金额</b>，报表同时展示 GMV 与净营收；<b>投放 ROI 一律用净营收算</b>，因为退掉的钱没有毛利</div>
+  <div>落地</div><div>FR-A-064、SDD 报表口径</div>
+</div>
+
+<h3>B4 退货入库只有"人工决定" <span class="brk">影响库存</span></h3>
+<div class="kv">
+  <div>现状</div><div>SDD 7.4 写"库存是否回补由人工决定（默认不回补，避免二次销售瑕疵品）"</div>
+  <div>影响</div><div>默认不回补是对的，但"人工决定"没有落点——后台没有这个操作入口，也没有字段记录"这件退回来的货去哪了"。三个月后盘点，账实必然不符</div>
+  <div>方案</div><div>售后单增加 <code>restockDecision</code>（restock / scrap / return_to_supplier）与 <code>restockedQty</code>。<b>决定必须显式记录，不能留空</b>；选择 restock 时才回补 onHand 并写库存流水</div>
+  <div>落地</div><div>FR-A-065、SDD AfterSale 加字段</div>
+</div>
+
+<h3>B5 用户评价完又退货 <span class="brk">影响口碑</span></h3>
+<div class="kv">
+  <div>现状</div><div>邀评在签收后 10 天，退货窗口 30 天。中间有 20 天窗口，用户可能先给好评再退货</div>
+  <div>影响</div><div>评价区出现"这条评价来自已退货订单"，对其他消费者是误导。但直接删评价又违反"低分保护"的精神（虽然这是高分）</div>
+  <div>方案</div><div><b>不删除，加标注</b>：订单退款后评价保留，但前台显示"Verified purchase · Later returned"。<b>该评价仍计入评分</b>——因为用户确实买过、戴过、有这个体验。这条规则要写进评价条款，避免用户觉得被"改评价"</div>
+  <div>落地</div><div>BR-24、FR-S-171</div>
+</div>
+
+<h3>B6 弃购转化判定与新订单的竞态 <span class="brk">影响体验</span></h3>
+<div class="kv">
+  <div>现状</div><div>定时任务每 30 分钟扫一次；stage 转换靠 lastSeenAt 判断</div>
+  <div>影响</div><div>用户在第 23 小时 59 分下单，任务在第 24 小时整扫到，邮件仍会发出——用户刚付完钱就收到"你的购物车还在等你"，非常尴尬</div>
+  <div>方案</div><div>发信前<b>二次校验</b>：查该 email 在最近 2 小时内有已支付订单 → 跳过并置 stage 9。这个校验必须放在发信那一刻，不能只在扫描开始时</div>
+  <div>落地</div><div>FR-S-172、SDD 7.6 补校验</div>
+</div>
+
+<h3>B7 注销账户后自动化还在给他发信 <span class="brk">影响合规</span></h3>
+<div class="kv">
+  <div>现状</div><div>注销时清 PII、revoke session，但没有停止营销自动化</div>
+  <div>影响</div><div>用户注销后还收到生日提醒与弃购邮件，在 GDPR 下属于"删除请求未被完整执行"，是可以投诉的</div>
+  <div>方案</div><div>注销时：<code>MarketingConsent.marketingOptIn = false</code>、<code>birthdayOptIn = false</code>、AbandonedCart 全部置 stage 8（放弃）、未发送的 EmailLog 标记 skipped。<b>交易类邮件仍可发</b>（若有在途订单）</div>
+  <div>落地</div><div>FR-S-173、SDD 7.5 注销流程补步骤</div>
+</div>
+
+<h3>B8 归因报表的分母口径 <span class="brk">影响决策</span></h3>
+<div class="kv">
+  <div>现状</div><div>未同意 Cookie 的用户不采集渠道，订单 channel 记为 direct</div>
+  <div>影响</div><div>如果 40% 用户拒绝，direct 被虚高、各渠道被低估，<b>CAC 全部算高、ROI 全部算低</b>，可能导致错误地砍掉本来有效的渠道</div>
+  <div>方案</div><div>报表页固定显示<b>归因覆盖率</b>（有渠道来源的订单 / 总订单）。覆盖率低于 70% 时，CAC 与 ROI 旁加"参考值"标记，并提示"按已归因部分计算"。<b>不做按比例摊派</b>——摊派出来的数字是编的</div>
+  <div>落地</div><div>FR-A-052 补充、SDD 7.8 补口径</div>
+</div>
+
+<h3>B9 批量改价与进行中活动打架 <span class="brk">影响毛利</span></h3>
+<div class="kv">
+  <div>现状</div><div>v2.1 加了批量改价（FR-A-054），但没规定与进行中活动的关系</div>
+  <div>影响</div><div>活动是"原价 8 折"，运营批量把原价从 $82 降到 $68，活动价自动变成 $54.4，可能低于成本线。BR-17 有"不得低于成本线"的保护，但那是在结算时拦截，<b>活动已经挂着，用户看到的折扣价是错的</b></div>
+  <div>方案</div><div>批量改价前做<b>冲突预检</b>：列出受影响的进行中活动与改后的最低成交价，低于成本线时<b>阻止</b>并说明；允许"改价同时暂停相关活动"的一步操作</div>
+  <div>落地</div><div>FR-A-054 补充、FR-A-066</div>
+</div>
+
+<h3>B10 结算过程中的价格变动 <span class="brk">影响体验</span></h3>
+<div class="kv">
+  <div>现状</div><div>购物车存 productId + 变体 + 数量，价格实时读取商品当前价</div>
+  <div>影响</div><div>用户在结算页停留 10 分钟期间运营改了价，用户点 Pay 时金额变了——支付金额与用户看到的金额不一致，这在支付环节是严重的信任问题，也可能引发拒付（chargeback）</div>
+  <div>方案</div><div>进入结算页时生成<b>价格快照并锁定 30 分钟</b>（写入 checkoutSession）；支付时校验快照与当前价，不一致则<b>不自动改价</b>，而是提示"价格已更新，请确认后继续"。这是唯一正确的处理方式——不能静默改价</div>
+  <div>落地</div><div>FR-S-174、BR-25、SDD CheckoutSession</div>
+</div>
+
+<h2 id="s4"><span class="n">4</span>功能完整性</h2>
+
+<p>把 FRD v2.2 的 170 条需求按章节盘点，看有没有整块缺失：</p>
+
+<table>
+  <tr><th>章节</th><th>需求条数</th><th>完整性判断</th><th>说明</th></tr>
+  <tr><td>5.1 全局框架</td><td>10</td><td class="ok">完整</td><td>页头 / 导航 / 页脚 / 响应式</td></tr>
+  <tr><td>5.2 首页</td><td>12</td><td class="ok">完整</td><td>11 个区块 + 服务承诺条</td></tr>
+  <tr><td>5.3 集合与搜索</td><td>10</td><td class="ok">完整</td><td>mega menu 在待实施清单（C-01），非缺失</td></tr>
+  <tr><td>5.4 商品详情</td><td>10</td><td class="ok">完整</td><td>图库 / 变体 / 卖点 / 评价区</td></tr>
+  <tr><td>5.5 交易链路</td><td>10</td><td class="brk">补 B10 后完整</td><td>缺价格锁定，已补 FR-S-174</td></tr>
+  <tr><td>5.6 内容与辅助</td><td>9</td><td class="ok">完整</td><td>Cookie 条在待实施清单（C-08）</td></tr>
+  <tr><td>5.7 营销呈现</td><td>10</td><td class="ok">完整</td><td>券 / 补贴 / 赠品 / 免邮 / 叠加提示</td></tr>
+  <tr><td>5.8 评价</td><td>6</td><td class="brk">补 B5 后完整</td><td>退货后评价规则，已补 BR-24</td></tr>
+  <tr><td>5.9 账户中心</td><td>14</td><td class="ok">补 B7 后完整</td><td>注销停自动化，已补 FR-S-173</td></tr>
+  <tr><td>5.10 生命周期</td><td>17</td><td class="brk">补 B6 后完整</td><td>弃购竞态，已补 FR-S-172</td></tr>
+  <tr><td>6.1 交易与商品</td><td>20</td><td class="brk">补 B1/B4 后完整</td><td>订单类型、售后入库决策</td></tr>
+  <tr><td>6.2 营销中心</td><td>11</td><td class="brk">补 B2 后完整</td><td>退款回退，已补 FR-A-063</td></tr>
+  <tr><td>6.3 评价与定制</td><td>9</td><td class="ok">完整</td><td>审核 / 删除留痕 / 定制单</td></tr>
+  <tr><td>6.4 运营效率</td><td>12</td><td class="brk">补 B8/B9 后完整</td><td>归因覆盖率、改价冲突预检</td></tr>
+  <tr><td>6.5 账务与对账</td><td>10</td><td class="ok">v2.2 新增</td><td>本报告的直接产物</td></tr>
+  <tr><td><b>合计</b></td><td><b>170</b></td><td>—</td><td>另有 26 条业务规则（BR-01~26）</td></tr>
+</table>
+
+<div class="note"><b>结论</b>：没有整块缺失的模块。所有缺口都在<b>模块之间的接缝</b>上——这正是闭环评估该发现的东西。功能清单是横向排列的，而订单生命周期是纵向流动的，接缝问题只有按流程走才会暴露。</div>
+
+<h2 id="s5"><span class="n">5</span>定稿决定</h2>
+
+<p>补充 16 条需求与 4 条业务规则后，FRD / SDD 定稿为 v2.2。以下是<b>几个必须现在定、以后改代价很大的架构决定</b>：</p>
+
+<table>
+  <tr><th>决定</th><th>内容</th><th>为什么现在定</th></tr>
+  <tr><td>订单类型分离</td><td><code>orderType</code> 字段区分 sale / exchange / reship / gift，报表只算 sale</td><td>上线后再加需要回填历史数据，且历史报表无法追溯修正</td></tr>
+  <tr><td>净营收口径</td><td>所有投放决策用 netRevenue，不用 GMV</td><td>口径一旦确定，后续所有报表与对外数字都基于它；中途改会推翻此前的投放判断</td></tr>
+  <tr><td>价格锁定</td><td>结算页锁定价格 30 分钟，变动时提示而非静默改价</td><td>涉及支付金额，上线后修改等于改动支付流程，风险高</td></tr>
+  <tr><td>归因不摊派</td><td>只报覆盖率，未归因部分单列</td><td>摊派算法一旦写进报表，后续所有 ROI 都建立在估算上，难以纠正</td></tr>
+  <tr><td>评价不因退货删除</td><td>保留评价 + 标注"Later returned"</td><td>涉及评价信任度，事后删评价会引发"品牌在美化评分"的质疑</td></tr>
+</table>
+
+<h2 id="s6"><span class="n">6</span>实施顺序</h2>
+
+<p>依赖关系决定顺序，不能按"哪个容易先做"排：</p>
+
+<div class="flow">
+  <span>1 Cookie 同意条</span><i>→</i><span>2 归因采集</span><i>→</i><span>3 归因报表</span>
+</div>
+<div class="flow">
+  <span>1 订单类型字段</span><i>→</i><span>2 净营收口径</span><i>→</i><span>3 投放决策</span>
+</div>
+<div class="flow">
+  <span>1 邮件同意与日志</span><i>→</i><span>2 弃购邮件</span><i>→</i><span>3 邀评邮件</span><i>→</i><span>4 客户群发</span>
+</div>
+
+<table>
+  <tr><th>阶段</th><th>内容</th><th>不可跳过的原因</th></tr>
+  <tr><td>P0 基础</td><td>Cookie 同意、邮件同意与日志、订单类型字段、价格锁定</td><td>这四项是其他功能的<b>前置</b>：没有同意就没有归因，没有日志就没有频次控制，没有类型就没有正确报表</td></tr>
+  <tr><td>P1 交易主干</td><td>商品 / 集合 / 结算 / 支付 / 订单 / 库存 / 账户</td><td>没有这些就没有订单，其余全部无意义</td></tr>
+  <tr><td>P2 营销与售后</td><td>优惠券 / 补贴 / 赠品 / 退款 / 换货 / 退货入库</td><td>依赖 P1 的订单与库存</td></tr>
+  <tr><td>P3 增长</td><td>弃购 / 邀评 / 归因报表 / 批量操作 / 库存预警</td><td>依赖 P0 的同意与日志、P1 的订单数据</td></tr>
+</table>
+
+<div class="warn"><b>一个容易被忽略的顺序问题</b>：Cookie 同意条看起来是"上线前补的合规项"，实际上它在 P0——因为归因采集依赖它，而归因报表是投放决策的依据。<b>如果先上投放、后补同意条，前两个月的渠道数据全部作废</b>，等于白跑一轮测试。</div>
+
+<p class="small" style="margin-top:40px;color:var(--muted)">— 文档结束 · TG-ARCH-001 v1.0 · 补充项已写入 FRD v2.2 / SDD v2.2，两份文档至此定稿 —</p>
+
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,46 @@
+[Unit]
+Description=TIDEGLASS API + Storefront (Node.js, zero-dependency)
+Documentation=https://github.com/jiaminfu/wildkind
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tideglass
+Group=tideglass
+WorkingDirectory=/opt/tideglass/current
+EnvironmentFile=/etc/tideglass/tideglass.env
+ExecStart=/usr/bin/node app/server/index.js
+
+# 单实例是硬约束，不是建议。
+# 数据层是「单文件 JSON + 内存镜像 + 串行写」，限流与会话也在进程内存里：
+# 起第二个进程 = 两个内存镜像互相覆盖 = 静默丢单。
+# 所以这里坚持 Type=simple 单进程，不要换 pm2 -i / cluster / 多副本。
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=20
+
+# ---- 最小权限加固 ----
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+# strict 模式下整个文件系统只读，唯一可写处就是数据目录
+ReadWritePaths=/opt/tideglass/current/app/server/data
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tideglass
+
+[Install]
+WantedBy=multi-user.target
