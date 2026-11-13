@@ -120,7 +120,7 @@ sudo LISTEN_PORT=8080 bash /opt/tideglass/current/deploy/install.sh - \
 |---|---|---|
 | 接口自动化 | `node tools/api-test.js` | 121 / 121 |
 | 双端适配体检 | `node tools/app-check.js` | 66 / 66（21 路由 × 390/768/1440） |
-| 后台点击巡查 | `node tools/admin-sweep.js` | 13 / 13（13 模块 × 3 宽度） |
+| 后台点击巡查 | `node tools/admin-sweep.js` | 16 / 16（13 模块 × 3 宽度 + 3 场景） |
 | 定价与库存单元 | `node tools/unit-core.js` | 38 / 38 |
 | 端到端（原型版） | `node tools/e2e.js` · `node tools/e2e-flow.js` | 17 / 17 · 47 / 47 |
 | 溢出专项 | `node tools/overflow-check.js` | 28 / 28 |
