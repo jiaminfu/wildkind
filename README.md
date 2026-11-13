@@ -8,7 +8,7 @@
 
 **全部交付文档在 [`handover/`](handover/README.md) —— 从那里开始看。**
 
-**要上线到服务器？直接看 [`handover/07-交付准备/服务器部署手册-v1.0.md`](handover/07-交付准备/服务器部署手册-v1.0.md)（约 40 分钟，含一键脚本）。**
+**要上线到服务器？直接看 [`handover/07-交付准备/服务器部署手册-v1.1.md`](handover/07-交付准备/服务器部署手册-v1.1.md)（约 40 分钟，含一键脚本）。**
 
 ---
 
@@ -88,12 +88,22 @@ wildkind/
 
 ## 部署
 
+**有域名：**
+
 ```bash
 # 服务器上（Ubuntu 22.04+ / Debian 12，root）
 mkdir -p /opt/tideglass
 git clone https://github.com/jiaminfu/wildkind.git /opt/tideglass/current
 bash /opt/tideglass/current/deploy/install.sh shop.你的域名.com \
      https://github.com/jiaminfu/wildkind.git you@mail.com
+```
+
+**还没有域名 / 服务器上已有别的项目（不抢 80·443）：**
+
+```bash
+sudo LISTEN_PORT=8080 bash /opt/tideglass/current/deploy/install.sh - \
+     https://github.com/jiaminfu/wildkind.git
+# → http://<服务器IP>:8080/
 ```
 
 跑完会打印后台地址与随机口令。脚本做完了：装 Node → 建用户 → 拉代码 → 生成环境变量 → 初始化数据 → systemd → Nginx → 防火墙 → HTTPS → 自检。
