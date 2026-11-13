@@ -143,6 +143,7 @@ step "安装 systemd 服务"
 sed -e "s#/usr/bin/node#$NODE_BIN#" \
     -e "s#WorkingDirectory=.*#WorkingDirectory=$APP_DIR#" \
     -e "s#EnvironmentFile=.*#EnvironmentFile=$ENV_FILE#" \
+    -e "s#ReadWritePaths=.*#ReadWritePaths=$APP_DIR/app/server/data#" \
     "$APP_DIR/deploy/tideglass-api.service" > "/etc/systemd/system/$SERVICE.service"
 systemctl daemon-reload
 systemctl enable "$SERVICE" >/dev/null 2>&1 || true
