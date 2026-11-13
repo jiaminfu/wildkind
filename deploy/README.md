@@ -1,7 +1,7 @@
 # deploy/ —— 部署产物
 
 完整步骤、验证清单、故障排查在
-**[`handover/07-交付准备/服务器部署手册-v1.1.md`](../handover/07-交付准备/服务器部署手册-v1.1.md)**。
+**[`handover/07-交付准备/服务器部署手册-v1.2.md`](../handover/07-交付准备/服务器部署手册-v1.2.md)**。
 这里只放能直接用的文件。
 
 | 文件 | 用途 |
@@ -12,8 +12,8 @@
 | `tideglass-api.service` | systemd 单元，含最小权限加固 |
 | `nginx-tideglass.conf` | 有域名版：Nginx 反代 + 静态托管 + HTTPS + 安全头 |
 | `nginx-tideglass-port.conf` | **无域名版**：只听独立端口，不碰已有站点的 80/443 |
-| `.env.example` | 生产环境变量样例（复制到 `/etc/tideglass/tideglass.env`） |
-| `Dockerfile` / `docker-compose.yml` / `docker-entrypoint.sh` | 容器方案（数据挂卷、首次启动自动初始化） |
+| `.env.example` | 生产环境变量样例（systemd 方式复制到 `/etc/tideglass/`，Docker 方式复制到 `deploy/.env`） |
+| `Dockerfile` / `docker-compose.yml` / `docker-entrypoint.sh` | 容器方案（数据挂卷、首次启动自动初始化、端口由 `.env` 驱动） |
 
 ## 最短路径
 
@@ -27,7 +27,7 @@ sudo bash /opt/tideglass/current/deploy/install.sh shop.你的域名.com \
      https://github.com/jiaminfu/wildkind.git you@mail.com
 ```
 
-**还没有域名 / 80·443 已被别的项目占用：**
+**还没有域名 / 80·443 已被别的项目占用（宿主机可用 Nginx）：**
 
 ```bash
 sudo LISTEN_PORT=8080 bash /opt/tideglass/current/deploy/install.sh - \
@@ -37,6 +37,26 @@ sudo LISTEN_PORT=8080 bash /opt/tideglass/current/deploy/install.sh - \
 
 第一个参数写 `-` 就走无域名模式：不删默认站点、不抢 80/443、不动防火墙、跳过证书。
 拿到域名后按手册 5.6.3 原地升级，不用重装。
+
+**80/443 被 Docker 容器占着（宿主机装不了 Nginx）：**
+
+```bash
+# ① 直连模式：连 nginx 这个包都不装
+sudo NO_NGINX=1 LISTEN_PORT=8080 \
+     bash /opt/tideglass/current/deploy/install.sh - \
+     https://github.com/jiaminfu/wildkind.git
+
+# ② 或者用 Docker，独立 compose 项目，端口从 .env 读
+cd /opt/tideglass/current/deploy
+cp .env.example .env && nano .env      # 填口令，去掉 BIND_ADDR/HOST_PORT 的注释
+#   BIND_ADDR=0.0.0.0
+#   HOST_PORT=8080
+sudo docker compose up -d --build
+```
+
+两种情况都先读
+**[`handover/07-交付准备/同机共存部署检查单-v1.0.md`](../handover/07-交付准备/同机共存部署检查单-v1.0.md)**，
+里面有端口归属判定、四条硬红线和 8 条验收。
 
 跑完会打印后台地址与随机口令。**登录后第一件事是改口令。**
 

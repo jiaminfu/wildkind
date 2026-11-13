@@ -6,9 +6,21 @@
 #   docker compose up -d --build
 #   docker compose logs -f
 #
-# 注意端口只绑 127.0.0.1：外网访问一律走宿主机 Nginx + HTTPS。
-# 直接把 4600 开到公网等于让接口裸奔（没有 HTTPS、没有限流兜底）。
+# 端口绑在哪里由 .env 决定，默认只绑 127.0.0.1:4600（配宿主机 Nginx + HTTPS 用）。
+#
+# 服务器上已经有别的项目（尤其 80/443 牵着 Docker 容器）时，别让宿主 Nginx 上，
+# 直接用独立端口对外：
+#   在 .env 里写
+#     BIND_ADDR=0.0.0.0
+#     HOST_PORT=8080
+#   然后 docker compose up -d --build
+#   访问 http://<公网IP>:8080/
+#
+# 与已有项目的隔离点：本文件有独立的 name / 卷 / 网络 / 容器名，
+# 和别的 compose 项目除了宿主机端口之外没有任何共享——端口不撞就互不影响。
 # ============================================================
+name: tideglass
+
 services:
   tideglass:
     build:
@@ -22,7 +34,9 @@ services:
       - .env
 
     ports:
-      - "127.0.0.1:4600:4600"
+      # BIND_ADDR 默认 127.0.0.1：只给本机反代用，公网摸不到。
+      # 无域名/共存场景改成 0.0.0.0 并把 HOST_PORT 换成一个空闲端口。
+      - "${BIND_ADDR:-127.0.0.1}:${HOST_PORT:-4600}:4600"
 
     # 数据必须落在卷里。容器重建很频繁，卷不重建。
     volumes:

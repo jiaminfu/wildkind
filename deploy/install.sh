@@ -5,22 +5,28 @@
 # 有域名：
 #   sudo bash deploy/install.sh shop.example.com git@github.com:jiaminfu/wildkind.git you@mail.com
 #
-# 没有域名 / 服务器上已经跑着别的项目（最安全的姿势，一个端口都不抢）：
+# 没有域名 / 服务器上已经跑着别的项目（Nginx 方式，一个端口都不抢）：
 #   sudo LISTEN_PORT=8080 bash deploy/install.sh - git@github.com:jiaminfu/wildkind.git
+#
+# 服务器上的 80/443 被 Docker 容器（Caddy / Traefik / Nginx Proxy Manager）占着，
+# 宿主机装不了系统 Nginx——这时用「直连模式」，完全跳过 Nginx：
+#   sudo NO_NGINX=1 LISTEN_PORT=8080 bash deploy/install.sh - https://github.com/jiaminfu/wildkind.git
 #
 #   参数 1  域名；写 - 表示「还没有域名」，走 IP + 端口模式，绝不碰已有的 80/443
 #   参数 2  仓库地址（必填）
 #   参数 3  邮箱（可选；有域名才用得上，用于签 Let's Encrypt 证书）
 #
 # 环境变量：
-#   LISTEN_PORT  没有域名时 Nginx 监听哪个端口（默认 8080）
-#   APP_PORT     Node 监听端口（默认 4600）
+#   LISTEN_PORT  对外监听端口（默认 8080）。Nginx 模式下是 Nginx 的端口
+#   APP_PORT     Node 监听端口（默认 4600）。设了 NO_NGINX=1 时会被 LISTEN_PORT 覆盖
+#   NO_NGINX=1   不装、不配、不动系统 Nginx；Node 直接监听 LISTEN_PORT 对外提供服务
 #
 # 它会做：装 Node 22 → 建系统用户 → 拉代码 → 生成环境变量与随机口令
-#          → 初始化数据 → 装 systemd 服务 → 配 Nginx → 防火墙 → 签证书 → 自检
+#          → 初始化数据 → 装 systemd 服务 → 配 Nginx（可跳过）→ 防火墙 → 签证书 → 自检
 #
 # 幂等：重复执行为「更新」语义——代码会 git pull，数据文件绝不覆盖。
 # 共存：不删 sites-enabled/default、不擅自启用 ufw、不抢 80/443，改用独立端口。
+#       NO_NGINX=1 时连 nginx 这个包都不装——80/443 归已有的容器，一行都不碰。
 # ============================================================
 set -euo pipefail
 
@@ -42,6 +48,14 @@ case "$DOMAIN" in
   ""|-|none|NONE|ip) NO_DOMAIN=1 ;;
 esac
 
+# 直连模式：不装 Nginx，Node 自己监听对外端口。
+# 用于「80/443 已被 Docker 容器占用」的机器——那种机器上装系统 Nginx 会起不来。
+NO_NGINX="${NO_NGINX:-0}"
+if [ "$NO_NGINX" -eq 1 ]; then
+  NO_DOMAIN=1
+  PORT_DEFAULT="$LISTEN_PORT"
+fi
+
 red()    { printf '\033[31m%s\033[0m\n' "$*"; }
 green()  { printf '\033[32m%s\033[0m\n' "$*"; }
 yellow() { printf '\033[33m%s\033[0m\n' "$*"; }
@@ -54,7 +68,9 @@ die()    { red "[×] $*"; exit 1; }
 
 export DEBIAN_FRONTEND=noninteractive
 
-if [ "$NO_DOMAIN" -eq 1 ]; then
+if [ "$NO_NGINX" -eq 1 ]; then
+  yellow "模式：直连（不装 Nginx，Node 监听 0.0.0.0:$LISTEN_PORT），80/443 留给已有服务"
+elif [ "$NO_DOMAIN" -eq 1 ]; then
   yellow "模式：无域名（IP + 端口 $LISTEN_PORT），不会修改已有站点、不抢 80/443"
 else
   green "模式：域名 $DOMAIN"
@@ -75,10 +91,12 @@ check_port() {
 }
 step "检查端口占用"
 check_port "$PORT_DEFAULT"
-if [ "$NO_DOMAIN" -eq 1 ]; then
+if [ "$NO_DOMAIN" -eq 1 ] && [ "$NO_NGINX" -eq 0 ]; then
   check_port "$LISTEN_PORT"
 fi
-if [ "$NO_DOMAIN" -eq 1 ]; then
+if [ "$NO_NGINX" -eq 1 ]; then
+  green "    $PORT_DEFAULT 可用（直连，仅此一个端口）"
+elif [ "$NO_DOMAIN" -eq 1 ]; then
   green "    $PORT_DEFAULT 与 $LISTEN_PORT 都可用"
 else
   green "    $PORT_DEFAULT 可用"
@@ -87,7 +105,14 @@ fi
 # ---------- 1. 基础包 ----------
 step "安装基础软件包"
 apt-get update -qq
-apt-get install -y -qq curl ca-certificates git nginx openssl >/dev/null
+# 直连模式不装 nginx：装完 apt 会自动 start，80 端口被 Docker 容器占着就直接报错，
+# 有些人看到 nginx 起不来会去 systemctl stop docker——那才是真正的灾难。
+if [ "$NO_NGINX" -eq 1 ]; then
+  apt-get install -y -qq curl ca-certificates git openssl >/dev/null
+  green "    已装 curl/git/openssl（跳过 nginx，80/443 归已有服务）"
+else
+  apt-get install -y -qq curl ca-certificates git nginx openssl >/dev/null
+fi
 # ufw 只在本来就装了的情况下才动它，避免把已有项目的端口墙掉
 if ! command -v ufw >/dev/null 2>&1; then
   apt-get install -y -qq ufw >/dev/null || true
@@ -217,30 +242,38 @@ green "    服务运行中"
 # 关键：不删任何已有站点、不动 sites-enabled/default。
 # 服务器上可能已经有别的项目在用 80/443，删默认站点或让我们的块抢 default_server
 # 都会把别人的流量截走。这里只用「独立端口」或「精确 server_name」两种方式接入。
-step "配置 Nginx"
-mkdir -p /var/www/certbot
-NGX_SITE="/etc/nginx/sites-available/tideglass.conf"
-
-if [ "$NO_DOMAIN" -eq 1 ]; then
-  sed -e "s/__LISTEN_PORT__/$LISTEN_PORT/g" -e "s/__APP_PORT__/$PORT/g" \
-      "$APP_DIR/deploy/nginx-tideglass-port.conf" > "$NGX_SITE"
+if [ "$NO_NGINX" -eq 1 ]; then
+  step "反向代理"
+  yellow "    直连模式，跳过 Nginx（Node 已在 0.0.0.0:$PORT 上对外服务）"
+  if command -v nginx >/dev/null 2>&1; then
+    yellow "    注意：本机已装 nginx，脚本不会碰它任何配置"
+  fi
 else
-  sed "s/__DOMAIN__/$DOMAIN/g" "$APP_DIR/deploy/nginx-tideglass.conf" > "$NGX_SITE"
-fi
-ln -sf "$NGX_SITE" /etc/nginx/sites-enabled/tideglass.conf
+  step "配置 Nginx"
+  mkdir -p /var/www/certbot
+  NGX_SITE="/etc/nginx/sites-available/tideglass.conf"
 
-# 配置写错就把自己的站点摘掉，别把别人正在跑的服务一起带下水
-if ! nginx -t 2>/tmp/nginx-tideglass-test.log; then
-  rm -f /etc/nginx/sites-enabled/tideglass.conf
-  cat /tmp/nginx-tideglass-test.log
-  die "Nginx 配置校验失败，已撤销本次站点配置（已有站点未受影响）"
+  if [ "$NO_DOMAIN" -eq 1 ]; then
+    sed -e "s/__LISTEN_PORT__/$LISTEN_PORT/g" -e "s/__APP_PORT__/$PORT/g" \
+        "$APP_DIR/deploy/nginx-tideglass-port.conf" > "$NGX_SITE"
+  else
+    sed "s/__DOMAIN__/$DOMAIN/g" "$APP_DIR/deploy/nginx-tideglass.conf" > "$NGX_SITE"
+  fi
+  ln -sf "$NGX_SITE" /etc/nginx/sites-enabled/tideglass.conf
+
+  # 配置写错就把自己的站点摘掉，别把别人正在跑的服务一起带下水
+  if ! nginx -t 2>/tmp/nginx-tideglass-test.log; then
+    rm -f /etc/nginx/sites-enabled/tideglass.conf
+    cat /tmp/nginx-tideglass-test.log
+    die "Nginx 配置校验失败，已撤销本次站点配置（已有站点未受影响）"
+  fi
+  if ! systemctl reload nginx; then
+    rm -f /etc/nginx/sites-enabled/tideglass.conf
+    systemctl reload nginx || true
+    die "Nginx reload 失败（常见原因：IPv6 未启用却写了 listen [::]），已撤销本次站点配置"
+  fi
+  green "    已生效（未改动任何已有站点）"
 fi
-if ! systemctl reload nginx; then
-  rm -f /etc/nginx/sites-enabled/tideglass.conf
-  systemctl reload nginx || true
-  die "Nginx reload 失败（常见原因：IPv6 未启用却写了 listen [::]），已撤销本次站点配置"
-fi
-green "    已生效（未改动任何已有站点）"
 
 # ---------- 10. 防火墙 ----------
 # 服务器上已有项目时，最危险的动作是「顺手 ufw enable」：
@@ -257,8 +290,11 @@ if ufw status 2>/dev/null | grep -q "Status: active"; then
     ufw allow 443/tcp >/dev/null 2>&1 || true
     green "    已放行 22/80/443"
   fi
-  ufw deny "$PORT"/tcp >/dev/null 2>&1 || true
-  green "    已封 $PORT（业务端口只给本机 Nginx）"
+  # 直连模式下 PORT == LISTEN_PORT，封了就等于把自己封了
+  if [ "$NO_NGINX" -eq 0 ] && [ "$PORT" != "$LISTEN_PORT" ]; then
+    ufw deny "$PORT"/tcp >/dev/null 2>&1 || true
+    green "    已封 $PORT（业务端口只给本机 Nginx）"
+  fi
 else
   yellow "    防火墙当前未启用，脚本不做改动（避免墙掉已有项目）"
   if [ "$NO_DOMAIN" -eq 1 ]; then
@@ -344,8 +380,20 @@ if [ "$NO_DOMAIN" -eq 1 ]; then
   cat <<EOF
 
   ⚠ 无域名模式的额外注意
-    · 当前是 HTTP，后台口令在网络上是明文。用完请按手册把来源 IP 收紧
-      （deploy/nginx-tideglass-port.conf 里的 allow / deny 两行）
+    · 当前是 HTTP，后台口令在网络上是明文。验证完请立刻收紧来源：
+EOF
+  if [ "$NO_NGINX" -eq 1 ]; then
+    cat <<EOF
+      sudo ufw allow from 你的公网IP to any port $LISTEN_PORT proto tcp
+      sudo ufw delete allow $LISTEN_PORT/tcp
+      （直连模式没有 Nginx 的 allow/deny，只能用防火墙按来源 IP 收紧）
+EOF
+  else
+    cat <<EOF
+      把 deploy/nginx-tideglass-port.conf 里的 allow / deny 两行取消注释并填你的 IP
+EOF
+  fi
+  cat <<EOF
     · 云厂商控制台的安全组也要放行 $LISTEN_PORT
     · 拿到域名后切 HTTPS，见手册第 5.6 节，不用重装
 EOF
