@@ -202,6 +202,11 @@
         '<span class="card__price">' + money(x.price) + '</span></div></a>';
     }).join('');
 
+    /* 后台「Description」是 textarea（可多行，最多 2000 字），接口以 description 返回。
+       这里原样转义输出，靠 CSS 的 pre-line 保留换行；没有描述时整块不渲染，
+       避免详情页留一段空div。 */
+    var descText = String(p.description || '').trim();
+
     return '<div class="wrap">' +
       '<div class="crumbs"><a href="#/">Home</a><span>/</span><a href="#/collections/' + esc(p.category) + '">' + esc(p.category) + '</a><span>/</span>' + esc(p.title) + '</div>' +
       '<div class="pdp">' +
@@ -217,6 +222,7 @@
       (p.compareAt ? '<s>' + money(p.compareAt) + '</s><em>Save ' + U.money0(save) + '</em>' : '') + '</div>' +
       '<div class="pdp__tax">Duties included</div>' +
       '<div class="eta">' + ui.icon('truck') + '<span>' + ui.etaText(7, 12) + '</span></div>' +
+      (descText ? '<div class="pdp__desc">' + esc(descText) + '</div>' : '') +
       '<ul class="usp-list">' +
       '<li>' + ui.icon('shield') + '<span><b>Lifetime colour guarantee.</b> If it fades, we replace it once.</span></li>' +
       '<li>' + ui.icon('shield') + '<span><b>Waterproof &amp; tarnish-free.</b> 0.8 micron PVD — swim, shower, sleep in it.</span></li>' +

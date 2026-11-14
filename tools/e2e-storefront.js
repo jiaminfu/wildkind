@@ -117,6 +117,27 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
     ok('详情页有加购按钮且带商品与金属', !!addInfo && /add to bag/i.test(addInfo), addInfo);
     const priceShown = await ev(`/\\$\\s?\\d/.test(document.body.innerText)`);
     ok('详情页显示价格', priceShown === true);
+
+    /* 商品描述：后台有「Description」输入框、接口一直返回 description，
+       但前端曾经整段没渲染——填了等于没填。这条守住它不再退化。 */
+    const descInfo = await ev(`(function(){
+      var el=document.querySelector('.pdp__desc');
+      return el?JSON.stringify({text:el.textContent.trim().slice(0,80),len:el.textContent.trim().length}):null;
+    })()`);
+    const apiDesc = await ev(`(async function(){
+      try{
+        var h=location.hash.replace('#/products/','');
+        var r=await fetch('/api/v1/products/'+h);
+        var j=await r.json();
+        var p=j.data&&(j.data.product||j.data);
+        return p&&p.description?String(p.description).trim():'';
+      }catch(e){return ''}
+    })()`);
+    const descObj = descInfo ? JSON.parse(descInfo) : null;
+    ok('详情页展示商品描述且与接口一致',
+      !!descObj && descObj.len > 0 && !!apiDesc &&
+      descObj.text.slice(0, 40) === String(apiDesc).slice(0, 40),
+      descInfo ? descInfo : '未渲染 .pdp__desc（后台填了描述但前台看不到）');
     await shot('02-pdp');
 
     /* 4. 加购 */
