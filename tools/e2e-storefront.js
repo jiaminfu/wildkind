@@ -61,6 +61,9 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
   });
   await new Promise(r => sock.addEventListener('open', r));
   await send('Page.enable'); await send('Runtime.enable');
+  /* 测试必须看服务的当前代码，不能被上一轮的磁盘缓存骗过去 */
+  await send('Network.enable');
+  await send('Network.setCacheDisabled', { cacheDisabled: true });
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
 
   const ev = async e => {
@@ -109,7 +112,10 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
     /* 3. 点第一张商品卡进详情 */
     const href = await ev(`(function(){var a=document.querySelector('a[href*="#/products/"]');return a?a.getAttribute('href'):null})()`);
     await ev(`(function(){var a=document.querySelector('a[href*="#/products/"]');if(a)a.click();return true})()`);
-    const pdpReady = await waitFor(`!!document.querySelector('[data-act=add]')`, 20000);
+    /* 必须等 .pdp 容器出现，不能用 [data-act=add]：
+       首页商品卡上的快速加购按钮也带这个属性，用它当"已进详情页"的信号会假阳性——
+       页面其实还停在首页，后面几条断言等于在首页上跑。 */
+    const pdpReady = await waitFor(`!!document.querySelector('.pdp')`, 20000);
     ok('点击商品卡进入详情页', pdpReady && (await ev('location.hash')).indexOf('#/products/') === 0,
       'hash=' + (await ev('location.hash')) + ' href=' + href);
 
@@ -119,7 +125,9 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
     ok('详情页显示价格', priceShown === true);
 
     /* 商品描述：后台有「Description」输入框、接口一直返回 description，
-       但前端曾经整段没渲染——填了等于没填。这条守住它不再退化。 */
+       但前端曾经整段没渲染——填了等于没填。这条守住它不再退化。
+       注意要轮询：点卡片进来时详情页会先渲染一版再刷新，固定在第一次渲染上读会误判。 */
+    await waitFor(`!!document.querySelector('.pdp__desc')`, 15000);
     const descInfo = await ev(`(function(){
       var el=document.querySelector('.pdp__desc');
       return el?JSON.stringify({text:el.textContent.trim().slice(0,80),len:el.textContent.trim().length}):null;
@@ -137,7 +145,9 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
     ok('详情页展示商品描述且与接口一致',
       !!descObj && descObj.len > 0 && !!apiDesc &&
       descObj.text.slice(0, 40) === String(apiDesc).slice(0, 40),
-      descInfo ? descInfo : '未渲染 .pdp__desc（后台填了描述但前台看不到）');
+      'hash=' + (await ev('location.hash')) +
+      ' | DOM=' + (descInfo || 'null') +
+      ' | 接口=' + JSON.stringify(String(apiDesc || '').slice(0, 30)));
     await shot('02-pdp');
 
     /* 4. 加购 */
