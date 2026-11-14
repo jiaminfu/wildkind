@@ -3,14 +3,16 @@
 | 项 | 内容 |
 | --- | --- |
 | 文档编号 | TG-API-001 |
-| 版本 | v1.1 |
-| 编写日期 | 2026-11-13 |
+| 版本 | v1.2 |
+| 编写日期 | 2026-11-14 |
 | 对应实现 | `app/server`（Node 原生，零第三方依赖） |
-| 对应需求 | FRD v2.5、SDD v2.4 第 16 节「服务端实现契约」 |
-| 端点数量 | 47 个操作，分布在 42 条路径（已与实现逐条对账，无遗漏、无虚构） |
-| 自动化覆盖 | `tools/api-test.js` 121 例全通过（见《测试报告 v1.2》） |
+| 对应需求 | FRD v2.7、SDD v2.5 第 16 节「服务端实现契约」、《商品管理补全-需求与设计说明 v1.1》 |
+| 端点数量 | 56 个操作，分布在 48 条路径（47 个业务接口 + 1 个公开静态图片；已与实现逐条对账，无遗漏、无虚构） |
+| 自动化覆盖 | `tools/api-test.js` 121 例 + `tools/api-test-product.js` 37 例全通过（见《测试报告 v1.3》） |
 | 机器可读版 | 同目录 `openapi.json`（OpenAPI 3.0.3，可导入 Postman / Apifox / Swagger UI） |
 
+> **v1.2 变更**：补齐商品管理闭环 —— 新建、单件详情、复制、删除、图片上传、CSV 批量导入（预检 / 导入 / 模板），新增 9 个操作（8 条后台路径 + 1 条公开静态路径）。`PATCH /admin/products/:id` 的字段面从 8 个扩到 16 个。同时把 `cost` 从「所有后台角色可见」收紧为「仅 owner 可见」。
+>
 > **v1.1 变更**：补齐后台三个模块的接口 —— 集合（4 个操作）、内容（2 个）、定制需求单（3 个，含 1 个前台匿名提交端点）。v1.0 漏掉这三个模块不是笔误：上一版后台只实现了 10 个模块，接口自然也只有那些。这一版把 FRD 第 48 行要求的模块补齐后，接口随之增加 9 个操作。
 
 ---
@@ -121,8 +123,8 @@ curl http://localhost:4600/api/v1/admin/orders?status=paid \
 | `orders:read` | `GET /admin/orders`、`GET /admin/orders/:number` |
 | `orders:write` | `PATCH /admin/orders/:number/status`、`POST /admin/orders/:number/tracking` |
 | `orders:refund` | `POST /admin/orders/:number/refund` |
-| `products:read` | `GET /admin/products`、`GET /admin/inventory`、`GET /admin/stock-ledger`、`GET /admin/reviews` |
-| `products:write` | `PATCH /admin/products/:id`、`PATCH /admin/reviews/:id` |
+| `products:read` | `GET /admin/products`、`GET /admin/products/:id`、`GET /admin/inventory`、`GET /admin/stock-ledger`、`GET /admin/reviews` |
+| `products:write` | `POST /admin/products`、`PATCH /admin/products/:id`、`DELETE /admin/products/:id`、`POST /admin/products/:id/duplicate`、`POST /admin/uploads`、`POST /admin/products/import/preview`、`POST /admin/products/import`、`GET /admin/products/import/template`、`PATCH /admin/reviews/:id` |
 | `inventory:write` | `POST /admin/products/:id/variants/:sku/restock` |
 | `customers:read` | `GET /admin/customers` |
 | `coupons:write` | `GET /admin/coupons`、`POST /admin/coupons`、`DELETE /admin/coupons/:code` |
@@ -740,25 +742,143 @@ refunded / cancelled    → 终态
 
 #### 🔑 `GET /admin/products?q=…`
 
-后台商品列表，**含 `cost`（成本）与 `version`**。
+后台商品列表，含 `version`；`cost`（成本）**仅 `role=owner` 返回，ops 拿到 `null`**。`q` 同时匹配标题与商品 ID。
+
+```json
+{ "data": [ { "id": "TG-802", "handle": "ocean-gift-set", "title": "Ocean Gift Set",
+              "price": 128, "compareAt": null, "cost": 32, "stock": 21, "active": true,
+              "badge": null, "category": "necklaces", "image": "assets/img/opt/p-…jpg",
+              "variants": [ { "sku": "TG-802-GO", "metal": "Gold", "stock": 11, "price": 128 } ],
+              "updatedAt": "2026-11-14T03:20:11.402Z", "version": 4 } ] }
+```
+
+> 成本为什么按角色区分：ops 能改价，但不需要知道进货成本。只挡列表不挡写接口也没用——`PATCH` 会原样回吐 `product`，ops 调一次就看见了，所以列表、详情、写返回、报错文案四处都做了处理。
+
+#### 🔑 `GET /admin/products/:id`
+
+编辑抽屉用，一次返回全部字段（含 `images` / `sizes` / `collections` / `details` / `variants`）。`:id` 接受商品 ID 或 handle。
+
+#### 🔑 `POST /admin/products`
+
+```json
+{ "title": "Moonlit Hare Necklace", "cat": "necklaces", "price": 76, "cost": 19.5,
+  "desc": "…", "motif": "hare", "set": "woodland", "badge": "New",
+  "compareAt": 92, "sizes": ["16in", "18"], "collections": ["necklaces", "new"],
+  "images": [], "variants": [ { "metal": "Gold", "stock": 11 }, { "metal": "Silver", "stock": 10 } ] }
+```
+
+**新建一律是草稿**（`active=false`）：填一半、没图、库存没核对的商品直接上架，会被顾客看到并下单。
+
+服务端自动生成：`id`（`TG-` + 现有最大序号 +1）、`handle`（标题转 slug，撞名加 `-2`）、缺失的 `sku`（`TG-<编号>-<GO|SI|RO>`）、`createdAt` / `version=1`。
+每个变体的初始库存会写一条 `initial` 流水。
+
+| 失败 code | 触发条件 |
+| --- | --- |
+| `400` + `details[].field` | 标题空、品类不在枚举内、价格 ≤ 0、金属非法、SKU 重复、图片超过 6 张或路径非法 |
+| `422 PRICE_BELOW_COST` | 售价比成本低（ops 收到的是脱敏文案，不带金额） |
+| `403 FORBIDDEN` | ops 试图设置 `cost` |
 
 #### 🔑 `PATCH /admin/products/:id`
 
 ```json
-{ "price": 88, "cost": 26, "active": true, "badge": "Best Seller", "version": 3 }
+{ "title": "…", "desc": "…", "cat": "rings", "motif": "shell", "set": "ocean",
+  "badge": "Bestseller", "price": 88, "cost": 26, "compareAt": 110, "active": true,
+  "sizes": ["7in"], "collections": ["rings"], "images": ["uploads/p-xxx.jpg"],
+  "variants": [ { "metal": "Gold", "sku": "TG-803-GO", "price": 88, "stock": 12 } ],
+  "version": 3 }
 ```
 
 | 字段 | 说明 |
 | --- | --- |
-| `price` | 必须 > 0 且 **不得低于 `cost`**，否则 `422 PRICE_BELOW_COST`。变体价按原比例跟随主价 |
-| `compareAt` | 划线价，传 `null` 清除 |
-| `cost` | 单位成本 |
-| `active` | 上架 / 下架 |
-| `badge` | 角标，传 `null` 清除 |
 | `title` / `desc` | 最长 120 / 2000 字 |
+| `cat` | 枚举：`necklaces` `bracelets` `anklets` `rings` `hair` |
+| `motif` / `set` / `badge` | 图案 / 系列 / 角标；`badge` 只接受 `New`、`Bestseller`，传 `null` 清除 |
+| `price` | 必须 > 0 且 **不得低于 `cost`**，否则 `422 PRICE_BELOW_COST`。未同时提交变体表时，变体价按原比例跟随主价 |
+| `cost` | 单位成本，**仅 owner 可写**，ops 传了返回 `403` |
+| `compareAt` | 划线价，必须高于售价，传 `null` 清除 |
+| `active` | 上架 / 下架。**从草稿转上架时**校验：至少 1 张图、至少 1 个变体、价格 > 0，否则 `422 NEEDS_IMAGE / NEEDS_VARIANT / NEEDS_PRICE` |
+| `images` | 1–6 个，元素必须是 `uploads/…` 或 `assets/img/…`，数组顺序即前台展示顺序 |
+| `variants` | **整表替换**。库存变化写 `variant-adjust` 流水，新增变体写 `variant-add`；商品 `stock` 自动重算为各变体之和 |
+| `sizes` | 最多 5 项，`16in` / `16"` 会统一成 `16"` |
+| `collections` | 只接受已存在的集合 handle，未知的静默丢弃 |
+| `handle` | 只在显式传入时修改。**改标题不会自动改 URL**——那会让已投放的链接全部 404 |
 | `version` | **乐观锁**。带上读到的版本号，不一致返回 `409` + `details.currentVersion` |
 
 乐观锁的意义：两个人同时改同一件商品的价格，后保存的人必须知道前一个人改了什么，而不是静默覆盖。
+
+#### 🔑 `POST /admin/products/:id/duplicate`
+
+复制为新草稿：标题加 `(copy)`、handle 加 `-copy`、**各变体库存归零**、评分与销量清零。库存归零是因为复制出来的数字是账面的，不能凭空变成可售。
+
+#### 🔑 `DELETE /admin/products/:id`
+
+| 失败 code | 触发条件 |
+| --- | --- |
+| `409 CONFLICT` | 该商品出现在订单里，响应带 `details.orders`（订单数）。硬删会让历史订单的商品名变空、对账断链，只能下架 |
+| `200` | 无订单引用，连同其记录一起删除；历史库存流水**保留** |
+
+#### 🔑 `POST /admin/uploads`
+
+```json
+{ "dataUrl": "data:image/jpeg;base64,/9j/4AAQ…" }
+```
+
+图片上传走 base64 JSON 而不是 multipart：现有请求解析器是 JSON 解析器（上限 256 KB），写一个 multipart 解析器约 60 行且边界条件多。前端用 Canvas 把图压到最长边 1600 px、质量 0.82（通常 200–400 KB），只给这一个接口把上限放宽到 8 MB，其余接口维持 256 KB。
+
+服务端**只认文件头，不认扩展名和 content-type**：JPG / PNG / WebP 三种魔数之外一律 `400 INVALID_IMAGE`。**明确拒绝 SVG** —— 它走 `<img>` 时不执行脚本，但有人直接打开链接就是 XSS。
+
+```json
+{ "data": { "path": "uploads/p-mwfvtoax-4f335c.jpg", "file": "p-mwfvtoax-4f335c.jpg", "bytes": 110568 } }
+```
+
+落盘位置 `/app/app/server/data/uploads/`（`tideglass-data` 卷），容器重建不丢。`path` 直接写进商品的 `images` 数组。
+
+未被任何商品引用、且超过 24 小时的文件，由每小时一次的清理任务删除（用户中途放弃编辑会留下这类孤儿文件）。
+
+#### 🔓 `GET /uploads/:file`
+
+商品图的公开读取端点。文件名白名单校验 + 路径解析后必须仍在 uploads 目录内，`/uploads/../../db.json` 这类请求返回 404。
+
+> 单独一条路由，不能交给 SPA 静态兜底：兜底对未命中路径返回 `index.html`，图片 404 时浏览器会收到一段 HTML，表现为「裂图 + 控制台 MIME 报错」。
+
+#### 🔑 `POST /admin/products/import/preview`
+
+```json
+{ "csv": "group,title,category,price,metal,stock\n…" }
+```
+
+**只校验、不写库。** 一次导入 100 行，中途失败一半而库里留下 50 个半成品是最难收拾的场面，所以必然有两段式。
+
+一行 = 一个变体，相同 `group` 的行归并成同一商品的多个变体。
+
+```json
+{ "data": { "totalRows": 100, "groupCount": 42, "validGroups": 40, "errorCount": 3,
+            "errors": [ { "line": 17, "column": "price", "message": "price must be greater than 0." } ],
+            "warnings": [ { "line": 9, "column": "collections", "message": "unknown collection(s) skipped: gift-set" } ],
+            "groups": [ { "key": "moonlit-hare", "title": "…", "category": "necklaces", "price": 76,
+                          "variants": 2, "stock": 21, "handle": "moonlit-hare", "ok": true } ] } }
+```
+
+`errors` 精确到行号与列名。`ok=false` 的整组不会被导入——同款少一个颜色就进库，比整组失败更难排查。
+
+#### 🔑 `POST /admin/products/import`
+
+```json
+{ "csv": "…", "mode": "valid-only" }
+```
+
+| `mode` | 行为 |
+| --- | --- |
+| `abort`（默认） | 有任何错误就整体拒绝，`422 IMPORT_HAS_ERRORS`，库中零变更 |
+| `valid-only` | 跳过 `ok=false` 的整组，其余全部创建 |
+
+导入的商品**全部是草稿**。返回 `{ created, skipped, products: [{id, handle, title, variants, stock}], errors }`。
+
+CSV 列：`group`（必填，归并键）/ `title` / `handle`（可空，撞名自动加后缀）/ `category` / `price` / `cost` / `compareAt` / `metal`（必填）/ `sku`（可空）/ `stock`（必填）/ `variantPrice` / `desc` / `motif` / `set` / `badge` / `images`（`|` 分隔）/ `collections`（`|` 分隔）/ `sizes`（`|` 分隔，`16in` 自动转 `16"`）。
+
+#### 🔑 `GET /admin/products/import/template`
+
+返回带表头与两行示例的 CSV，`Content-Type: text/csv; charset=utf-8`，**带 UTF-8 BOM**（不带 BOM 时 Excel 双击打开会把中文认成 GBK 而乱码）。
 
 #### 🔑 `POST /admin/products/:id/variants/:sku/restock`
 
@@ -1118,7 +1238,8 @@ curl -H "Authorization: Bearer $TOKEN" \
 | --- | --- | --- |
 | v1.0 | 2026-11-13 | 首次成文。覆盖 38 个操作（36 条路径），对应 `app/server` 当前实现；同步 FRD v2.5 的 7 处业务逻辑修正与 SDD v2.3 第 16 节的 8 条服务端契约 |
 | v1.1 | 2026-11-13 | 补 9 个操作（42 路径 / 47 操作）：集合 4、内容 2、定制需求单 3。起因是复核后台时发现 FRD 第 48 行要求的集合 / 内容 / 定制需求单三个模块在交付版里根本没有，接口层同样缺失。同时修正 `bootstrap` 增加 `pages` 与 `bestSellersEyebrow` 两个字段；`PATCH /admin/products/:id` 支持 `collections` 数组（挂载集合） |
+| v1.2 | 2026-11-14 | 补 9 个操作（48 路径 / 56 操作）：`POST /admin/products`（新建，默认草稿）、`GET /admin/products/:id`、`POST /admin/products/:id/duplicate`、`DELETE /admin/products/:id`、`POST /admin/uploads`、CSV 导入三件套（preview / import / template）、公开的 `GET /uploads/:file`。`PATCH` 字段面从 8 个扩到 16 个（新增 `cat`/`motif`/`set`/`sizes`/`images`/`variants`/`details`/`handle`）。**权限收紧**：`cost` 从此只对 `role=owner` 返回，ops 的列表、详情、写返回、报错文案四处都做了脱敏。起因：后台 `Products` 页只有 `Price` 和 `Unlist` 两个按钮，100 款 SKU 无法录入 |
 
 ---
 
-— 文档结束 · TG-API-001 v1.1 · 42 路径 / 47 操作 · 与 `openapi.json` 同步维护 —
+— 文档结束 · TG-API-001 v1.2 · 48 路径 / 56 操作 · 与 `openapi.json` 同步维护 —

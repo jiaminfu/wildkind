@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "TIDEGLASS API",
-    "version": "1.0.0",
-    "description": "TIDEGLASS 跨境饰品独立站接口。\n\n**响应信封**：成功 `{ \"data\": … }`；分页 `{ \"data\": [], \"meta\": {} }`；失败 `{ \"error\": { code, message, details } }`。\n前端必须按 `code` 分支，不要按 `message` 文案匹配。\n\n**两个跨接口机制**：\n- 报价锁：`POST /checkout/quote` 拿 `quoteId`（15 分钟），下单时必须带上；金额不一致返回 `PRICE_CHANGED`。\n- 幂等下单：`POST /orders` 带 `Idempotency-Key` 头，重复提交返回原订单并标记 `replayed: true`。\n\n**权限**：Bearer Token（12 小时，可吊销），按 10 个权限位鉴权，不按角色判断。\n\n详细说明见《API 接口文档 v1.0》。",
+    "version": "1.2.0",
+    "description": "TIDEGLASS 跨境饰品独立站接口。\n\n**响应信封**：成功 `{ \"data\": … }`；分页 `{ \"data\": [], \"meta\": {} }`；失败 `{ \"error\": { code, message, details } }`。\n前端必须按 `code` 分支，不要按 `message` 文案匹配。\n\n**两个跨接口机制**：\n- 报价锁：`POST /checkout/quote` 拿 `quoteId`（15 分钟），下单时必须带上；金额不一致返回 `PRICE_CHANGED`。\n- 幂等下单：`POST /orders` 带 `Idempotency-Key` 头，重复提交返回原订单并标记 `replayed: true`。\n\n**权限**：Bearer Token（12 小时，可吊销），按 10 个权限位鉴权，不按角色判断。\n\n详细说明见《API 接口文档 v1.2》。",
     "license": {
       "name": "Proprietary"
     }
@@ -62,6 +62,26 @@
     {
       "name": "后台 · 设置",
       "description": "站点设置与审计日志"
+    },
+    {
+      "name": "后台 · 集合",
+      "description": "集合的新建 / 改 / 删"
+    },
+    {
+      "name": "后台 · 内容",
+      "description": "首页文案与内容页导语"
+    },
+    {
+      "name": "门店 · 定制",
+      "description": "匿名提交定制需求（公开）"
+    },
+    {
+      "name": "后台 · 定制",
+      "description": "定制需求单的报价与流转"
+    },
+    {
+      "name": "公开 · 静态",
+      "description": "商品图等静态资源"
     }
   ],
   "paths": {
@@ -1376,7 +1396,7 @@
         "tags": [
           "后台 · 商品"
         ],
-        "summary": "商品列表（含成本与 version）",
+        "summary": "商品列表（含 version；cost 仅 owner 可见）",
         "security": [
           {
             "bearerAuth": []
@@ -1417,14 +1437,101 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "后台 · 商品"
+        ],
+        "summary": "新建商品（默认草稿，自动生成 id / handle / sku）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminProductEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        }
       }
     },
     "/api/v1/admin/products/{id}": {
+      "get": {
+        "tags": [
+          "后台 · 商品"
+        ],
+        "summary": "单件详情（编辑抽屉用，id 或 handle）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminProductEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
       "patch": {
         "tags": [
           "后台 · 商品"
         ],
-        "summary": "改商品（乐观锁；改价不得低于成本）",
+        "summary": "改商品（乐观锁；改价不得低于成本；草稿转上架校验图片与变体）",
         "security": [
           {
             "bearerAuth": []
@@ -1478,6 +1585,331 @@
           },
           "422": {
             "$ref": "#/components/responses/Unprocessable"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "后台 · 商品"
+        ],
+        "summary": "删除商品（有订单引用返回 409，只能下架）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/products/{id}/duplicate": {
+      "post": {
+        "tags": [
+          "后台 · 商品"
+        ],
+        "summary": "复制为草稿（库存归零、评分清零）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminProductEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/uploads": {
+      "post": {
+        "tags": [
+          "后台 · 商品"
+        ],
+        "summary": "上传商品图（base64 JSON；JPG/PNG/WebP；≤5MB）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "dataUrl"
+                ],
+                "properties": {
+                  "dataUrl": {
+                    "type": "string",
+                    "description": "data:image/jpeg;base64,…"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/products/import/preview": {
+      "post": {
+        "tags": [
+          "后台 · 商品"
+        ],
+        "summary": "CSV 批量导入预检（只校验不写库）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "csv"
+                ],
+                "properties": {
+                  "csv": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportPreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/products/import": {
+      "post": {
+        "tags": [
+          "后台 · 商品"
+        ],
+        "summary": "CSV 批量导入（mode=abort 有错整体拒绝 / valid-only 跳过错误行）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "csv"
+                ],
+                "properties": {
+                  "csv": {
+                    "type": "string"
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "abort",
+                      "valid-only"
+                    ],
+                    "default": "abort"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/products/import/template": {
+      "get": {
+        "tags": [
+          "后台 · 商品"
+        ],
+        "summary": "下载 CSV 模板（UTF-8 BOM）",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV 文件",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/uploads/{file}": {
+      "get": {
+        "tags": [
+          "公开 · 静态"
+        ],
+        "summary": "商品图（数据卷里的 uploads/，未命中返回 404 不走 SPA 兜底）",
+        "parameters": [
+          {
+            "name": "file",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "图片二进制",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -2890,19 +3322,85 @@
           "id": {
             "type": "string"
           },
+          "handle": {
+            "type": "string"
+          },
           "title": {
             "type": "string"
           },
-          "handle": {
+          "desc": {
+            "type": "string"
+          },
+          "cat": {
+            "type": "string",
+            "enum": [
+              "necklaces",
+              "bracelets",
+              "anklets",
+              "rings",
+              "hair"
+            ]
+          },
+          "motif": {
+            "type": "string"
+          },
+          "set": {
             "type": "string"
           },
           "price": {
             "type": "number"
           },
+          "compareAt": {
+            "type": "number",
+            "nullable": true
+          },
           "cost": {
-            "type": "number"
+            "type": "number",
+            "nullable": true,
+            "description": "仅 owner 可见；ops 取到 null"
+          },
+          "badge": {
+            "type": "string",
+            "nullable": true
+          },
+          "currency": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sizes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "collections": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "details": {
+            "type": "object",
+            "description": "material / pendant / chain / weight"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Variant"
+            }
           },
           "stock": {
+            "type": "integer"
+          },
+          "rating": {
+            "type": "number"
+          },
+          "reviewCount": {
             "type": "integer"
           },
           "active": {
@@ -2911,23 +3409,40 @@
           "version": {
             "type": "integer"
           },
-          "variants": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Variant"
-            }
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "required": [
           "id",
-          "title",
           "handle",
+          "title",
+          "desc",
+          "cat",
+          "motif",
+          "set",
           "price",
+          "compareAt",
           "cost",
+          "badge",
+          "currency",
+          "images",
+          "sizes",
+          "collections",
+          "details",
+          "variants",
           "stock",
+          "rating",
+          "reviewCount",
           "active",
           "version",
-          "variants"
+          "createdAt",
+          "updatedAt"
         ]
       },
       "AdminProductEnvelope": {
@@ -2949,37 +3464,486 @@
           "data"
         ]
       },
+      "VariantInput": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string",
+            "description": "留空自动生成 TG-{id}-{GO|SI|RO}；3–32 位 A-Z / 0-9 / -"
+          },
+          "metal": {
+            "type": "string",
+            "enum": [
+              "Gold",
+              "Silver",
+              "Rose Gold"
+            ]
+          },
+          "price": {
+            "type": "number",
+            "description": "留空继承主价"
+          },
+          "stock": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "metal",
+          "stock"
+        ]
+      },
+      "ProductCreate": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "cat": {
+            "type": "string",
+            "enum": [
+              "necklaces",
+              "bracelets",
+              "anklets",
+              "rings",
+              "hair"
+            ]
+          },
+          "price": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "variants": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/components/schemas/VariantInput"
+            }
+          },
+          "handle": {
+            "type": "string",
+            "description": "留空则从标题推导；撞名自动加 -2"
+          },
+          "desc": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "cost": {
+            "type": "number",
+            "minimum": 0,
+            "description": "仅 owner 可写；不得高于售价"
+          },
+          "compareAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "划价，必须高于 price"
+          },
+          "motif": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "set": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "badge": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "New",
+              "Bestseller"
+            ],
+            "description": "其他值会被归一为 null"
+          },
+          "sizes": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "type": "string"
+            }
+          },
+          "collections": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "只接受库里已存在的 handle"
+          },
+          "images": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {
+              "type": "string"
+            },
+            "description": "uploads/… 或 assets/img/…；草稿可为空"
+          },
+          "details": {
+            "type": "object",
+            "properties": {
+              "material": {
+                "type": "string"
+              },
+              "pendant": {
+                "type": "string"
+              },
+              "chain": {
+                "type": "string"
+              },
+              "weight": {
+                "type": "string"
+              }
+            },
+            "required": []
+          }
+        },
+        "required": [
+          "title",
+          "cat",
+          "price",
+          "variants"
+        ]
+      },
       "ProductPatch": {
         "type": "object",
         "properties": {
+          "version": {
+            "type": "integer",
+            "description": "乐观锁：传当前 version，不一致返回 409"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "desc": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "handle": {
+            "type": "string",
+            "description": "只在显式传入时变更，避免已投放的链接变 404"
+          },
+          "cat": {
+            "type": "string",
+            "enum": [
+              "necklaces",
+              "bracelets",
+              "anklets",
+              "rings",
+              "hair"
+            ]
+          },
+          "motif": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "set": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "badge": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "New",
+              "Bestseller"
+            ],
+            "description": "其他值会被归一为 null"
+          },
           "price": {
-            "type": "number"
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "不得低于 cost；变体价按原比例跟随"
           },
           "compareAt": {
             "type": "number",
             "nullable": true
           },
           "cost": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0,
+            "description": "仅 owner 可写，ops 写入返回 403"
+          },
+          "variants": {
+            "type": "array",
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/components/schemas/VariantInput"
+            },
+            "description": "整表替换；库存差自动写流水"
+          },
+          "images": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {
+              "type": "string"
+            },
+            "description": "整表替换；草稿可空，上架时校验"
+          },
+          "sizes": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "type": "string"
+            }
+          },
+          "collections": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "details": {
+            "type": "object",
+            "properties": {
+              "material": {
+                "type": "string"
+              },
+              "pendant": {
+                "type": "string"
+              },
+              "chain": {
+                "type": "string"
+              },
+              "weight": {
+                "type": "string"
+              }
+            },
+            "required": []
           },
           "active": {
-            "type": "boolean"
-          },
-          "badge": {
-            "type": "string",
-            "nullable": true
-          },
-          "title": {
-            "type": "string"
-          },
-          "desc": {
-            "type": "string"
-          },
-          "version": {
-            "type": "integer"
+            "type": "boolean",
+            "description": "false→true 时走 guardPublish（需有图 / 有变体 / 价大于 0）"
           }
         },
         "required": []
+      },
+      "DeleteResult": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "deleted": {
+                "type": "string",
+                "description": "被删除的商品 id"
+              }
+            },
+            "required": [
+              "deleted"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "UploadResult": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "写回商品的相对路径，如 uploads/1731-abc.jpg"
+              },
+              "file": {
+                "type": "string"
+              },
+              "bytes": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "path",
+              "file",
+              "bytes"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ImportErrorRow": {
+        "type": "object",
+        "properties": {
+          "line": {
+            "type": "integer"
+          },
+          "column": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "line",
+          "column",
+          "message"
+        ]
+      },
+      "ImportPreview": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "totalRows": {
+                "type": "integer"
+              },
+              "groupCount": {
+                "type": "integer"
+              },
+              "validGroups": {
+                "type": "integer"
+              },
+              "errorCount": {
+                "type": "integer"
+              },
+              "errors": {
+                "type": "array",
+                "maxItems": 200,
+                "items": {
+                  "$ref": "#/components/schemas/ImportErrorRow"
+                }
+              },
+              "warnings": {
+                "type": "array",
+                "maxItems": 100,
+                "items": {
+                  "$ref": "#/components/schemas/ImportErrorRow"
+                }
+              },
+              "groups": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "category": {
+                      "type": "string",
+                      "enum": [
+                        "necklaces",
+                        "bracelets",
+                        "anklets",
+                        "rings",
+                        "hair"
+                      ]
+                    },
+                    "price": {
+                      "type": "number"
+                    },
+                    "variants": {
+                      "type": "integer"
+                    },
+                    "stock": {
+                      "type": "integer"
+                    },
+                    "handle": {
+                      "type": "string"
+                    },
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "title",
+                    "category",
+                    "price",
+                    "variants",
+                    "stock",
+                    "handle",
+                    "ok"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "totalRows",
+              "groupCount",
+              "validGroups",
+              "errorCount",
+              "errors",
+              "warnings",
+              "groups"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ImportResult": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "created": {
+                "type": "integer"
+              },
+              "skipped": {
+                "type": "integer"
+              },
+              "products": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "handle": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "variants": {
+                      "type": "integer"
+                    },
+                    "stock": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "handle",
+                    "title",
+                    "variants",
+                    "stock"
+                  ]
+                }
+              },
+              "errors": {
+                "type": "array",
+                "maxItems": 200,
+                "items": {
+                  "$ref": "#/components/schemas/ImportErrorRow"
+                }
+              }
+            },
+            "required": [
+              "created",
+              "skipped",
+              "products",
+              "errors"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
       },
       "Review": {
         "type": "object",
@@ -5065,6 +6029,16 @@
       },
       "RateLimited": {
         "description": "超过限流阈值",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorBody"
+            }
+          }
+        }
+      },
+      "PayloadTooLarge": {
+        "description": "上传体超过上限（图片 ≤5MB，请求体 ≤8MB）",
         "content": {
           "application/json": {
             "schema": {

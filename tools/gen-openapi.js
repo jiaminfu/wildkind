@@ -253,17 +253,73 @@ const paths = {
   /* --- 后台商品与库存 --- */
   [BASE + '/admin/products']: {
     get: {
-      tags: ['后台 · 商品'], summary: '商品列表（含成本与 version）', security: auth,
+      tags: ['后台 · 商品'], summary: '商品列表（含 version；cost 仅 owner 可见）', security: auth,
       parameters: [{ name: 'q', in: 'query', schema: { type: 'string' } }],
       responses: { 200: { description: '成功', content: { 'application/json': { schema: { type: 'object', properties: { data: { type: 'array', items: { $ref: '#/components/schemas/AdminProduct' } } } } } }, 401: errRef('Unauthorized'), 403: errRef('Forbidden') } },
     },
+    post: {
+      tags: ['后台 · 商品'], summary: '新建商品（默认草稿，自动生成 id / handle / sku）', security: auth,
+      requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/ProductCreate' } } } },
+      responses: { 201: okJson('AdminProductEnvelope'), 400: errRef('BadRequest'), 401: errRef('Unauthorized'), 403: errRef('Forbidden'), 422: errRef('Unprocessable') },
+    },
   },
   [BASE + '/admin/products/{id}']: {
+    get: {
+      tags: ['后台 · 商品'], summary: '单件详情（编辑抽屉用，id 或 handle）', security: auth,
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+      responses: { 200: okJson('AdminProductEnvelope'), 401: errRef('Unauthorized'), 403: errRef('Forbidden'), 404: errRef('NotFound') },
+    },
     patch: {
-      tags: ['后台 · 商品'], summary: '改商品（乐观锁；改价不得低于成本）', security: auth,
+      tags: ['后台 · 商品'], summary: '改商品（乐观锁；改价不得低于成本；草稿转上架校验图片与变体）', security: auth,
       parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
       requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/ProductPatch' } } } },
       responses: { 200: okJson('AdminProductEnvelope'), 400: errRef('BadRequest'), 401: errRef('Unauthorized'), 403: errRef('Forbidden'), 404: errRef('NotFound'), 409: errRef('Conflict'), 422: errRef('Unprocessable') },
+    },
+    delete: {
+      tags: ['后台 · 商品'], summary: '删除商品（有订单引用返回 409，只能下架）', security: auth,
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+      responses: { 200: okJson('DeleteResult'), 401: errRef('Unauthorized'), 403: errRef('Forbidden'), 404: errRef('NotFound'), 409: errRef('Conflict') },
+    },
+  },
+  [BASE + '/admin/products/{id}/duplicate']: {
+    post: {
+      tags: ['后台 · 商品'], summary: '复制为草稿（库存归零、评分清零）', security: auth,
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+      responses: { 201: okJson('AdminProductEnvelope'), 401: errRef('Unauthorized'), 403: errRef('Forbidden'), 404: errRef('NotFound') },
+    },
+  },
+  [BASE + '/admin/uploads']: {
+    post: {
+      tags: ['后台 · 商品'], summary: '上传商品图（base64 JSON；JPG/PNG/WebP；≤5MB）', security: auth,
+      requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['dataUrl'], properties: { dataUrl: { type: 'string', description: 'data:image/jpeg;base64,…' } } } } } },
+      responses: { 201: okJson('UploadResult'), 400: errRef('BadRequest'), 401: errRef('Unauthorized'), 403: errRef('Forbidden'), 413: errRef('PayloadTooLarge') },
+    },
+  },
+  [BASE + '/admin/products/import/preview']: {
+    post: {
+      tags: ['后台 · 商品'], summary: 'CSV 批量导入预检（只校验不写库）', security: auth,
+      requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['csv'], properties: { csv: { type: 'string' } } } } } },
+      responses: { 200: okJson('ImportPreview'), 400: errRef('BadRequest'), 401: errRef('Unauthorized'), 403: errRef('Forbidden') },
+    },
+  },
+  [BASE + '/admin/products/import']: {
+    post: {
+      tags: ['后台 · 商品'], summary: 'CSV 批量导入（mode=abort 有错整体拒绝 / valid-only 跳过错误行）', security: auth,
+      requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['csv'], properties: { csv: { type: 'string' }, mode: { type: 'string', enum: ['abort', 'valid-only'], default: 'abort' } } } } } },
+      responses: { 201: okJson('ImportResult'), 400: errRef('BadRequest'), 401: errRef('Unauthorized'), 403: errRef('Forbidden'), 422: errRef('Unprocessable') },
+    },
+  },
+  [BASE + '/admin/products/import/template']: {
+    get: {
+      tags: ['后台 · 商品'], summary: '下载 CSV 模板（UTF-8 BOM）', security: auth,
+      responses: { 200: { description: 'CSV 文件', content: { 'text/csv': { schema: { type: 'string' } } } }, 401: errRef('Unauthorized'), 403: errRef('Forbidden') },
+    },
+  },
+  ['/uploads/{file}']: {
+    get: {
+      tags: ['公开 · 静态'], summary: '商品图（数据卷里的 uploads/，未命中返回 404 不走 SPA 兜底）',
+      parameters: [{ name: 'file', in: 'path', required: true, schema: { type: 'string' } }],
+      responses: { 200: { description: '图片二进制', content: { 'image/jpeg': { schema: { type: 'string', format: 'binary' } } } }, 404: errRef('NotFound') },
     },
   },
   [BASE + '/admin/products/{id}/variants/{sku}/restock']: {
@@ -463,15 +519,109 @@ const schemas = {
     createdAt: { type: 'string', nullable: true },
   }),
   AdminProduct: S({
-    id: str, title: str, handle: str, price: num, cost: num, stock: int,
-    active: bool, version: int, variants: arr('Variant'),
+    id: str, handle: str, title: str, desc: str,
+    cat: { type: 'string', enum: ['necklaces', 'bracelets', 'anklets', 'rings', 'hair'] },
+    motif: str, set: str, price: num,
+    compareAt: { type: 'number', nullable: true },
+    cost: { type: 'number', nullable: true, description: '仅 owner 可见；ops 取到 null' },
+    badge: { type: 'string', nullable: true }, currency: str,
+    images: { type: 'array', items: str },
+    sizes: { type: 'array', items: str },
+    collections: { type: 'array', items: str },
+    details: { type: 'object', description: 'material / pendant / chain / weight' },
+    variants: arr('Variant'),
+    stock: int, rating: num, reviewCount: int,
+    active: bool, version: int,
+    createdAt: { type: 'string', format: 'date-time' },
+    updatedAt: { type: 'string', format: 'date-time' },
   }),
   AdminProductEnvelope: S({ data: S({ product: { $ref: '#/components/schemas/AdminProduct' } }) }),
+
+  /* 变体入参：sku / price 可留空，服务端按 id 与主价自动生成 */
+  VariantInput: S({
+    sku: { type: 'string', description: '留空自动生成 TG-{id}-{GO|SI|RO}；3–32 位 A-Z / 0-9 / -' },
+    metal: { type: 'string', enum: ['Gold', 'Silver', 'Rose Gold'] },
+    price: { type: 'number', description: '留空继承主价' },
+    stock: { type: 'integer', minimum: 0 },
+  }, ['metal', 'stock']),
+
+  ProductCreate: S({
+    title: { type: 'string', maxLength: 120 },
+    cat: { type: 'string', enum: ['necklaces', 'bracelets', 'anklets', 'rings', 'hair'] },
+    price: { type: 'number', exclusiveMinimum: 0 },
+    variants: { type: 'array', minItems: 1, maxItems: 12, items: { $ref: '#/components/schemas/VariantInput' } },
+    handle: { type: 'string', description: '留空则从标题推导；撞名自动加 -2' },
+    desc: { type: 'string', maxLength: 2000 },
+    cost: { type: 'number', minimum: 0, description: '仅 owner 可写；不得高于售价' },
+    compareAt: { type: 'number', nullable: true, description: '划价，必须高于 price' },
+    motif: { type: 'string', maxLength: 40 },
+    set: { type: 'string', maxLength: 40 },
+    badge: { type: 'string', nullable: true, enum: ['New', 'Bestseller'], description: '其他值会被归一为 null' },
+    sizes: { type: 'array', maxItems: 5, items: str },
+    collections: { type: 'array', items: str, description: '只接受库里已存在的 handle' },
+    images: { type: 'array', maxItems: 6, items: str, description: 'uploads/… 或 assets/img/…；草稿可为空' },
+    details: S({ material: str, pendant: str, chain: str, weight: str }, []),
+  }, ['title', 'cat', 'price', 'variants']),
+
+  /* 一个接口覆盖所有可编辑字段，前端抽屉整包提交。
+     version 是乐观锁，不一致返回 409 并给出 currentVersion。 */
   ProductPatch: S({
-    price: num, compareAt: { type: 'number', nullable: true }, cost: num,
-    active: bool, badge: { type: 'string', nullable: true },
-    title: str, desc: str, version: int,
+    version: { type: 'integer', description: '乐观锁：传当前 version，不一致返回 409' },
+    title: { type: 'string', maxLength: 120 },
+    desc: { type: 'string', maxLength: 2000 },
+    handle: { type: 'string', description: '只在显式传入时变更，避免已投放的链接变 404' },
+    cat: { type: 'string', enum: ['necklaces', 'bracelets', 'anklets', 'rings', 'hair'] },
+    motif: { type: 'string', maxLength: 40 },
+    set: { type: 'string', maxLength: 40 },
+    badge: { type: 'string', nullable: true, enum: ['New', 'Bestseller'], description: '其他值会被归一为 null' },
+    price: { type: 'number', exclusiveMinimum: 0, description: '不得低于 cost；变体价按原比例跟随' },
+    compareAt: { type: 'number', nullable: true },
+    cost: { type: 'number', minimum: 0, description: '仅 owner 可写，ops 写入返回 403' },
+    variants: { type: 'array', maxItems: 12, items: { $ref: '#/components/schemas/VariantInput' }, description: '整表替换；库存差自动写流水' },
+    images: { type: 'array', maxItems: 6, items: str, description: '整表替换；草稿可空，上架时校验' },
+    sizes: { type: 'array', maxItems: 5, items: str },
+    collections: { type: 'array', items: str },
+    details: S({ material: str, pendant: str, chain: str, weight: str }, []),
+    active: { type: 'boolean', description: 'false→true 时走 guardPublish（需有图 / 有变体 / 价大于 0）' },
   }, []),
+
+  DeleteResult: S({ data: S({ deleted: { type: 'string', description: '被删除的商品 id' } }) }),
+  UploadResult: S({
+    data: S({
+      path: { type: 'string', description: '写回商品的相对路径，如 uploads/1731-abc.jpg' },
+      file: str, bytes: int,
+    }),
+  }),
+
+  ImportErrorRow: S({ line: int, column: str, message: str }),
+
+  ImportPreview: S({
+    data: S({
+      totalRows: int,
+      groupCount: int,
+      validGroups: int,
+      errorCount: int,
+      errors: { type: 'array', maxItems: 200, items: { $ref: '#/components/schemas/ImportErrorRow' } },
+      warnings: { type: 'array', maxItems: 100, items: { $ref: '#/components/schemas/ImportErrorRow' } },
+      groups: {
+        type: 'array',
+        items: S({
+          key: str, title: str,
+          category: { type: 'string', enum: ['necklaces', 'bracelets', 'anklets', 'rings', 'hair'] },
+          price: num, variants: int, stock: int, handle: str, ok: bool,
+        }),
+      },
+    }),
+  }),
+
+  ImportResult: S({
+    data: S({
+      created: int,
+      skipped: int,
+      products: { type: 'array', items: S({ id: str, handle: str, title: str, variants: int, stock: int }) },
+      errors: { type: 'array', maxItems: 200, items: { $ref: '#/components/schemas/ImportErrorRow' } },
+    }),
+  }),
   Review: S({ id: str, name: str, rating: int, title: str, body: str, createdAt: str, verified: bool }),
   RelatedItem: S({ id: str, handle: str, title: str, price: num, image: str }),
   ProductDetail: S({ product: { $ref: '#/components/schemas/Product' }, reviews: arr('Review'), related: arr('RelatedItem') }),
@@ -657,7 +807,7 @@ const doc = {
   openapi: '3.0.3',
   info: {
     title: 'TIDEGLASS API',
-    version: '1.0.0',
+    version: '1.2.0',
     description: [
       'TIDEGLASS 跨境饰品独立站接口。',
       '',
@@ -670,7 +820,7 @@ const doc = {
       '',
       '**权限**：Bearer Token（12 小时，可吊销），按 10 个权限位鉴权，不按角色判断。',
       '',
-      '详细说明见《API 接口文档 v1.0》。',
+      '详细说明见《API 接口文档 v1.2》。',
     ].join('\n'),
     license: { name: 'Proprietary' },
   },
@@ -688,6 +838,11 @@ const doc = {
     { name: '后台 · 营销', description: '优惠码' },
     { name: '后台 · 评价', description: '评价审核' },
     { name: '后台 · 设置', description: '站点设置与审计日志' },
+    { name: '后台 · 集合', description: '集合的新建 / 改 / 删' },
+    { name: '后台 · 内容', description: '首页文案与内容页导语' },
+    { name: '门店 · 定制', description: '匿名提交定制需求（公开）' },
+    { name: '后台 · 定制', description: '定制需求单的报价与流转' },
+    { name: '公开 · 静态', description: '商品图等静态资源' },
   ],
   paths,
   components: {
@@ -710,6 +865,7 @@ const doc = {
       OutOfStock: { description: '库存不足，整单拒绝（不部分成交）', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorBody' } } } },
       CouponInvalid: { description: '优惠码不可用，details.reason 细分原因', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorBody' } } } },
       RateLimited: { description: '超过限流阈值', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorBody' } } } },
+      PayloadTooLarge: { description: '上传体超过上限（图片 ≤5MB，请求体 ≤8MB）', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorBody' } } } },
       Internal: { description: '服务端未预期错误', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorBody' } } } },
     },
   },
