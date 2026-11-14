@@ -10,6 +10,8 @@ const os = require('os');
 const EDGE = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9444;
 const BASE = process.argv[2] || 'http://127.0.0.1:4610';
+const EMAIL = process.env.TG_EMAIL || 'owner@tideglassjewelry.com';
+const PW = process.env.TG_PW || 'tideglass2026';
 const SHOTS = path.join(os.tmpdir(), 'tg-e2e-shots');
 const PROF = path.join(os.tmpdir(), 'edge_e2e_prof');
 const IMG = path.resolve(__dirname, '..', 'app', 'web', 'assets', 'img', 'opt',
@@ -108,7 +110,7 @@ function get(url) {
     await evalJs(`
       (function(){
         var e=document.querySelector('input[name=email]'), p=document.querySelector('input[name=password]');
-        e.value='owner@tideglassjewelry.com'; p.value='tideglass2026';
+        e.value='${EMAIL}'; p.value='${PW}';
         document.querySelector('form[data-act=login]').requestSubmit();
         return true;
       })()
@@ -118,7 +120,7 @@ function get(url) {
 
     /* 2. 打开 Products */
     await send('Page.navigate', { url: BASE + '/#/admin/products' });
-    await wait(1400);
+    await wait(2600);
     const hasNewBtn = await evalJs(`!!document.querySelector('[data-act=pnew]')`);
     ok('Products 页有 New product 按钮', hasNewBtn);
     await shot('01-products');
@@ -167,8 +169,8 @@ function get(url) {
     const node = await send('DOM.querySelector', { nodeId: doc.root.nodeId, selector: '#pFile' });
     await send('DOM.setFileInputFiles', { files: [IMG], nodeId: node.nodeId });
     let uploaded = 0;
-    for (let i = 0; i < 20; i++) {
-      await wait(400);
+    for (let i = 0; i < 90; i++) {          // 跨境线路上传可能十几秒，给足 45 秒
+      await wait(500);
       uploaded = await evalJs(`document.querySelectorAll('#pImgs .imgcell.on').length`);
       if (uploaded) break;
     }
@@ -186,7 +188,7 @@ function get(url) {
 
     /* 7. 保存 */
     await evalJs(`document.querySelector('[data-act=psave]').click()`);
-    await wait(1600);
+    await wait(3000);
     ok('保存后抽屉关闭', !(await evalJs(`document.body.classList.contains('pedit-open')`)));
     const listed = await evalJs(`
       (function(){
@@ -217,7 +219,7 @@ function get(url) {
         return true;
       })()
     `);
-    await wait(1400);
+    await wait(2600);
     ok('上架后显示 Live', await evalJs(`
       (function(){
         var tr=[].filter.call(document.querySelectorAll('.atable tbody tr'),function(t){return t.innerText.indexOf('E2E Sea Glass Pendant')>=0;})[0];
@@ -250,7 +252,7 @@ function get(url) {
 
     /* 10. 编辑已存在商品：改标题不应改 URL */
     await send('Page.navigate', { url: BASE + '/#/admin/products' });
-    await wait(1400);
+    await wait(2600);
     await evalJs(`
       (function(){
         var tr=[].filter.call(document.querySelectorAll('.atable tbody tr'),function(t){return t.innerText.indexOf('E2E Sea Glass Pendant')>=0;})[0];
@@ -269,7 +271,7 @@ function get(url) {
         document.querySelector('[data-act=psave]').click(); return true;
       })()
     `);
-    await wait(1600);
+    await wait(3000);
     ok('改标题后仍在列表', await evalJs(`document.body.innerText.indexOf('E2E Renamed Pendant')>=0`));
     ok('URL handle 未变', (await evalJs(`
       (function(){

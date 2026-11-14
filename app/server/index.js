@@ -220,6 +220,20 @@ process.on('uncaughtException', e => console.error('[uncaughtException]', e));
 process.on('unhandledRejection', e => console.error('[unhandledRejection]', e));
 
 store.load();
+
+/* 上传的图片在保存商品之前就已经落盘了：中途放弃、删商品、换图都会留下孤儿文件。
+   每小时扫一次，只删「没被任何商品引用且超过 24 小时」的，避免误删正在编辑的图。 */
+(function sweepLoop() {
+  const run = () => {
+    try {
+      const n = uploads.sweepOrphans(store.get());
+      if (n) console.log('[uploads] 已清理 %d 张未被引用的图片', n);
+    } catch (e) { console.error('[uploads] 清理失败', e.message); }
+  };
+  setTimeout(run, 60 * 1000).unref();
+  setInterval(run, 60 * 60 * 1000).unref();
+})();
+
 server.listen(PORT, () => {
   const db = store.get();
   console.log('TIDEGLASS API 已启动 → http://localhost:' + PORT);

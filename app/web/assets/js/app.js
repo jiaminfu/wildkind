@@ -746,16 +746,23 @@
     if (!files.length) return;
 
     S.toast('Uploading ' + files.length + ' image(s)…', '');
+    var hint = dEl('pImgHint');
+    var done = 0;
     for (var i = 0; i < files.length; i++) {
+      /* 跨境线路下一张 100 KB 的图也可能要十几秒。
+         没有进度的话，用户以为没反应，会重复点「Add image」。 */
+      if (hint) hint.textContent = 'Uploading ' + (i + 1) + ' of ' + files.length + '… please wait';
       try {
         var dataUrl = await compressImage(files[i]);
         var res = await API.post('/admin/uploads', { dataUrl: dataUrl }, { auth: true });
         editing.images.push(res.data.path);
-        renderDrawerImages();
+        done++;
       } catch (e) {
         S.toast(e.message || 'Upload failed', 'err');
       }
     }
+    renderDrawerImages();
+    if (done) S.toast(done + ' image(s) ready', 'ok');
   });
 
   /* 拖拽换序：第一张就是前台主图 */
