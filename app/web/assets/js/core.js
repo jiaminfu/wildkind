@@ -10,11 +10,15 @@
 
   var CART_KEY = 'tideglass_cart_v1';
   var COUPON_KEY = 'tideglass_coupon_v1';
+  var WISH_KEY = 'tideglass_wish_v1';
 
   var U = {
+    /* 价格显示遵循 DTC 惯例：整数不带小数（$48），有零头才显示两位（$48.50）。
+       全线 $48.00 看起来像淘宝后台截图，和页面其他部分的气质不搭。 */
     money: function (n) {
       var v = Number(n) || 0;
-      return '$' + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      var s = (Math.round(v * 100) / 100).toFixed(2).replace(/\.00$/, '');
+      return '$' + s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     },
     money0: function (n) {
       var v = Number(n) || 0;
@@ -39,10 +43,70 @@
       var d = new Date(iso);
       return Math.max(0, Math.round((Date.now() - d.getTime()) / 86400000));
     },
+    /* 星级：半边星按 0.25 为界。
+       以前只区分 on / 未加 on，而 CSS 里 .st 一律金色，空心和实心长得一模一样——
+       0 条评价的商品照样显示五颗满星，等于骗人。现在由 CSS 区分空心与实心。 */
     stars: function (n) {
-      var full = Math.floor(n), out = '';
-      for (var i = 0; i < 5; i++) out += '<span class="' + (i < full ? 'on' : '') + '">★</span>';
+      var v = Math.max(0, Math.min(5, Number(n) || 0));
+      var out = '';
+      for (var i = 0; i < 5; i++) {
+        var cls = (v - i) >= 0.75 ? 'on' : ((v - i) >= 0.25 ? 'half' : '');
+        out += '<span class="' + cls + '">★</span>';
+      }
       return out;
+    },
+    /* 把一个 opt 目录下的图片路径拆成 srcset 所需的信息。
+       不是 opt 里的图（外链、运营临时填的地址）返回 null，调用方退回普通 img。
+       两档宽度必须和 tools/opt-img2.js 里的 widthsFor() 保持一致。 */
+    picParts: function (src) {
+      var s = String(src == null ? '' : src);
+      /* img.src 读出来永远是带 origin 的绝对地址（详情页换图时会走到这里），
+         先剥掉同源前缀，否则下面认不出 assets/img/opt/ 这个特征。 */
+      try {
+        if (window.location && s.indexOf(window.location.origin) === 0) {
+          s = s.slice(window.location.origin.length);
+        }
+      } catch (e) { }
+      var m = /^(.*\/)?img\/opt\/([A-Za-z0-9_.-]+)\.(?:jpg|jpeg|png|webp)$/i.exec(s);
+      if (!m) return null;
+      var dir = (m[1] || '') + 'img/opt/';
+      var base = m[2];
+      var widths = /^hero-/.test(base) ? [700, 1100] : (/^c-/.test(base) ? [400, 820] : [440, 900]);
+      return {
+        dir: dir,
+        base: base,
+        widths: widths,
+        set: widths.map(function (w) { return dir + base + '-' + w + '.webp ' + w + 'w'; }).join(', ')
+      };
+    },
+    /* 响应式图片（D-111 / D-112）。
+       库里存的是 assets/img/opt/<name>.jpg 这个「兜底档」（约 70–190KB），
+       真正下发给浏览器的是同名两档 WebP + sizes 提示：手机上只下 440w 那档（12–30KB），
+       桌面才取 900w。原始 PNG 是 1.2–3.3MB，一个商品列表页就能吃掉几十兆流量。 */
+    pic: function (src, o) {
+      o = o || {};
+      var s = String(src == null ? '' : src);
+      var alt = o.alt == null ? '' : o.alt;
+      var cls = o.cls ? ' class="' + o.cls + '"' : '';
+      var wh = (o.w && o.h) ? ' width="' + o.w + '" height="' + o.h + '"' : '';
+      var load = o.priority ? ' fetchpriority="high"' : ' loading="lazy"';
+      var extra = o.extra ? ' ' + o.extra : '';
+      var p = U.picParts(s);
+      if (!p) {
+        return '<img src="' + U.esc(s) + '" alt="' + U.esc(alt) + '"' + wh + load +
+          ' decoding="async"' + cls + extra + '>';
+      }
+      var sizes = o.sizes || '(max-width:640px) 46vw, (max-width:1024px) 31vw, 320px';
+      var html = '<picture' + (o.defer ? ' data-defer="1"' : '') + '>' +
+        '<source type="image/webp" srcset="' + p.set + '" sizes="' + sizes + '">' +
+        '<img src="' + U.esc(s) + '" alt="' + U.esc(alt) + '"' + wh + load +
+        ' decoding="async"' + cls + extra + '></picture>';
+      /* defer：把真实地址降级成 data-*，浏览器不会去下载。
+         首图之外的轮播图用它——用户不点圆点就永远用不上，白下 100 多 KB。 */
+      if (o.defer) {
+        html = html.replace(' srcset="', ' data-srcset="').replace('<img src="', '<img data-src="');
+      }
+      return html;
     }
   };
 
@@ -51,6 +115,7 @@
     boot: null,               // /bootstrap 结果
     cart: loadCart(),
     coupon: loadCoupon(),
+    wish: loadJSON(WISH_KEY, []) || [],   // 收藏的 handle 列表，访客也能用
     quote: null,              // 服务端最近一次报价
     lastOrder: loadJSON('tideglass_last_order', null),
     admin: loadJSON('tideglass_admin', null),
@@ -271,6 +336,22 @@
     return (state.boot && state.boot.nav) || [];
   }
 
+  /* ---------------- 收藏 ----------------
+     头部心形图标原先链到 #/account/wishlist，但那条路由从未实现，
+     点进去落到了「订单查询」页——图标说 Wishlist、页面是查单，很突兀。
+     现在是真的能用了：存 localStorage，访客无需登录；商品从 /products?handles= 批量取。 */
+  function wishHas(handle) {
+    return state.wish.indexOf(handle) >= 0;
+  }
+  function wishToggle(handle) {
+    var i = state.wish.indexOf(handle);
+    if (i >= 0) state.wish.splice(i, 1);
+    else state.wish.push(handle);
+    saveJSON(WISH_KEY, state.wish);
+    return i < 0;   // true = 刚加入
+  }
+  function wishCount() { return state.wish.length; }
+
   window.S = {
     U: U,
     get DB() { return DB; },
@@ -287,6 +368,7 @@
     emptyCart: emptyCart,
     rawSubtotal: rawSubtotal,
     persistCoupon: persistCoupon,
+    wishHas: wishHas, wishToggle: wishToggle, wishCount: wishCount,
     parseHash: parseHash,
     go: go,
     onClick: onClick, onSubmit: onSubmit, onChange: onChange,

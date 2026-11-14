@@ -1,0 +1,90 @@
+{
+  "generatedAt": "2026-11-14T14:10:29.421Z",
+  "quality": 0.82,
+  "items": [
+    {
+      "f": "c-celestial.png",
+      "src": "1319KB",
+      "srcDim": "820x820",
+      "made": "400w=14KB  820w=70KB"
+    },
+    {
+      "f": "c-ocean.png",
+      "src": "1606KB",
+      "srcDim": "820x820",
+      "made": "400w=23KB  820w=113KB"
+    },
+    {
+      "f": "c-woodland.png",
+      "src": "1450KB",
+      "srcDim": "820x820",
+      "made": "400w=14KB  820w=67KB"
+    },
+    {
+      "f": "hero-necklaces.png",
+      "src": "3314KB",
+      "srcDim": "1100x1375",
+      "made": "700w=58KB  1100w=117KB"
+    },
+    {
+      "f": "p-anklet-shell-gold.png",
+      "src": "1832KB",
+      "srcDim": "900x900",
+      "made": "440w=30KB  900w=104KB"
+    },
+    {
+      "f": "p-bracelet-beaded-gold.png",
+      "src": "1404KB",
+      "srcDim": "900x900",
+      "made": "440w=15KB  900w=51KB"
+    },
+    {
+      "f": "p-bracelet-clover-silver.png",
+      "src": "1739KB",
+      "srcDim": "900x900",
+      "made": "440w=24KB  900w=103KB"
+    },
+    {
+      "f": "p-earrings-hoop-gold.png",
+      "src": "1483KB",
+      "srcDim": "900x900",
+      "made": "440w=14KB  900w=52KB"
+    },
+    {
+      "f": "p-necklace-fox-gold.png",
+      "src": "1465KB",
+      "srcDim": "900x900",
+      "made": "440w=21KB  900w=82KB"
+    },
+    {
+      "f": "p-necklace-moon-silver.png",
+      "src": "1330KB",
+      "srcDim": "900x900",
+      "made": "440w=12KB  900w=50KB"
+    },
+    {
+      "f": "p-necklace-pearl-gold.png",
+      "src": "1749KB",
+      "srcDim": "900x900",
+      "made": "440w=19KB  900w=102KB"
+    },
+    {
+      "f": "p-necklace-sun-gold.png",
+      "src": "1481KB",
+      "srcDim": "900x900",
+      "made": "440w=11KB  900w=47KB"
+    },
+    {
+      "f": "p-necklace-turtle-silver.png",
+      "src": "1265KB",
+      "srcDim": "900x900",
+      "made": "440w=12KB  900w=48KB"
+    },
+    {
+      "f": "p-rings-stack-gold.png",
+      "src": "1231KB",
+      "srcDim": "900x900",
+      "made": "440w=11KB  900w=39KB"
+    }
+  ]
+}

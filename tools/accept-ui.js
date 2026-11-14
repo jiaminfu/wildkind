@@ -427,6 +427,321 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
     const injectedImgs = await ev(`document.querySelectorAll('img[src="x"]').length`);
     ok('U8', '页面没有被注入的 <img src=x> 节点', injectedImgs === 0, 'found=' + injectedImgs);
 
+    /* ═══ U10 本轮修复项（搜索 / 收藏 / 评价 / 导出 / SEO） ═══ */
+    console.log('\n─── U10 搜索 · 收藏 · 评价 · SEO ───');
+
+    /* 搜索：从浮层输入到结果页，全站范围 */
+    await goto(BASE + '/', `document.querySelectorAll('a[href*="#/products/"]').length>0`, 35000);
+    await ev(`(function(){var b=document.querySelector('[data-act=open-search]');if(b)b.click();return true})()`);
+    await wait(500);
+    await ev(`(function(){var i=document.getElementById('searchInput');if(i){i.value='ring';i.dispatchEvent(new Event('input',{bubbles:true}))}return true})()`);
+    await wait(1400);
+    const liveRes = await ev(`document.querySelectorAll('#searchRes .slres').length`);
+    ok('U10', '搜索浮层输入即时出建议', liveRes >= 1, 'suggestions=' + liveRes);
+
+    await ev(`(function(){
+      var i=document.getElementById('searchInput');
+      i.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
+      return true;
+    })()`);
+    const onSearch = await waitFor(`location.hash.indexOf('#/search')===0 && document.querySelectorAll('.grid .card').length>0`, 25000);
+    const searchHash = await ev(`location.hash`);
+    ok('U10', '回车跳到独立搜索页 #/search?q= 并出结果', onSearch, 'hash=' + searchHash);
+    const searchCount = await ev(`document.querySelectorAll('.grid .card').length`);
+    ok('U10', '搜索结果非空（搜 ring 能搜到戒指）', searchCount >= 1, 'cards=' + searchCount);
+    const searchTitle = await ev(`document.title`);
+    ok('U10', '搜索页 title 含关键词（不再是全站同一句）',
+      searchTitle.indexOf('ring') >= 0, searchTitle);
+    await shot('15-search');
+
+    /* 收藏：详情页加心 → 头部角标 → 收藏页有卡片 */
+    await goto(BASE + '/#/collections/all', `document.querySelectorAll('.grid .card').length>0`, 30000);
+    const firstHandle = await ev(`(function(){
+      var a=document.querySelector('a[href*="#/products/"]');return a?a.getAttribute('href').replace('#/products/',''):''
+    })()`);
+    await goto(BASE + '/#/products/' + firstHandle, `!!document.querySelector('.pdp')`, 30000);
+    await wait(600);
+    await ev(`(function(){var b=document.querySelector('.pdp__wish');if(b)b.click();return true})()`);
+    await wait(700);
+    const wishBadge = await ev(`(function(){var e=document.getElementById('wishCount');return e?e.textContent.trim():''})()`);
+    ok('U10', '详情页点收藏后头部角标 +1', wishBadge === '1', 'badge=' + wishBadge);
+    await goto(BASE + '/#/account/wishlist', `!!document.querySelector('.collhead h1')`, 25000);
+    await wait(900);
+    const wishCards = await ev(`document.querySelectorAll('.grid .card').length`);
+    const wishHead = await ev(`(function(){var e=document.querySelector('.collhead h1');return e?e.innerText.trim():'(no h1)'})()`);
+    ok('U10', '收藏页展示已收藏商品（不再是「订单查询」页）',
+      wishCards >= 1 && /saved/i.test(wishHead), `cards=${wishCards} h1="${wishHead}"`);
+    await shot('16-wishlist');
+    /* 取消收藏，别把本地状态留给后面的用例 */
+    await ev(`(function(){var b=document.querySelector('.card__wish');if(b)b.click();return true})()`);
+    await wait(600);
+
+    /* 评价：表单存在 + 真提交 + 收到感谢文案 */
+    await goto(BASE + '/#/products/' + firstHandle, `!!document.querySelector('form[data-act=writereview]')`, 30000);
+    ok('U10', '详情页有「写评价」表单（UGC 入口存在）',
+      await ev(`!!document.querySelector('form[data-act=writereview] textarea[name=rbody]')`));
+    const rvEmail = 'ui.reviewer.' + SUF.toLowerCase() + '@example.com';
+    await ev(`(function(){
+      var f=document.querySelector('form[data-act=writereview]');
+      var set=function(n,v){var e=f.querySelector('[name='+n+']');if(e){e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))}};
+      set('rname','UI Reviewer'); set('remail','${rvEmail}');
+      set('rtitle','Wears well'); set('rbody','Wore it every day for two weeks, the colour has not moved at all.');
+      return true;
+    })()`);
+    await ev(`(function(){
+      var f=document.querySelector('form[data-act=writereview]');
+      f.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})); return true;
+    })()`);
+    const rvDone = await waitFor(`!!document.querySelector('.revy__done')`, 20000);
+    const rvDoneTxt = await ev(`(function(){var e=document.querySelector('.revy__done');return e?e.innerText.replace(/\\s+/g,' ').slice(0,90):''})()`);
+    ok('U10', '提交评价后显示「已收到，待审核」而不是报错', rvDone, rvDoneTxt);
+    await shot('17-review-form');
+
+    /* SEO：详情页标题、og、canonical、JSON-LD */
+    const seo = await ev(`(function(){
+      var g=function(s){var e=document.querySelector(s);return e?e.getAttribute('content')||e.getAttribute('href')||e.textContent:''};
+      return {
+        title: document.title,
+        desc: g('meta[name=description]'),
+        ogImage: g('meta[property="og:image"]'),
+        ogType: g('meta[property="og:type"]'),
+        canonical: g('link[rel=canonical]'),
+        ld: g('script[type="application/ld+json"]')
+      };
+    })()`);
+    ok('U10', '详情页 title 是该商品名（不再全站同一句）',
+      seo.title && seo.title.indexOf('TIDEGLASS') >= 0 && seo.title.indexOf('—') > 0,
+      seo.title);
+    ok('U10', '详情页有 og:image 与 og:type=product',
+      !!seo.ogImage && seo.ogType === 'product', 'image=' + (seo.ogImage || '').slice(-40) + ' type=' + seo.ogType);
+    ok('U10', '详情页有 canonical', /#\/products\//.test(seo.canonical || ''), seo.canonical);
+    let ldOk = false, ldType = '';
+    try {
+      const ld = JSON.parse(seo.ld || '{}');
+      const graph = ld['@graph'] || [ld];
+      ldType = graph.map(x => x['@type']).join(',');
+      ldOk = ldType.indexOf('Product') >= 0;
+    } catch (e) { ldType = 'parse-fail'; }
+    ok('U10', '详情页有 Product 结构化数据', ldOk, 'types=' + ldType);
+
+    /* 导航：所有下拉子项都必须落在已存在的集合上，不能 404 */
+    await goto(BASE + '/', `!!document.querySelector('.hdr__nav a')`, 25000);
+    const navHrefs = await ev(`(function(){
+      var out=[];document.querySelectorAll('.mega a[href^="#/collections/"]').forEach(function(a){out.push(a.getAttribute('href'))});
+      return Array.from(new Set(out));
+    })()`);
+    let deadNav = [];
+    for (const h of navHrefs.slice(0, 20)) {
+      const handle = h.replace('#/collections/', '');
+      const r = await fetch(BASE + '/api/v1/collections/' + encodeURIComponent(handle));
+      if (!r.ok) deadNav.push(handle);
+    }
+    ok('U10', '导航下拉没有死链（每个子项都有对应集合）',
+      deadNav.length === 0, `共 ${navHrefs.length} 个链接，死链：${JSON.stringify(deadNav)}`);
+
+    /* 价格格式：整数价不带 .00 */
+    await goto(BASE + '/#/collections/all', `document.querySelectorAll('.card__price b').length>0`, 30000);
+    const priceTexts = await ev(`(function(){
+      var o=[];document.querySelectorAll('.card__price b').forEach(function(b){o.push(b.innerText.trim())});
+      return o;
+    })()`);
+    ok('U10', '价格整数不显示 .00（DTC 惯例）',
+      priceTexts.length > 0 && !priceTexts.some(t => /\\.00$/.test(t)), JSON.stringify(priceTexts.slice(0, 6)));
+
+    /* 后台部分：沿用 U7 的登录态，掉了就再登一次 */
+    if (ADMIN_PASS) {
+      await goto(BASE + '/#/admin/orders', `!!document.querySelector('form[data-act=login]') || !!document.querySelector('.adm')`, 30000);
+      if (await ev(`!!document.querySelector('form[data-act=login]')`)) {
+        await ev(`(function(){
+          var s=function(n,v){var e=document.querySelector('[name='+n+']');if(!e)return;e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))};
+          s('email','${ADMIN_EMAIL}'); s('password','${ADMIN_PASS}'); return true;
+        })()`);
+        await ev(`(function(){document.querySelector('form[data-act=login]').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));return true})()`);
+        await waitFor(`!!document.querySelector('.adm')`, 20000);
+      }
+
+      const exportPages = [];
+      for (const [sec, label] of [['orders', '订单'], ['products', '商品'], ['customers', '客户']]) {
+        await goto(BASE + '/#/admin/' + sec, `document.body.innerText.length>100`, 30000);
+        await wait(700);
+        const has = await ev(`(function(){
+          var b=Array.from(document.querySelectorAll('[data-act=export]'));
+          return b.length>0 ? b[0].getAttribute('data-what') : '';
+        })()`);
+        exportPages.push([label, has]);
+      }
+      ok('U10', '后台三处都有 CSV 导出按钮',
+        exportPages.every(x => x[1]), JSON.stringify(exportPages));
+
+      /* 订单页状态 tab 覆盖 Cancelled / Delivered */
+      await goto(BASE + '/#/admin/orders', `document.querySelectorAll('.panel__bd a.abtn').length>3`, 30000);
+      const tabText = await ev(`(function(){
+        var o=[];document.querySelectorAll('.panel__bd a.abtn').forEach(function(a){o.push(a.innerText.trim())});
+        return o.join(',');
+      })()`);
+      ok('U10', '订单状态 tab 覆盖 Delivered 与 Cancelled',
+        /Delivered/.test(tabText) && /Cancelled/.test(tabText), tabText || '(空)');
+      await shot('18-admin-orders-tabs');
+    }
+
+    /* ═══ U11 图片加载（D-111 / D-112） ═══ */    console.log('\n─── U11 图片优化 ───');
+    await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
+    await goto(BASE + '/', `document.querySelectorAll('picture').length>5`, 35000);
+    await wait(1500);
+
+    const picStat = await ev(`(function(){
+      var all = Array.prototype.slice.call(document.images);
+      return {
+        total: all.length,
+        picture: document.querySelectorAll('picture').length,
+        bare: all.filter(function(i){return !(i.parentNode && i.parentNode.tagName === 'PICTURE')}).length,
+        png: all.filter(function(i){return /\\.png($|\\?)/.test(i.getAttribute('src')||'')}).length,
+        webp: all.filter(function(i){return /\\.webp($|\\?)/.test(i.currentSrc||'')}).length,
+        noAlt: all.filter(function(i){return !i.hasAttribute('alt')}).length,
+        noDim: all.filter(function(i){return i.parentNode && i.parentNode.tagName==='PICTURE' && !(i.getAttribute('width')&&i.getAttribute('height'))}).length
+      };
+    })()`);
+    ok('U11', '首页图片全部走 <picture>，无裸 <img>',
+      picStat.total > 0 && picStat.bare === 0, JSON.stringify(picStat));
+    ok('U11', '没有任何图片回落到原始 PNG',
+      picStat.png === 0, 'png=' + picStat.png);
+    ok('U11', '已加载的图全部是 WebP',
+      picStat.webp >= 5, 'webp=' + picStat.webp + '/' + picStat.total);
+    ok('U11', '每个 <picture> 内的 img 都带 alt 与宽高',
+      picStat.noAlt === 0 && picStat.noDim === 0,
+      'noAlt=' + picStat.noAlt + ' noDim=' + picStat.noDim);
+
+    /* srcset 里点名的文件必须真的存在——写错一个宽度前缀，
+       浏览器会静默退回兜底 JPG，肉眼看不出来，只有流量悄悄涨回去。 */
+    const srcsetFiles = await ev(`(function(){
+      var o=[];
+      document.querySelectorAll('picture source[srcset]').forEach(function(s){
+        s.getAttribute('srcset').split(',').forEach(function(p){ o.push(p.trim().split(/\\s+/)[0]); });
+      });
+      return o;
+    })()`);
+    const uniq = Array.from(new Set(srcsetFiles));
+    const missing = [];
+    for (const u of uniq) {
+      const code = await ev(`fetch(${JSON.stringify(u)}, {method:'HEAD'}).then(function(r){return r.status}).catch(function(){return 0})`);
+      if (code !== 200) missing.push(u + '→' + code);
+    }
+    ok('U11', 'srcset 引用的 WebP 全部存在',
+      uniq.length > 0 && missing.length === 0,
+      uniq.length + ' 个文件，缺失 ' + missing.length + (missing.length ? '：' + missing.slice(0, 3).join(', ') : ''));
+
+    /* 首图之外的轮播图必须挂起，不能跟着首屏一起下 */
+    const deferStat = await ev(`(function(){
+      var m=document.getElementById('heroMedia'); if(!m) return null;
+      var imgs=Array.prototype.slice.call(m.querySelectorAll('img'));
+      return {
+        n: imgs.length,
+        deferred: imgs.filter(function(i){return i.parentNode.dataset.defer==='1'}).length,
+        loaded: imgs.filter(function(i){return i.currentSrc}).length
+      };
+    })()`);
+    ok('U11', '首图之外的轮播图处于挂起状态',
+      deferStat && deferStat.n >= 2 && deferStat.deferred === deferStat.n - 1 && deferStat.loaded === 1,
+      JSON.stringify(deferStat));
+
+    /* 点圆点要能把挂起的图叫醒 */
+    if (deferStat && deferStat.n > 1) {
+      await ev(`document.querySelectorAll('.hero__dots i')[1].click()`);
+      await wait(1500);
+      const woke = await ev(`(function(){
+        var m=document.getElementById('heroMedia');
+        var i=Array.prototype.slice.call(m.querySelectorAll('img'))[1];
+        return {cur:(i.currentSrc||'').replace(location.origin,''), defer:i.parentNode.dataset.defer||''};
+      })()`);
+      ok('U11', '点第 2 个圆点后第 2 张轮播图真正加载',
+        /\.webp$/.test(woke.cur) && woke.defer !== '1', JSON.stringify(woke));
+    }
+
+    /* 详情页缩略图换图：<picture> 只改 img.src 是无效的，必须连 source 一起换 */
+    await ev(`document.querySelector('a[href*="#/products/"]').click()`);
+    await waitFor(`!!document.querySelector('.pdp')`, 25000);
+    await wait(1200);
+    const galBefore = await ev(`(function(){var m=document.getElementById('galMain');return m?{src:m.getAttribute('src'),cur:(m.currentSrc||'').replace(location.origin,'')}:null})()`);
+    const galThumbs = await ev(`document.querySelectorAll('.gal__thumbs img').length`);
+    if (galThumbs > 1) {
+      await ev(`document.querySelectorAll('.gal__thumbs img')[1].click()`);
+      await wait(1300);
+      const galAfter = await ev(`(function(){
+        var m=document.getElementById('galMain');
+        var s=document.querySelector('.gal__main picture source');
+        return {src:m.getAttribute('src'), cur:(m.currentSrc||'').replace(location.origin,''), srcset:s?s.getAttribute('srcset'):''};
+      })()`);
+      ok('U11', '详情页点缩略图，大图真的换图（含 source.srcset）',
+        galAfter.cur !== galBefore.cur && galAfter.src !== galBefore.src && /\.webp$/.test(galAfter.cur),
+        'before=' + galBefore.cur + ' after=' + galAfter.cur);
+    } else {
+      ok('U11', '详情页点缩略图，大图真的换图（含 source.srcset）', false, '该商品只有 1 张图');
+    }
+    await shot('19-pdp-gallery-swap');
+
+    /* ═══ U12 顶栏在中间宽度不重叠（D-129） ═══ */
+    console.log('\n─── U12 顶栏断点 ───');
+    const navBreaks = [];
+    for (const w of [1600, 1440, 1366, 1280, 1220]) {
+      await send('Emulation.setDeviceMetricsOverride', { width: w, height: 900, deviceScaleFactor: 1, mobile: false });
+      await send('Page.navigate', { url: BASE + '/' });
+      await wait(1600);
+      const m = await ev(`(function(){
+        var nav=document.querySelector('.hdr__nav'); if(!nav) return {gone:true};
+        var items=Array.from(nav.children); if(!items.length) return {gone:true};
+        var last=items[items.length-1].getBoundingClientRect();
+        var tools=document.querySelector('.hdr__tools');
+        var tf=tools?tools.getBoundingClientRect():null;
+        return {
+          w: window.innerWidth,
+          overflow: nav.scrollWidth - nav.clientWidth,
+          lastRight: Math.round(last.right),
+          toolsLeft: tf?Math.round(tf.left):0,
+          hit: tf ? (last.right - tf.left) : 0
+        };
+      })()`);
+      navBreaks.push(m);
+    }
+    const navBad = navBreaks.filter(function (m) {
+      return m && !m.gone && ((m.overflow || 0) > 1 || (m.hit || 0) > 0);
+    });
+    ok('U12', '顶栏 1220–1600px 导航不溢出、不压到右侧工具区',
+      navBad.length === 0, JSON.stringify(navBreaks));
+
+    /* 压缩间距的补丁不能把 mega menu 一起裁掉。
+       面板是纯 CSS :hover 展开的，只能用真实鼠标移动，派发 JS 事件无效。 */
+    await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
+    await send('Page.navigate', { url: BASE + '/' });
+    await wait(1600);
+    const navItemBox = await ev(`(function(){
+      var it=document.querySelector('.hdr__nav .navitem');
+      if(!it) return null;
+      var r=it.getBoundingClientRect();
+      return {x:Math.round(r.left+r.width/2), y:Math.round(r.top+r.height/2)};
+    })()`);
+    let mega = { none: true };
+    if (navItemBox) {
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: navItemBox.x, y: navItemBox.y, button: 'none' });
+      await wait(700);
+      mega = await ev(`(function(){
+        var p=document.querySelector('.hdr__nav .navitem .mega');
+        if(!p) return {noPanel:true};
+        var r=p.getBoundingClientRect();
+        var cs=getComputedStyle(p);
+        var hdr=document.querySelector('.hdr').getBoundingClientRect();
+        return {
+          display:cs.display, w:Math.round(r.width), h:Math.round(r.height),
+          overflowX: Math.round(r.right - window.innerWidth),
+          belowHeader: Math.round(r.top - hdr.bottom),
+          clipped: cs.display==='none' || r.height < 80
+        };
+      })()`);
+    }
+    ok('U12', '导航下拉面板展开后完整显示、未被裁切',
+      !mega.none && !mega.noPanel && !mega.clipped && mega.overflowX <= 0,
+      JSON.stringify(mega));
+    await shot('20-header-1280');
+
     /* ═══ U9 移动端 ═══ */
     console.log('\n─── U9 移动端 390px ───');
     await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });

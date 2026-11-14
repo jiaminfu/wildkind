@@ -12,30 +12,86 @@
   function esc(s) { return U.esc(s); }
 
   /* ---------------- 首页 ---------------- */
-  function home(boot, best, reviews) {
+  function home(boot, best, reviews, stats) {
     var c = boot.settings;
-    var heroImgs = ['assets/img/opt/hero-necklaces.jpg', 'assets/img/opt/c-ocean.jpg', 'assets/img/opt/p-necklace-moon-silver.jpg'];
-    var slides = heroImgs.map(function (src, i) {
-      return '<img src="' + src + '" alt="" class="' + (i === 0 ? 'on' : '') + '">';
+    /* 三张轮播图原始比例并不相同：首图 1100×1375 是竖构图，另两张是 1:1。
+       宽高按各自的真实尺寸给，别统一抄 1100×1375——否则第二、三张在
+       图还没下完时占位框比例是错的，切换轮播会看到一次轻微跳动。 */
+    var heroImgs = [
+      { s: 'assets/img/opt/hero-necklaces.jpg', w: 1100, h: 1375 },
+      { s: 'assets/img/opt/c-ocean.jpg', w: 820, h: 820 },
+      { s: 'assets/img/opt/p-necklace-moon-silver.jpg', w: 900, h: 900 }
+    ];
+    var slides = heroImgs.map(function (it, i) {
+      return U.pic(it.s, {
+        alt: '', w: it.w, h: it.h, cls: (i === 0 ? 'on' : ''),
+        sizes: '100vw', priority: i === 0,
+        /* 只有第一张是首屏必须的。这个轮播没有自动播放，第 2、3 张
+           只有用户点圆点才会露出来，先挂起，点的时候再取。 */
+        defer: i > 0
+      });
     }).join('');
     var parts = String(c.heroTitle || 'Made for|salt water.').split('|');
     var heroTitle = '<h1>' + esc(parts[0] || '') + (parts[1] ? '<br><em>' + esc(parts[1]) + '</em>' : '') + '</h1>';
 
-    var worlds = [
-      { h: 'best-sellers', t: 'Ocean', s: 'Salt, sand, and the things that survive both.', i: 'assets/img/opt/c-ocean.jpg' },
-      { h: 'woodland', t: 'Woodland', s: 'Foxes, hares and ferns, cut small.', i: 'assets/img/opt/c-woodland.jpg' },
-      { h: 'celestial', t: 'Celestial', s: 'Moons, stars and quiet night skies.', i: 'assets/img/opt/c-celestial.jpg' },
-    ].map(function (w) {
+    /* 「三个世界」的入口图片和链接只指向真实存在的集合。
+       原来写死 best-sellers / woodland / celestial 三个 handle，
+       后两个库里没有，点进去就是 404。 */
+    var worldDefs = [
+      { h: 'best-sellers', t: 'Best sellers', s: 'The pieces everyone reorders.', i: 'assets/img/opt/c-ocean.jpg' },
+      { h: 'new', t: 'New in', s: 'Fresh from the bench this month.', i: 'assets/img/opt/c-woodland.jpg' },
+      { h: 'sea-glass', t: 'Sea glass', s: 'Soft greens and worn edges.', i: 'assets/img/opt/c-celestial.jpg' },
+    ];
+    var have = (S.DB.collections || []).map(function (x) { return x.handle; });
+    var worlds = worldDefs.filter(function (w) { return have.indexOf(w.h) >= 0; });
+    if (worlds.length < 3) {
+      /* 集合不够三个时，用「按金属 / 按价格 / 全部」这类永远可用的筛选入口补位 */
+      var extra = [
+        { h: 'all', t: 'Shop all', s: 'Every piece currently in stock.', i: 'assets/img/opt/c-ocean.jpg' },
+        { h: 'sale', t: 'Sale', s: 'Last few of each.', i: 'assets/img/opt/c-woodland.jpg' },
+      ];
+      extra.forEach(function (e) {
+        if (worlds.length < 3 && !worlds.some(function (w) { return w.h === e.h; })) {
+          if (e.h === 'all' || have.indexOf(e.h) >= 0) worlds.push(e);
+        }
+      });
+    }
+    var worldHtml = worlds.slice(0, 3).map(function (w) {
       return '<a class="tile" href="#/collections/' + w.h + '">' +
-        '<img src="' + w.i + '" alt="" loading="lazy">' +
+        U.pic(w.i, { alt: '', w: 820, h: 820, sizes: '(max-width:900px) 46vw, 30vw' }) +
         '<div class="tile__body"><h3>' + w.t + '</h3><p>' + w.s + '</p></div></a>';
     }).join('');
 
     var revs = (reviews || []).slice(0, 6).map(function (r) {
       return '<div class="rev"><div class="st">' + U.stars(r.rating) + '</div>' +
-        '<b>' + esc(r.title) + '</b><p>' + esc((r.body || '').slice(0, 150)) + '</p>' +
+        '<b>' + esc(r.title || r.name) + '</b><p>' + esc((r.body || '').slice(0, 150)) + '</p>' +
         '<span>' + esc(r.name) + (r.verified ? ' · Verified buyer' : '') + '</span></div>';
     }).join('');
+
+    /* 「7M+ pieces worn / 1.6M customers / 4.7 rating」原先写死在模板里，
+       站里 0 客户 0 评价也照显示——这是虚假宣传，真站上是能告的。
+       现在只显示库里的真实数字；一条评价都没有时，退回到可验证的产品事实。 */
+    var st = stats || {};
+    var proofCells = [];
+    if (st.rating && st.reviewCount) {
+      proofCells.push({ b: Number(st.rating).toFixed(1), s: 'Average rating' });
+      proofCells.push({ b: st.reviewCount, s: st.reviewCount === 1 ? 'Verified review' : 'Verified reviews' });
+    }
+    if (st.productCount) proofCells.push({ b: st.productCount, s: 'Pieces in stock' });
+    if (st.soldCount) proofCells.push({ b: st.soldCount, s: 'Pieces shipped' });
+
+    var proof;
+    if (proofCells.length >= 2) {
+      proof = '<div class="proof">' + proofCells.slice(0, 3).map(function (x) {
+        return '<div><b>' + esc(x.b) + '</b><span>' + esc(x.s) + '</span></div>';
+      }).join('') + '</div>';
+    } else {
+      /* 没有任何交易数据时，只讲产品事实——这些每一句都能在详情页对上 */
+      proof = '<div class="proof">' +
+        '<div><b>0.8 µm</b><span>PVD colour layer</span></div>' +
+        '<div><b>316L</b><span>Surgical steel</span></div>' +
+        '<div><b>1–2 days</b><span>Dispatch, tracked</span></div></div>';
+    }
 
     return '<section class="hero">' +
       '<div class="hero__copy">' +
@@ -56,21 +112,19 @@
         return '<i class="' + (i === 0 ? 'on' : '') + '" data-act="slide" data-i="' + i + '"></i>';
       }).join('') + '</div></div></section>' +
 
-      '<div class="proof"><div><b>7M+</b><span>Pieces worn</span></div>' +
-      '<div><b>1.6M</b><span>Customers</span></div>' +
-      '<div><b>4.7</b><span>Average rating</span></div></div>' +
+      proof +
 
       '<div class="wrap"><div class="sec-head"><div><div class="eyebrow">' +
       esc((S.DB.settings || {}).bestSellersEyebrow || 'As seen on TikTok') + '</div><h2>Best sellers</h2></div>' +
       '<div class="sec-head__arrow">' +
-      '<button class="arrow-btn" data-act="rail" data-d="-1" data-target="railBest">' + ui.icon('left') + '</button>' +
-      '<button class="arrow-btn" data-act="rail" data-d="1" data-target="railBest">' + ui.icon('right') + '</button>' +
+      '<button class="arrow-btn" data-act="rail" data-d="-1" data-target="railBest" aria-label="Scroll left">' + ui.icon('left') + '</button>' +
+      '<button class="arrow-btn" data-act="rail" data-d="1" data-target="railBest" aria-label="Scroll right">' + ui.icon('right') + '</button>' +
       '</div></div>' +
       '<div class="rail" id="railBest">' + best.map(function (p) { return ui.productCard(p); }).join('') + '</div></div>' +
 
-      '<div class="wrap"><div class="sec-head"><div><div class="eyebrow">Shop by mood</div><h2>Three worlds</h2></div>' +
-      '<a href="#/collections/gifts" class="link-u" style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase">All collections</a></div>' +
-      '<div class="tiles">' + worlds + '</div></div>' +
+      (worldHtml ? '<div class="wrap"><div class="sec-head"><div><div class="eyebrow">Shop by mood</div><h2>Three worlds</h2></div>' +
+        '<a href="#/collections/all" class="link-u" style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase">All collections</a></div>' +
+        '<div class="tiles">' + worldHtml + '</div></div>' : '') +
 
       '<section class="birth"><div class="wrap birth__in">' +
       '<div><div class="eyebrow">Made to be worn daily</div>' +
@@ -80,7 +134,9 @@
       '<div class="birth__tags"><span>Salt water</span><span>Sunscreen</span><span>Showers</span><span>Gym</span><span>Sleep</span></div>' +
       '</div></section>' +
 
-      (revs ? '<div class="wrap"><div class="sec-head"><div><div class="eyebrow">4.7 average · 12,400 reviews</div><h2>What people say</h2></div></div>' +
+      (revs ? '<div class="wrap"><div class="sec-head"><div><div class="eyebrow">' +
+        (st.rating ? Number(st.rating).toFixed(1) + ' average · ' + st.reviewCount + ' reviews' : 'Reviews') +
+        '</div><h2>What people say</h2></div></div>' +
         '<div class="revs">' + revs + '</div></div>' : '');
   }
 
@@ -154,8 +210,67 @@
       '</div>';
   }
 
+  /* ---------------- 搜索结果页 ----------------
+     这是一条独立路由（#/search?q=），不再借道某个集合。
+     以前搜索被硬编码跳到 #/collections/best-sellers?q=ring，
+     于是在 best-sellers 那几件里过滤——全站明明有 3 件戒指，
+     用户看到的是「0 pieces」。搜索是电商第二入口，这条链断了等于没搜索。 */
+  function search(q, items, meta, r) {
+    var query = r.query || {};
+    var sorts = [
+      { v: 'featured', l: 'Featured' }, { v: 'new', l: 'Newest' }, { v: 'best', l: 'Best selling' },
+      { v: 'price-asc', l: 'Price: low to high' }, { v: 'price-desc', l: 'Price: high to low' },
+    ];
+    function sortLink(v) {
+      var p = [];
+      if (q) p.push('q=' + encodeURIComponent(q));
+      if (v && v !== 'featured') p.push('sort=' + v);
+      return '#/search' + (p.length ? '?' + p.join('&') : '');
+    }
+    var sortSel = '<select class="sortsel" data-act="search-sort">' +
+      sorts.map(function (s) {
+        return '<option value="' + s.v + '"' + ((query.sort || 'featured') === s.v ? ' selected' : '') + '>' + s.l + '</option>';
+      }).join('') + '</select>';
+
+    var grid = items.length
+      ? '<div class="grid">' + items.map(function (p) { return ui.productCard(p); }).join('') + '</div>'
+      : '<div class="empty" style="padding:72px 0;text-align:center">' +
+        '<h3>No pieces matched “' + esc(q) + '”</h3>' +
+        '<p style="color:var(--muted);margin:10px 0 22px">Try a shorter word, or browse everything we have.</p>' +
+        '<a class="btn" href="#/collections/all">Shop all</a></div>';
+
+    return '<div class="wrap">' +
+      '<div class="crumbs"><a href="#/">Home</a><span>/</span>Search</div>' +
+      '<div class="collhead"><h1>' + (q ? 'Results for “' + esc(q) + '”' : 'Search') + '</h1>' +
+      '<p>' + meta.total + ' ' + (meta.total === 1 ? 'piece' : 'pieces') + (q ? '' : ' — tell us what you are after') + '</p></div>' +
+      '<div class="fbar"><span class="fbar__count">' + meta.total + ' pieces</span>' +
+      '<div class="fbar__sort"><span>Sort</span>' + sortSel + '</div></div>' +
+      grid +
+      (meta.hasMore ? '<div style="text-align:center;padding:36px 0"><a class="btn btn--ghost" href="#/search?q=' +
+        encodeURIComponent(q) + '&page=' + (meta.page + 1) + '">Load more</a></div>' : '') +
+      '</div>';
+  }
+
+  /* ---------------- 收藏 ----------------
+     头部心形图标以前链到 #/account/wishlist，那条路由从没实现过，
+     点进去落到「订单查询」——图标说 Wishlist、页面是查单。
+     现在存 localStorage，访客可用，不做账号也能收藏。 */
+  function wishlist(items) {
+    if (!items.length) {
+      return '<div class="wrap"><div class="collhead"><h1>Saved pieces</h1></div>' +
+        '<div class="empty" style="padding:80px 0;text-align:center">' +
+        '<h3>Nothing saved yet</h3>' +
+        '<p style="color:var(--muted);margin:10px 0 22px">Tap the heart on any piece to keep it here.</p>' +
+        '<a class="btn" href="#/collections/all">Browse the shop</a></div></div>';
+    }
+    return '<div class="wrap">' +
+      '<div class="collhead"><h1>Saved pieces</h1>' +
+      '<p>' + items.length + ' ' + (items.length === 1 ? 'piece' : 'pieces') + ' · kept on this device</p></div>' +
+      '<div class="grid">' + items.map(function (p) { return ui.productCard(p); }).join('') + '</div></div>';
+  }
+
   /* ---------------- 商品详情 ---------------- */
-  function product(p, reviews, related, r) {
+  function product(p, reviews, related, r, reviewStats) {
     var q = r.query || {};
     var vlist = p.variants;
     var sel = vlist.filter(function (v) { return v.metal === (q.metal || '') && v.inStock; })[0]
@@ -163,16 +278,22 @@
     var selSize = q.size || (p.sizes[0] || '');
     var stock = sel.stock;
     var save = p.compareAt ? p.compareAt - p.price : 0;
+    var rs = reviewStats || { count: 0, rating: 0, buckets: [] };
+    var rated = rs.count > 0;
 
     var thumbs = (p.images || []).map(function (src, i) {
-      return '<img src="' + src + '" class="' + (i === 0 ? 'on' : '') + '" data-act="thumb" data-i="' + i + '" alt="" loading="lazy">';
+      return U.pic(src, {
+        alt: '', w: 900, h: 900, cls: (i === 0 ? 'on' : ''), sizes: '76px',
+        extra: 'data-act="thumb" data-i="' + i + '"'
+      });
     }).join('');
 
     var metalBtns = vlist.map(function (v) {
       var cls = v.metal === 'Gold' ? 'gold' : v.metal === 'Silver' ? 'silver' : 'rose';
       return '<button class="sw-opt ' + cls + (v.metal === sel.metal ? ' on' : '') + '" ' +
         'data-act="metal" data-handle="' + esc(p.handle) + '" data-m="' + esc(v.metal) + '" ' +
-        (v.stock ? '' : 'disabled ') + 'title="' + esc(v.metal) + (v.stock ? '' : ' — sold out') + '"></button>';
+        (v.stock ? '' : 'disabled ') + 'aria-label="' + esc(v.metal) + (v.stock ? '' : ' — sold out') + '" ' +
+        'title="' + esc(v.metal) + (v.stock ? '' : ' — sold out') + '"></button>';
     }).join('');
 
     var sizeBtns = (p.sizes || []).length ? p.sizes.map(function (s) {
@@ -191,13 +312,48 @@
 
     var revs = (reviews || []).map(function (x) {
       return '<div class="rev"><div class="st">' + U.stars(x.rating) + '</div>' +
-        '<b>' + esc(x.title) + '</b><p>' + esc(x.body) + '</p>' +
-        '<span>' + esc(x.name) + (x.verified ? ' · Verified buyer' : '') + '</span></div>';
+        (x.title ? '<b>' + esc(x.title) + '</b>' : '') +
+        '<p>' + esc(x.body) + '</p>' +
+        '<span>' + esc(x.name) + (x.verified ? ' · Verified buyer' : '') +
+        (x.createdAt ? ' · ' + U.fmtShort(x.createdAt) : '') + '</span></div>';
     }).join('');
+
+    /* 评分分布：5→1 每档一根条。
+       没有分布数据时用户只看到「4.7」这个数字，无法判断是 100 个五星 + 1 个一星，
+       还是刚好全是四星半——分布条是对评分最有效的佐证。 */
+    var dist = rated ? '<div class="revdist">' + (rs.buckets || []).map(function (b) {
+      var pct = rs.count ? Math.round(b.count / rs.count * 100) : 0;
+      return '<div class="revdist__row"><span>' + b.star + ' star</span>' +
+        '<i><em style="width:' + pct + '%"></em></i><b>' + b.count + '</b></div>';
+    }).join('') + '</div>' : '';
+
+    /* 评价提交表单。
+       这条链路以前整个不存在：POST /api/v1/reviews 返 404，后台只有「审核」没有「新建」，
+       从零开卖时评价区永远是空的。现在顾客能写，写完进待审核队列，后台通过后出现在这里。 */
+    var writeForm = '<form class="revy" data-act="writereview" data-handle="' + esc(p.handle) + '">' +
+      '<div class="revy__hd"><h4>' + (rated ? 'Write a review' : 'Be the first to review') + '</h4>' +
+      '<p>' + (rated ? 'Bought this piece? Tell the next person what it is like.' : 'No reviews yet — yours would be the first.') + '</p></div>' +
+      '<div class="revstars" role="radiogroup" aria-label="Your rating">' +
+      [5, 4, 3, 2, 1].map(function (n) {
+        return '<label><input type="radio" name="rating" value="' + n + '"' + (n === 5 ? ' checked' : '') + '>' +
+          '<span>' + n + '★</span></label>';
+      }).join('') + '</div>' +
+      '<div class="fld"><label>Your name</label><input name="rname" required maxlength="60" placeholder="Alex" autocomplete="name"></div>' +
+      '<div class="fld"><label>Email <span class="small">(not shown)</span></label>' +
+      '<input name="remail" type="email" maxlength="120" placeholder="you@email.com" autocomplete="email"></div>' +
+      '<div class="fld"><label>Headline <span class="small">(optional)</span></label>' +
+      '<input name="rtitle" maxlength="120" placeholder="Wear it every day"></div>' +
+      '<div class="fld"><label>Your review</label>' +
+      '<textarea name="rbody" rows="4" required minlength="10" maxlength="2000" placeholder="How does it wear? Does the colour hold?"></textarea></div>' +
+      '<div class="fld"><label>Order number <span class="small">(optional — marks it Verified)</span></label>' +
+      '<input name="rorder" placeholder="#TG1041"></div>' +
+      '<button class="btn" type="submit">Submit review</button>' +
+      '<p class="small" style="color:var(--muted);margin:10px 0 0">Reviews appear once we have checked them — usually within a day.</p>' +
+      '</form>';
 
     var rel = (related || []).map(function (x) {
       return '<a class="card card--mini" href="#/products/' + esc(x.handle) + '">' +
-        '<div class="card__media"><img src="' + esc(x.image) + '" alt="" loading="lazy"></div>' +
+        '<div class="card__media">' + U.pic(x.image, { alt: '', w: 900, h: 900 }) + '</div>' +
         '<div class="card__body"><span class="card__title">' + esc(x.title) + '</span>' +
         '<span class="card__price">' + money(x.price) + '</span></div></a>';
     }).join('');
@@ -206,18 +362,27 @@
        这里原样转义输出，靠 CSS 的 pre-line 保留换行；没有描述时整块不渲染，
        避免详情页留一段空div。 */
     var descText = String(p.description || '').trim();
+    var saved = S.wishHas(p.handle);
 
     return '<div class="wrap">' +
       '<div class="crumbs"><a href="#/">Home</a><span>/</span><a href="#/collections/' + esc(p.category) + '">' + esc(p.category) + '</a><span>/</span>' + esc(p.title) + '</div>' +
       '<div class="pdp">' +
       '<div class="gal"><div class="gal__thumbs">' + thumbs + '</div>' +
-      '<div class="gal__main"><img src="' + esc(p.images[0] || '') + '" id="galMain" alt="' + esc(p.title) + '"></div></div>' +
+      '<div class="gal__main">' +
+      U.pic(p.images[0] || '', {
+        alt: p.title, w: 900, h: 900, priority: true,
+        sizes: '(max-width:900px) 100vw, 560px',
+        extra: 'id="galMain"'
+      }) + '</div></div>' +
 
       '<div class="pdp__info">' +
       (p.badge ? '<div class="eyebrow" style="margin-bottom:8px">' + esc(p.badge) + '</div>' : '') +
       '<h1 style="font-family:var(--serif);font-size:clamp(26px,2.6vw,34px);font-weight:400">' + esc(p.title) + '</h1>' +
-      '<div class="pdp__rate"><span class="st">' + U.stars(Number(p.rating)) + '</span>' +
-      '<span>' + p.rating + ' · ' + p.reviewCount + ' reviews</span></div>' +
+      (rated
+        ? '<a class="pdp__rate" href="#reviews"><span class="st">' + U.stars(rs.rating) + '</span>' +
+          '<span>' + rs.rating + ' · ' + rs.count + ' ' + (rs.count === 1 ? 'review' : 'reviews') + '</span></a>'
+        : '<div class="pdp__rate pdp__rate--none"><span>No reviews yet</span>' +
+          '<a href="#reviews" class="link-u">Be the first</a></div>') +
       '<div class="pdp__price"><b>' + money(sel.price || p.price) + '</b>' +
       (p.compareAt ? '<s>' + money(p.compareAt) + '</s><em>Save ' + U.money0(save) + '</em>' : '') + '</div>' +
       '<div class="pdp__tax">Duties included</div>' +
@@ -234,10 +399,13 @@
       ((p.sizes || []).length ? '<div class="opt"><div class="opt__hd"><span>Length</span><b>' + esc(selSize) + '</b></div>' +
         '<div class="sizes">' + sizeBtns + '</div></div>' : '') +
       '<div class="qtyrow">' +
-      '<span class="stepper"><button data-act="pdpq" data-d="-1">' + ui.icon('minus') + '</button>' +
-      '<input id="pdpQty" value="1" readonly><button data-act="pdpq" data-d="1">' + ui.icon('plus') + '</button></span>' +
+      '<span class="stepper"><button data-act="pdpq" data-d="-1" aria-label="Decrease quantity">' + ui.icon('minus') + '</button>' +
+      '<input id="pdpQty" value="1" readonly aria-label="Quantity"><button data-act="pdpq" data-d="1" aria-label="Increase quantity">' + ui.icon('plus') + '</button></span>' +
       '<button class="btn" data-act="add" data-handle="' + esc(p.handle) + '" data-metal="' + esc(sel.metal) + '" data-size="' + esc(selSize) + '"' +
       (stock <= 0 ? ' disabled' : '') + '>' + (stock <= 0 ? 'Sold out' : 'Add to bag') + '</button></div>' +
+      '<button class="pdp__wish' + (saved ? ' on' : '') + '" data-act="wish" data-handle="' + esc(p.handle) + '"' +
+      ' aria-pressed="' + (saved ? 'true' : 'false') + '">' + ui.icon(saved ? 'heartFull' : 'heart') +
+      '<span>' + (saved ? 'Saved' : 'Save for later') + '</span></button>' +
       stockNote +
       '<div class="acc">' +
       '<div class="acc__item open"><button class="acc__hd" data-act="acc">Materials &amp; care <i>−</i></button>' +
@@ -250,8 +418,16 @@
 
       '<div class="wrap"><div class="sec-head"><div><div class="eyebrow">From the same world</div><h2>You may also like</h2></div></div>' +
       '<div class="grid grid--4">' + rel + '</div></div>' +
-      (revs ? '<div class="wrap"><div class="sec-head"><div><div class="eyebrow">' + p.reviewCount + ' reviews</div><h2>What buyers say</h2></div></div>' +
-        '<div class="revs">' + revs + '</div></div>' : '') +
+
+      '<div class="wrap" id="reviews"><div class="revwrap">' +
+      '<div class="revwrap__sum"><div class="eyebrow">Reviews</div>' +
+      (rated
+        ? '<div class="revavg"><b>' + rs.rating + '</b><div><span class="st">' + U.stars(rs.rating) + '</span>' +
+          '<small>' + rs.count + ' ' + (rs.count === 1 ? 'review' : 'reviews') + '</small></div></div>' + dist
+        : '<p style="color:var(--muted);margin:8px 0 0">No reviews yet.</p>') +
+      '</div>' +
+      '<div class="revwrap__list">' + (revs || '') + writeForm + '</div>' +
+      '</div></div>' +
       '</div>';
   }
 
@@ -267,7 +443,7 @@
     }
     var rows = lines.map(function (l) {
       return '<div class="cline">' +
-        '<a class="cline__img" href="#/products/' + esc(l.handle) + '"><img src="' + esc(l.image) + '" alt=""></a>' +
+        '<a class="cline__img" href="#/products/' + esc(l.handle) + '">' + U.pic(l.image, { alt: '', w: 900, h: 900, sizes: '90px' }) + '</a>' +
         '<div class="cline__info"><a class="cline__title" href="#/products/' + esc(l.handle) + '">' + esc(l.title) + '</a>' +
         '<span class="cline__var">' + esc(l.metal) + (l.size ? ' / ' + esc(l.size) : '') + '</span>' +
         '<div class="cline__row"><span class="stepper">' +
@@ -298,12 +474,14 @@
   function checkout(quote, form, err) {
     form = form || {};
     var lines = (quote ? quote.lines : S.cartLines()).map(function (l) {
-      return '<div class="paysum__line"><img src="' + esc(l.image || '') + '" alt="">' +
+      return '<div class="paysum__line">' + U.pic(l.image || '', { alt: '', w: 900, h: 900, sizes: '56px' }) +
         '<div>' + esc(l.title) + '<span>' + esc(l.metal) + (l.size ? ' / ' + esc(l.size) : '') + ' · ×' + l.qty + '</span></div>' +
         '<div class="mono" style="font-size:11.5px">' + money(l.lineTotal || l.unitPrice * l.qty) + '</div></div>';
     }).join('');
     if (quote && quote.gift) {
-      lines += '<div class="paysum__line"><img src="' + esc(quote.gift.image || 'assets/img/opt/p-earring-pearl-gold.jpg') + '" alt="">' +
+      /* 兜底图原来写的是 p-earring-pearl-gold.jpg，这个文件不存在（实际叫 p-earrings-hoop-gold），
+         礼品没有配图时结算页会显示一个裂图。 */
+      lines += '<div class="paysum__line">' + U.pic(quote.gift.image || 'assets/img/opt/p-earrings-hoop-gold.jpg', { alt: '', w: 900, h: 900, sizes: '56px' }) +
         '<div>' + esc(quote.gift.title) + '<span>Free gift</span></div>' +
         '<div class="mono" style="font-size:11.5px;color:var(--brass)">$0.00</div></div>';
     }
@@ -433,6 +611,7 @@
   window.Views = {
     home: home, collection: collection, product: product, cart: cart,
     checkout: checkout, orderDone: orderDone, lookup: lookup, notFound: notFound,
+    search: search, wishlist: wishlist,
     METALS: METALS, PRICES: PRICES, SORTS: SORTS,
   };
 })();

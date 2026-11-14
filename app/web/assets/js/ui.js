@@ -54,6 +54,11 @@
 
   function navItems() {
     var list = S.navCollections().slice();
+    /* 一个集合都没有时（新站、刚清库），顶栏会只剩 LOGO 和三个图标，
+       用户连「从哪开始逛」都找不到。给一个永远可用的兜底入口：
+       #/collections/all 在 app.js 里被特判成「全部在售」。 */
+    if (!list.length) return [{ handle: 'all', title: 'Shop all' }];
+
     list.sort(function (a, b) {
       var ia = NAV_ORDER.indexOf(a.handle), ib = NAV_ORDER.indexOf(b.handle);
       if (ia < 0) ia = 99; if (ib < 0) ib = 99;
@@ -73,33 +78,62 @@
     }).join('<span>·</span>') + '<span>·</span>';
   }
 
-  // 品类项带 mega menu（FR-S-002）。面板按集合的 parent 关系动态生成，不写死清单
+  // 品类项带 mega menu（FR-S-002）。
+  /* 面板内容一律从「库里真实存在的集合」长出来。
+     早先 MOTIFS / GIFT_SETS 是照参考站抄的硬编码清单，库里从来没有这些集合，
+     于是 ocean / woodland / celestial / floral / for-her / for-him / gifts-for-mom /
+     birthday-gifts / gift-sets / all-necklaces 十个子项挂在五个类目下，
+     50 条链接条条 404——导航是主路径，点进去就是「Page not found」。
+     现在改成：集合存在才出现，不存在就不出现。想在导航里加 Ocean，
+     去后台建一个 handle=ocean 的集合即可，导航自动长出来。 */
   var MEGA = { necklaces: 1, rings: 1, pearls: 1, earrings: 1, bracelets: 1, anklets: 1 };
+  /* 只是排序提示：命中这些 handle 的集合排到左边，不影响是否显示 */
   var MOTIFS = ['ocean', 'woodland', 'celestial', 'floral'];
   var GIFT_SETS = ['for-her', 'for-him', 'gifts-for-mom', 'birthday-gifts', 'gift-sets'];
 
+  function allColls() { return (S.DB.collections || []); }
+  function hasColl(h) { return allColls().some(function (c) { return c.handle === h; }); }
+
   function collTitle(h) {
-    var c = (S.DB.collections || []).filter(function (x) { return x.handle === h; })[0];
+    var c = allColls().filter(function (x) { return x.handle === h; })[0];
     return c ? c.title : h.replace(/-/g, ' ');
   }
 
   function megaPanel(handle, right) {
-    var kids = (S.DB.collections || []).filter(function (c) { return c.parent === handle; });
-    var col1 = kids.length ? kids.map(function (c) {
-      return '<a href="#/collections/' + c.handle + '">' + U.esc(c.title) + '</a>';
-    }).join('') : '<a href="#/collections/' + handle + '">All ' + U.esc(collTitle(handle)) + '</a>';
-    var col2 = MOTIFS.map(function (m) {
-      return '<a href="#/collections/' + m + '">' + U.esc(collTitle(m)) + '</a>';
-    }).join('');
-    var col3 = GIFT_SETS.map(function (h) {
-      return '<a href="#/collections/' + h + '">' + U.esc(collTitle(h)) + '</a>';
-    }).join('');
-    return '<div class="mega' + (right ? ' mega--right' : '') + '">' +
-      '<div class="mega__col"><h6>Shop by style</h6>' + col1 + '</div>' +
-      '<div class="mega__col"><h6>Shop by motif</h6>' + col2 + '</div>' +
-      '<div class="mega__col"><h6>Gifts</h6>' + col3 + '</div>' +
+    var kids = allColls().filter(function (c) { return c.parent === handle; });
+    var motifs = MOTIFS.filter(hasColl);
+    var gifts = GIFT_SETS.filter(hasColl);
+
+    var col1 = kids.length
+      ? kids.map(function (c) {
+        return '<a href="#/collections/' + c.handle + '">' + U.esc(c.title) + '</a>';
+      }).join('')
+      : '<a href="#/collections/' + handle + '">All ' + U.esc(collTitle(handle)) + '</a>' +
+        '<a href="#/search?q=' + encodeURIComponent(collTitle(handle)) + '">Search ' + U.esc(collTitle(handle).toLowerCase()) + '</a>';
+
+    /* 空列不渲染——三列里两列空着比一个干净的短菜单更难看 */
+    var cols = '<div class="mega__col"><h6>Shop by style</h6>' + col1 + '</div>';
+    if (motifs.length) {
+      cols += '<div class="mega__col"><h6>Shop by motif</h6>' +
+        motifs.map(function (m) {
+          return '<a href="#/collections/' + m + '">' + U.esc(collTitle(m)) + '</a>';
+        }).join('') + '</div>';
+    }
+    if (gifts.length) {
+      cols += '<div class="mega__col"><h6>Gifts</h6>' +
+        gifts.map(function (h) {
+          return '<a href="#/collections/' + h + '">' + U.esc(collTitle(h)) + '</a>';
+        }).join('') + '</div>';
+    }
+    cols += '<div class="mega__col"><h6>More</h6>' +
+      '<a href="#/collections/' + handle + '">Shop all</a>' +
+      '<a href="#/search?q=' + encodeURIComponent(collTitle(handle)) + '">Search</a>' +
+      (hasColl('sale') ? '<a href="#/collections/sale">Sale</a>' : '') +
+      '</div>';
+
+    return '<div class="mega' + (right ? ' mega--right' : '') + '">' + cols +
       '<a class="mega__feat" href="#/collections/' + handle + '">' +
-      '<img src="assets/img/opt/hero-necklaces.jpg" alt="">' +
+      U.pic('assets/img/opt/hero-necklaces.jpg', { alt: '', w: 1100, h: 1375, sizes: '(max-width:900px) 90vw, 420px' }) +
       '<span>Shop all ' + U.esc(collTitle(handle)) + '</span></a>' +
       '</div>';
   }
@@ -132,7 +166,13 @@
       '<div class="hdr__tools">' +
       '<button class="icon-btn" data-act="open-search" aria-label="Search">' + icon('search') + '</button>' +
       '<a class="icon-btn hdr__acct" href="#/account" aria-label="Account">' + icon('user') + '</a>' +
-      '<a class="icon-btn" href="#/account/wishlist" aria-label="Wishlist" id="wishBtn">' + icon('heart') + '</a>' +
+      /* 心形图标以前链到 #/account/wishlist，但那条路由根本没实现，
+         点进去落在「订单查询」页——图标说 Wishlist、页面是查单。
+         现在 /account/wishlist 有真实视图，收藏存本地，访客也能用。 */
+      '<a class="icon-btn hdr__wish" href="#/account/wishlist" id="wishBtn"' +
+      ' aria-label="Wishlist' + (S.wishCount() ? ', ' + S.wishCount() + ' saved' : '') + '">' +
+      icon('heart') +
+      '<span class="bag-count' + (S.wishCount() ? '' : ' is-zero') + '" id="wishCount">' + S.wishCount() + '</span></a>' +
       (function () {
         var u = S.state.user;
         if (u) {
@@ -145,6 +185,17 @@
   }
 
   function footer() {
+    /* 页脚的 Shop 列表也只列真实存在的集合。
+       写死的六个（necklaces / bracelets / anklets / sale …）在清库后全是 404，
+       而且这类死链藏在页脚里，平时没人点，上线后才发现。 */
+    var shopWant = ['best-sellers', 'new', 'necklaces', 'rings', 'bracelets', 'anklets', 'earrings', 'sale'];
+    var shopHave = shopWant.filter(hasColl);
+    var shopLinks = shopHave.length
+      ? shopHave.map(function (h) {
+        return '<li><a href="#/collections/' + h + '">' + U.esc(collTitle(h)) + '</a></li>';
+      }).join('')
+      : '<li><a href="#/collections/all">Shop all</a></li>';
+
     return '<footer class="ftr"><div class="wrap">' +
       '<div class="ftr__top">' +
       '<div class="ftr__brand"><a href="#/" class="brand" aria-label="TIDEGLASS home"><span class="brand__mark" aria-hidden="true">' + MARK + '</span><span class="brand__word">TIDEGLASS</span></a>' +
@@ -154,13 +205,7 @@
       '<a href="#/pages/about" aria-label="Pinterest">' + icon('pinterest') + '</a>' +
       '<a href="#/pages/about" aria-label="TikTok">' + icon('tiktok') + '</a>' +
       '</div></div>' +
-      '<div><h5>Shop</h5><ul>' +
-      '<li><a href="#/collections/best-sellers">Best Sellers</a></li>' +
-      '<li><a href="#/collections/new">New Arrivals</a></li>' +
-      '<li><a href="#/collections/necklaces">Necklaces</a></li>' +
-      '<li><a href="#/collections/bracelets">Bracelets</a></li>' +
-      '<li><a href="#/collections/anklets">Anklets</a></li>' +
-      '<li><a href="#/collections/sale">Sale</a></li></ul></div>' +
+      '<div><h5>Shop</h5><ul>' + shopLinks + '</ul></div>' +
       '<div><h5>Help</h5><ul>' +
       '<li><a href="#/pages/shipping">Shipping &amp; Duties</a></li>' +
       '<li><a href="#/pages/returns">Returns</a></li>' +
@@ -200,15 +245,31 @@
       ? '<div class="card__swrow">' + sw + '<span>' + p.variants.map(function (x) { return U.esc(x.metal); }).join(' / ') + '</span></div>'
       : '';
 
+    /* 有评价才显示星级。
+       0 分的商品以前照样画五颗金星（CSS 里 .st 统一金色，空星实星没区别），
+       等于给新品贴了个「五星好评」——既是误导，也踩虚假宣传。 */
+    var rated = Number(p.rating) > 0;
+    var rateRow = rated
+      ? '<div class="card__rate"><span class="st">' + U.stars(p.rating) + '</span>' + p.rating + ' (' + p.reviewCount + ')</div>'
+      : '<div class="card__rate card__rate--none">No reviews yet</div>';
+
+    var saved = S.wishHas(p.handle);
     return '<article class="card">' +
       '<a class="card__media" href="#/products/' + p.handle + '">' +
-      '<img src="' + p.images[0] + '" alt="' + U.esc(p.title) + '" loading="lazy">' +
-      (p.images[1] ? '<img class="alt" src="' + p.images[1] + '" alt="" loading="lazy">' : '') +
+      /* width/height 给浏览器一个比例，图没下完时先占位。
+         CSS 里 .card__media 已经写了 aspect-ratio，双保险能压掉移动端的布局跳动。
+         注意：源图是 1:1，这里写 4:5 会让占位框和实际图不一致——
+         所以宽高按源图真实比例给（900×900），裁剪交给 CSS 的 object-fit。 */
+      U.pic(p.images[0], { alt: p.title, w: 900, h: 900 }) +
+      (p.images[1] ? U.pic(p.images[1], { alt: '', w: 900, h: 900, cls: 'alt' }) : '') +
       badge + '</a>' +
+      '<button class="card__wish' + (saved ? ' on' : '') + '" data-act="wish" data-handle="' + U.esc(p.handle) + '"' +
+      ' aria-label="' + (saved ? 'Remove ' : 'Save ') + U.esc(p.title) + (saved ? ' from wishlist' : ' to wishlist') + '"' +
+      ' aria-pressed="' + (saved ? 'true' : 'false') + '">' + icon(saved ? 'heartFull' : 'heart') + '</button>' +
       '<div class="card__body">' +
       '<a class="card__title" href="#/products/' + p.handle + '">' + U.esc(p.title) + '</a>' +
       swRow +
-      '<div class="card__rate"><span class="st">' + U.stars(p.rating) + '</span>' + p.rating + ' (' + p.reviewCount + ')</div>' +
+      rateRow +
       '<div class="card__price"><b>' + U.money(v.price) + '</b>' +
       (p.compareAt ? '<s>' + U.money(p.compareAt) + '</s><em>SAVE ' + U.money0(save) + '</em>' : '') +
       '</div>' +
@@ -229,13 +290,13 @@
     } else {
       body = lines.map(function (l) {
         if (l.isGift) {
-          return '<div class="cline gift"><div class="cline__img"><img src="' + l.image + '" alt=""></div>' +
+          return '<div class="cline gift"><div class="cline__img">' + U.pic(l.image, { alt: '', w: 900, h: 900, sizes: '90px' }) + '</div>' +
             '<div class="cline__info"><span class="gift-tag">Free gift</span>' +
             '<span class="cline__title">' + U.esc(l.title) + '</span>' +
             '<span class="cline__var">Auto-added · limit 1 per order</span>' +
             '<div class="cline__row"><span class="cline__price" style="color:var(--brass)">$0.00</span></div></div></div>';
         }
-        return '<div class="cline"><a class="cline__img" href="#/products/' + l.handle + '"><img src="' + l.image + '" alt=""></a>' +
+        return '<div class="cline"><a class="cline__img" href="#/products/' + l.handle + '">' + U.pic(l.image, { alt: '', w: 900, h: 900, sizes: '90px' }) + '</a>' +
           '<div class="cline__info"><a class="cline__title" href="#/products/' + l.handle + '">' + U.esc(l.title) + '</a>' +
           '<span class="cline__var">' + U.esc(l.metal) + (l.size ? ' / ' + U.esc(l.size) : '') + '</span>' +
           '<div class="cline__row"><span class="stepper">' +
@@ -328,7 +389,9 @@
   function shell(body, r) {
     return header(r) + '<main id="main">' + body + '</main>' + footer() +
       cartDrawer() + searchLayer() + mobileMenu() + cookieBar() +
-      '<div class="toast" id="toast"></div>';
+      /* role=status + aria-live：加购成功、表单报错这类即时反馈
+         以前只有视觉 toast，读屏用户完全听不到。 */
+      '<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>';
   }
 
   function adminShell(content, active, title) {
@@ -360,7 +423,7 @@
       '<span class="who"><i>TG</i>Owner</span>' +
       '<button class="abtn sm" data-act="logout">Sign out</button></div></div>' +
       '<div class="adm__body">' + content + '</div></div></div>' +
-      '<div class="toast" id="toast"></div>';
+      '<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>';
   }
 
   // 预计送达（FR-S-167）：处理时长 1–2 个工作日 + 运输天数，跳过周末。

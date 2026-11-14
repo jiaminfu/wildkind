@@ -109,11 +109,21 @@
   }
 
   function orders(list, meta, q) {
-    var tabs = [['', 'All'], ['paid', 'Paid'], ['fulfilling', 'Preparing'], ['fulfilled', 'Shipped'], ['refunded', 'Refunded']]
+    /* Tab 覆盖全部状态。
+       原先只有 All/Paid/Preparing/Shipped/Refunded，但列表里会出现 Cancelled 和
+       Delivered 的单——能看到却筛不出来，想找「哪些被取消了」只能一页页翻。 */
+    var tabs = [['', 'All'], ['paid', 'Paid'], ['fulfilling', 'Preparing'],
+      ['fulfilled', 'Shipped'], ['completed', 'Delivered'],
+      ['cancelled', 'Cancelled'], ['refunded', 'Refunded']]
       .map(function (t) {
         var on = (q.status || '') === t[0] ? ' solid' : '';
         return '<a class="abtn' + on + '" href="#/admin/orders' + (t[0] ? '?status=' + t[0] : '') + '">' + t[1] + '</a>';
       }).join('');
+
+    /* 导出：以前一个都没有，对账、打发货单、丢给 ERP 全得手工抄。
+       走 fetch + blob，因为下载要带 Bearer 令牌，<a href> 带不了。 */
+    var exportBtn = '<button class="abtn sm" data-act="export" data-what="orders"' +
+      (q.status ? ' data-status="' + U.esc(q.status) + '"' : '') + '>Export CSV</button>';
 
     var rows = list.map(function (o) {
       return '<tr data-act="open-order" data-num="' + U.esc(o.number) + '">' +
@@ -149,7 +159,8 @@
       '</div>';
 
     return '<div class="panel"><div class="panel__hd"><h2>Orders</h2>' +
-      '<form class="admsearch" data-act="osearch"><input name="q" placeholder="Search number, email or name" value="' + U.esc(q.q || '') + '"></form></div>' +
+      '<div style="display:flex;gap:8px;align-items:center">' + exportBtn +
+      '<form class="admsearch" data-act="osearch"><input name="q" placeholder="Search number, email or name" value="' + U.esc(q.q || '') + '"></form></div></div>' +
       '<div class="panel__bd" style="display:flex;gap:8px;flex-wrap:wrap">' + tabs + '</div>' +
       '<div class="panel__bd flush"><table class="atable"><thead><tr>' +
       '<th>Order</th><th>Customer</th><th>Status</th><th class="num">Items</th><th class="num">Total</th><th>Date</th>' +
@@ -225,6 +236,7 @@
       '<div class="phd-r">' +
       '<span class="sub">' + live + ' live · ' + drafts + ' draft</span>' +
       '<form class="admsearch" data-act="psearch"><input name="q" placeholder="Search title or ID" value="' + U.esc(q || '') + '"></form>' +
+      '<button class="abtn sm" data-act="export" data-what="products">Export CSV</button>' +
       '<button class="abtn sm" data-act="pimport">Import CSV</button>' +
       '<button class="btn btn--sm" data-act="pnew">New product</button>' +
       '</div></div>' +
@@ -251,7 +263,7 @@
       var src = images[i];
       if (src) {
         out += '<div class="imgcell on" draggable="true" data-idx="' + i + '">' +
-          '<img src="' + U.esc(src) + '" alt="">' +
+          U.pic(src, { alt: '', w: 900, h: 900, sizes: '96px' }) +
           (i === 0 ? '<span class="imgcell__main">Main</span>' : '') +
           '<button type="button" class="imgcell__x" data-act="pimgdel" data-idx="' + i + '" title="Remove">×</button>' +
           (i > 0 ? '<button type="button" class="imgcell__set" data-act="pimgmain" data-idx="' + i + '">Set main</button>' : '') +
@@ -496,7 +508,8 @@
       '<em>' + (list.length ? Math.round(repeat / list.length * 100) : 0) + '% of base</em></div>' +
       '<div class="kpi"><span>Lifetime value</span><b>' + U.money(total) + '</b></div></div>' +
       '<div class="panel"><div class="panel__hd"><h2>Customer book</h2>' +
-      '<span class="sub">Grouped by lowercased email — no duplicate records</span></div>' +
+      '<div class="phd-r"><span class="sub">Grouped by lowercased email — no duplicate records</span>' +
+      '<button class="abtn sm" data-act="export" data-what="customers">Export CSV</button></div></div>' +
       '<div class="panel__bd flush"><table class="atable"><thead><tr>' +
       '<th>Customer</th><th class="num">Orders</th><th class="num">Spent</th><th>Tier</th><th>Last order</th>' +
       '</tr></thead><tbody>' + (rows || '<tr><td colspan="5">No customers yet.</td></tr>') + '</tbody></table></div></div>';

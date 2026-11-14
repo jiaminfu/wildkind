@@ -14,6 +14,176 @@
     (list || []).forEach(function (p) { cache[p.id] = p; });
   }
 
+  /* 当前页面的 SEO 上下文。各 renderXxx 在取到数据后填，
+     render() 结束前统一写进 <head>。
+     直接读 cache 反查也可以，但集合页/搜索页没有商品对象可查，统一走这个变量更清楚。 */
+  var seo = null;
+  function setSeo(o) { seo = o; }
+
+  /* ---------------- SEO ----------------
+     原先全站 <title> 是 index.html 里写死的一句，集合页、商品页、内容页完全一样，
+     也没有 og:*、canonical、JSON-LD。结果：Google 里每个商品页标题都相同，
+     微信/Twitter 分享出去没有图没有摘要。这里按路由动态补。
+     爬虫（含 Googlebot）会执行 JS，动态注入的标签能被抓到；
+     接上 history 路由后可以改成服务端直出，效果更稳。 */
+  function metaTag(name, content, isProp) {
+    var sel = isProp ? 'meta[property="' + name + '"]' : 'meta[name="' + name + '"]';
+    var el = document.head.querySelector(sel);
+    if (content == null || content === '') { if (el) el.remove(); return; }
+    if (!el) {
+      el = document.createElement('meta');
+      if (isProp) el.setAttribute('property', name); else el.setAttribute('name', name);
+      document.head.appendChild(el);
+    }
+    el.setAttribute('content', String(content));
+  }
+
+  function linkTag(rel, href) {
+    var el = document.head.querySelector('link[rel="' + rel + '"]');
+    if (!href) { if (el) el.remove(); return; }
+    if (!el) {
+      el = document.createElement('link');
+      el.setAttribute('rel', rel);
+      document.head.appendChild(el);
+    }
+    el.setAttribute('href', href);
+  }
+
+  var jsonLdEl = null;
+  function jsonLd(obj) {
+    if (!jsonLdEl) {
+      jsonLdEl = document.createElement('script');
+      jsonLdEl.type = 'application/ld+json';
+      document.head.appendChild(jsonLdEl);
+    }
+    jsonLdEl.textContent = obj ? JSON.stringify(obj) : '';
+  }
+
+  function applySeo(seg, r) {
+    var brand = 'TIDEGLASS';
+    var title, desc, image, canonical, ld = null;
+    var origin = location.origin + location.pathname;
+
+    if (seg[0] === 'admin') {
+      /* 后台绝不能被收录 */
+      document.title = 'Admin · ' + brand;
+      var rb = document.head.querySelector('meta[name="robots"]');
+      if (!rb) {
+        rb = document.createElement('meta');
+        rb.setAttribute('name', 'robots');
+        document.head.appendChild(rb);
+      }
+      rb.setAttribute('content', 'noindex,nofollow');
+      jsonLd(null);
+      seo = null;
+      return;
+    }
+    /* 离开后台回到前台时要把 noindex 撤掉 */
+    var rbx = document.head.querySelector('meta[name="robots"]');
+    if (rbx) rbx.remove();
+
+    var s = seo || {};
+
+    if (s.type === 'product' && s.product) {
+      var p = s.product;
+      var price = Number(p.price) || 0;
+      title = p.title + ' — ' + brand;
+      desc = String(p.description || '').trim().slice(0, 158) ||
+        (p.title + ' in ' + (p.variants || []).map(function (v) { return v.metal; }).join(' / ') +
+          '. 316L stainless steel with PVD colour. ' + S.U.money(price) + ', duties included.');
+      image = p.images && p.images[0] ? origin + p.images[0] : '';
+      canonical = origin + '#/products/' + p.handle;
+      ld = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: p.title,
+        description: desc,
+        image: (p.images || []).map(function (i) { return origin + i; }),
+        sku: (p.variants && p.variants[0] && p.variants[0].sku) || p.handle,
+        brand: { '@type': 'Brand', name: brand },
+        offers: {
+          '@type': 'Offer',
+          price: price.toFixed(2),
+          priceCurrency: 'USD',
+          availability: p.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          url: canonical,
+        },
+      };
+      if (s.stats && s.stats.count > 0) {
+        ld.aggregateRating = {
+          '@type': 'AggregateRating',
+          ratingValue: s.stats.rating,
+          reviewCount: s.stats.count,
+        };
+      }
+    } else if (s.type === 'collection' && s.collection) {
+      title = s.collection.title + ' — ' + brand;
+      desc = s.collection.intro || ('Shop ' + s.collection.title + ' at ' + brand +
+        '. 316L stainless steel with a PVD colour layer that does not fade.');
+      canonical = origin + '#/collections/' + s.collection.handle;
+      image = origin + 'assets/img/opt/c-ocean.jpg';
+    } else if (s.type === 'search') {
+      title = (s.q ? 'Search: ' + s.q : 'Search') + ' — ' + brand;
+      desc = s.q
+        ? (s.total + ' pieces matching “' + s.q + '” at ' + brand + '.')
+        : ('Search every piece in stock at ' + brand + '.');
+      canonical = origin + (s.q ? '#/search?q=' + encodeURIComponent(s.q) : '#/search');
+    } else if (s.type === 'page' && s.title) {
+      title = s.title + ' — ' + brand;
+      desc = s.intro || (s.title + ' at ' + brand + '.');
+      canonical = origin + '#/pages/' + s.key;
+    } else if (s.type === 'wishlist') {
+      title = 'Saved pieces — ' + brand;
+      desc = 'Pieces you saved at ' + brand + '.';
+      canonical = origin + '#/account/wishlist';
+    } else {
+      title = brand + ' — Sea glass doesn\'t fade.';
+      desc = '316L stainless steel jewellery with a PVD colour layer that does not fade. ' +
+        'Swim in it. Shower in it. Sleep in it. Duties included, 30-day returns.';
+      canonical = origin;
+      image = origin + 'assets/img/opt/hero-necklaces.jpg';
+    }
+
+    document.title = title;
+    metaTag('description', desc);
+    metaTag('og:title', title, true);
+    metaTag('og:description', desc, true);
+    metaTag('og:type', s.type === 'product' ? 'product' : 'website', true);
+    metaTag('og:site_name', brand, true);
+    metaTag('og:url', canonical, true);
+    if (image) metaTag('og:image', image, true);
+    else metaTag('og:image', '', true);
+    metaTag('twitter:card', image ? 'summary_large_image' : 'summary');
+    metaTag('twitter:title', title);
+    metaTag('twitter:description', desc);
+    if (image) metaTag('twitter:image', image);
+    linkTag('canonical', canonical);
+
+    /* BreadcrumbList 对商品页的富摘要很有用，顺手给一份 */
+    if (s.type === 'product' && s.product) {
+      jsonLd({
+        '@context': 'https://schema.org',
+        '@graph': [
+          ld,
+          {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: origin },
+              {
+                '@type': 'ListItem', position: 2, name: s.product.category || 'Shop',
+                item: origin + '#/collections/' + (s.product.category || 'all'),
+              },
+              { '@type': 'ListItem', position: 3, name: s.product.title, item: canonical },
+            ],
+          },
+        ],
+      });
+    } else {
+      jsonLd(ld);
+    }
+    seo = null;
+  }
+
   /* ---------------- 骨架 ---------------- */
   function storeShell(body, r) {
     return ui.shell(body, r) ;
@@ -67,6 +237,8 @@
     var seg = r.seg;
     var html;
 
+    seo = null;   // 每次渲染重置，避免上一页的 SEO 上下文串到这一页
+
     document.body.classList.remove('menu-open', 'search-open');
     if (seg[0] !== 'admin') document.body.classList.remove('filter-open');
 
@@ -79,11 +251,20 @@
           case undefined: case '': body = await renderHome(r); break;
           case 'collections': body = await renderCollection(r); break;
           case 'products': body = await renderProduct(r); break;
+          case 'search': body = await renderSearch(r); break;
           case 'cart': body = V.cart(); break;
           case 'checkout': body = await renderCheckout(r); break;
           case 'order': body = await renderOrder(r); break;
           case 'account': body = await renderAccount(r); break;
-          case 'pages': body = Pages.page(seg[1]) || V.notFound(); break;
+          case 'pages': {
+            var pg = Pages.page(seg[1]);
+            if (pg) {
+              var pmeta = (S.DB.pages || {})[seg[1]] || {};
+              setSeo({ type: 'page', key: seg[1], title: pmeta.title || seg[1], intro: pmeta.intro });
+            }
+            body = pg || V.notFound();
+            break;
+          }
           case 'custom': body = Pages.custom(r.query.sent || null); break;
           default: body = V.notFound();
         }
@@ -109,43 +290,58 @@
       var mb = document.getElementById('admMenuBtn');
       if (mb && window.innerWidth > 900) mb.style.display = 'none';
     }
+    /* title / og / canonical / JSON-LD 在这里统一落地（见 applySeo） */
+    try { applySeo(seg, r); } catch (e) { /* SEO 失败不该影响页面 */ }
   }
 
   /* ---------------- 首页 ---------------- */
+  /* 首页所需的数据一次拿全（?with=home）。
+     以前是 bootstrap → best-sellers → limit=1 → 详情 → limit=8 五个请求串起来，
+     在 350 kbps 的跨境链路上光等待就 6 秒多。
+     现在第一个请求就把 settings/nav/集合/首页商品/真实统计一起带回来。 */
   async function renderHome() {
-    var boot = S.state.boot || (await bootLoad());
-    var best = (await API.get('/products?collection=best-sellers&limit=8')).data;
-    setProducts(best);
-    var reviews = [];
-    try {
-      var first = best[0] || (await API.get('/products?limit=1')).data[0];
-      if (first) {
-        var d = await API.get('/products/' + first.handle);
-        setProducts([d.data.product]);
-        reviews = d.data.reviews;
-      }
-    } catch (e) { /* 评价取不到不影响首屏 */ }
-    if (best.length < 4) best = (await API.get('/products?limit=8')).data;
-    return V.home(boot, best, reviews);
+    var boot = S.state.boot;
+    if (!boot || !boot.home) boot = await bootLoad(true);
+    var h = boot.home || {};
+    var best = h.items || [];
+    if (best.length) setProducts(best);
+    return V.home(boot, best, h.reviews || [], h.stats || {});
   }
 
-  async function bootLoad() {
-    var res = await API.get('/bootstrap');
+  async function bootLoad(withHome) {
+    var res = await API.get('/bootstrap' + (withHome ? '?with=home' : ''));
     S.setBoot(res.data);
     return res.data;
   }
 
-  /* ---------------- 集合页 ---------------- */
-  async function renderCollection(r) {
-    var handle = r.seg[1] || 'best-sellers';
+  /* ---------------- 搜索 ---------------- */
+  /* 独立路由，不再借道集合。
+     之前回车跳到 #/collections/best-sellers?q=ring，只在 best-sellers 里过滤，
+     全站 3 件戒指搜出「0 pieces」——搜索是电商第二入口，断了等于没有。 */
+  async function renderSearch(r) {
+    var q = (r.query.q || '').trim();
     var qs = new URLSearchParams();
-    ['metal', 'price', 'stock', 'sort', 'page', 'q'].forEach(function (k) {
+    if (q) qs.set('q', q);
+    ['sort', 'page', 'cat', 'metal', 'price', 'stock'].forEach(function (k) {
       if (r.query[k]) qs.set(k, r.query[k]);
     });
     qs.set('limit', '24');
-    var res = await API.get('/collections/' + encodeURIComponent(handle) + '?' + qs.toString());
+
+    /* 空关键词时给「全部在售」，让搜索页本身也是个可逛的页面 */
+    var res = await API.get('/search?' + qs.toString());
     setProducts(res.data);
-    return V.collection(res.meta.collection, res.data, res.meta, r);
+    setSeo({ type: 'search', q: q, total: res.meta.total });
+    return V.search(q, res.data, res.meta, r);
+  }
+
+  /* ---------------- 收藏 ---------------- */
+  async function renderWishlist() {
+    setSeo({ type: 'wishlist' });
+    var handles = (S.state.wish || []).slice();
+    if (!handles.length) return V.wishlist([]);
+    var res = await API.get('/products?handles=' + encodeURIComponent(handles.join(',')) + '&limit=48');
+    setProducts(res.data);
+    return V.wishlist(res.data);
   }
 
   /* ---------------- 商品页 ---------------- */
@@ -154,7 +350,22 @@
     if (!handle) return V.notFound();
     var d = await API.get('/products/' + encodeURIComponent(handle));
     setProducts([d.data.product].concat(d.data.related || []));
-    return V.product(d.data.product, d.data.reviews, d.data.related, r);
+    setSeo({ type: 'product', product: d.data.product, stats: d.data.reviewStats });
+    return V.product(d.data.product, d.data.reviews, d.data.related, r, d.data.reviewStats);
+  }
+
+  /* ---------------- 集合页 ---------------- */
+  async function renderCollection(r) {
+    var handle = r.seg[1] || 'best-sellers';
+    var qs = new URLSearchParams();
+    ['metal', 'price', 'stock', 'sort', 'page', 'q', 'cat', 'motif', 'set'].forEach(function (k) {
+      if (r.query[k]) qs.set(k, r.query[k]);
+    });
+    qs.set('limit', '24');
+    var res = await API.get('/collections/' + encodeURIComponent(handle) + '?' + qs.toString());
+    setProducts(res.data);
+    setSeo({ type: 'collection', collection: res.meta.collection });
+    return V.collection(res.meta.collection, res.data, res.meta, r);
   }
 
   /* ---------------- 结算 ---------------- */
@@ -199,7 +410,12 @@
   }
 
   async function renderAccount(r) {
-    if ((r.seg[1] || '') !== 'lookup') S.go('/account/lookup');
+    var sub = r.seg[1] || '';
+    /* #/account/wishlist 现在有真实视图了。
+       之前所有非 lookup 的子路径都被强制重定向到查单页，
+       于是头部心形图标（aria-label="Wishlist"）点进去看到的是「Track an order」。 */
+    if (sub === 'wishlist') return renderWishlist();
+    if (sub !== 'lookup') S.go('/account/lookup');
     var st = S.state.lookup || {};
     return V.lookup(st.order, st.err, st.form);
   }
@@ -322,12 +538,102 @@
   S.onClick('close-filter', function () { document.body.classList.remove('filter-open'); });
   S.onClick('acc', function (el) { el.parentNode.classList.toggle('open'); });
 
+  /* 收藏 / 取消收藏。
+     只在本地更新，不发请求——收藏是浏览行为，不需要账号，也不该为它写库。 */
+  S.onClick('wish', function (el) {
+    var handle = el.dataset.handle;
+    if (!handle) return;
+    var added = S.wishToggle(handle);
+    S.toast(added ? 'Saved to your wishlist' : 'Removed from your wishlist', 'ok');
+
+    var n = S.wishCount();
+    var wc = document.getElementById('wishCount');
+    if (wc) { wc.textContent = n; wc.classList.toggle('is-zero', !n); }
+    var wb = document.getElementById('wishBtn');
+    if (wb) wb.setAttribute('aria-label', 'Wishlist' + (n ? ', ' + n + ' saved' : ''));
+
+    var label = el.querySelector('span');
+    el.classList.toggle('on', added);
+    el.setAttribute('aria-pressed', added ? 'true' : 'false');
+    if (label) el.innerHTML = ui.icon(added ? 'heartFull' : 'heart') + '<span>' + (added ? 'Saved' : 'Save for later') + '</span>';
+    else el.innerHTML = ui.icon(added ? 'heartFull' : 'heart');
+
+    /* 在收藏页里取消收藏，卡片得当场消失，否则用户以为没生效 */
+    var r = S.parseHash();
+    if (r.seg[0] === 'account' && r.seg[1] === 'wishlist') render();
+  });
+
+  /* 提交评价 → POST /api/v1/reviews，落 pending 等后台审核。
+     成功后把表单换成一句话，不再重渲染整页——用户刚写完的东西不能突然消失。 */
+  S.onSubmit('writereview', async function (form) {
+    var fd = new FormData(form);
+    var btn = form.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+    try {
+      await API.post('/reviews', {
+        handle: form.dataset.handle,
+        rating: Number(fd.get('rating')),
+        name: String(fd.get('rname') || '').trim(),
+        email: String(fd.get('remail') || '').trim(),
+        title: String(fd.get('rtitle') || '').trim(),
+        body: String(fd.get('rbody') || '').trim(),
+        orderNumber: String(fd.get('rorder') || '').trim(),
+      });
+      form.innerHTML = '<div class="revy__done">' +
+        '<b>Thank you — your review is in.</b>' +
+        '<p>We check every review before it goes live, usually within a day. ' +
+        'If you left an order number, it will carry a “Verified buyer” mark.</p></div>';
+      S.toast('Review submitted', 'ok');
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Submit review'; }
+      /* 字段级错误逐条列出来，用户才知道改哪儿，而不是只看到 "Please check the fields" */
+      if (e.details && e.details.length) {
+        var box = form.querySelector('.falert');
+        if (!box) {
+          box = document.createElement('div');
+          box.className = 'falert';
+          form.insertBefore(box, form.firstChild);
+        }
+        box.innerHTML = e.details.map(function (d) { return '<div>· ' + S.U.esc(d.message) + '</div>'; }).join('');
+      }
+      S.toast(e.message, 'err');
+    }
+  });
+
   S.onClick('thumb', function (el) {
     var main = document.getElementById('galMain');
-    if (main) main.src = el.src;
+    if (main) {
+      main.src = el.src;
+      /* 大图现在是 <picture>，只改 img.src 不会生效——浏览器优先取 <source> 里的 WebP，
+         画面会纹丝不动。必须把 source 的 srcset 一起换成同一张图的两档 WebP。 */
+      var pic = main.parentNode;
+      if (pic && pic.tagName === 'PICTURE') {
+        var src = pic.querySelector('source');
+        var parts = U.picParts(el.src);
+        if (src && parts) src.setAttribute('srcset', parts.set);
+      }
+    }
     el.parentNode.querySelectorAll('img').forEach(function (i) { i.classList.remove('on'); });
     el.classList.add('on');
   });
+
+  /* 把 U.pic(..., {defer:true}) 挂起的图真正取回来。
+     data-srcset / data-src 换回 srcset / src，浏览器这才开始下载。 */
+  function wakePic(img) {
+    if (!img) return;
+    var pic = img.parentNode;
+    if (!pic || pic.tagName !== 'PICTURE' || pic.dataset.defer !== '1') return;
+    var src = pic.querySelector('source');
+    if (src && src.dataset.srcset) {
+      src.setAttribute('srcset', src.dataset.srcset);
+      src.removeAttribute('data-srcset');
+    }
+    if (img.dataset.src) {
+      img.setAttribute('src', img.dataset.src);
+      img.removeAttribute('data-src');
+    }
+    delete pic.dataset.defer;
+  }
 
   S.onClick('slide', function (el) {
     var i = Number(el.dataset.i);
@@ -335,6 +641,8 @@
     if (!media) return;
     media.querySelectorAll('img').forEach(function (img, k) { img.classList.toggle('on', k === i); });
     media.querySelectorAll('.hero__dots i').forEach(function (d, k) { d.classList.toggle('on', k === i); });
+    /* 切到哪一张再取哪一张——用户可能一个圆点都不点 */
+    wakePic(media.querySelectorAll('img')[i]);
   });
 
   S.onClick('rail', function (el) {
@@ -465,6 +773,14 @@
     S.go('/collections/' + S.parseHash().seg[1] + (qs ? '?' + qs : ''));
   });
 
+  S.onChange('search-sort', function (el) {
+    var q = S.parseHash().query;
+    var p = [];
+    if (q.q) p.push('q=' + encodeURIComponent(q.q));
+    if (el.value && el.value !== 'featured') p.push('sort=' + el.value);
+    S.go('/search' + (p.length ? '?' + p.join('&') : ''));
+  });
+
   /* 结算提交：先重新报价，金额变化则让用户确认，不静默改价 */
   S.onSubmit('place', async function (form) {
     var btn = form.querySelector('button[type=submit]');
@@ -538,6 +854,38 @@
     localStorage.removeItem('tideglass_admin');
     S.go('/admin');
     render();
+  });
+
+  /* 导出 CSV。
+     下载要带 Bearer 令牌，所以不能用 <a href> 直接点——走 fetch 取 blob 再触发下载。
+     文件名从 Content-Disposition 里读，服务端已经按日期命名好了。 */
+  S.onClick('export', async function (el) {
+    var what = el.dataset.what || 'orders';
+    var qs = (what === 'orders' && el.dataset.status) ? '?status=' + encodeURIComponent(el.dataset.status) : '';
+    var label = el.textContent;
+    el.disabled = true;
+    el.textContent = 'Exporting…';
+    try {
+      var res = await fetch(API.base + '/admin/export/' + what + '.csv' + qs, {
+        headers: { Authorization: 'Bearer ' + API.token() },
+      });
+      if (!res.ok) throw new Error('Export failed (' + res.status + ')');
+      var blob = await res.blob();
+      var cd = res.headers.get('content-disposition') || '';
+      var m = /filename="([^"]+)"/.exec(cd);
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = m ? m[1] : what + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+      S.toast('Exported ' + what + '.csv', 'ok');
+    } catch (e) {
+      S.toast(e.message, 'err');
+    }
+    el.disabled = false;
+    el.textContent = label;
   });
 
   S.onClick('open-order', function (el) {
@@ -1222,12 +1570,14 @@
     } catch (e) { S.toast(e.message, 'err'); }
   });
 
-  /* 搜索层：输入回车跳集合页搜索 */
+  /* 搜索层：输入回车跳独立搜索页。
+     以前跳的是 #/collections/best-sellers?q=，只在 best-sellers 那几件里过滤，
+     全站 3 件戒指搜出来是「0 pieces」——接口一直是好的，是前端把搜索当成了集合筛选。 */
   document.addEventListener('keydown', function (e) {
     var input = e.target;
     if (e.key === 'Enter' && input && input.id === 'searchInput') {
       var q = input.value.trim();
-      if (q) { S.go('/collections/best-sellers?q=' + encodeURIComponent(q)); document.body.classList.remove('search-open'); }
+      if (q) { S.go('/search?q=' + encodeURIComponent(q)); document.body.classList.remove('search-open'); }
     }
     if (e.key === '/' && !/input|textarea|select/i.test(document.activeElement.tagName)) {
       e.preventDefault();
@@ -1235,6 +1585,42 @@
       var si = document.getElementById('searchInput');
       if (si) setTimeout(function () { si.focus(); }, 40);
     }
+  });
+
+  /* 搜索浮层的实时建议：输入 2 个字以上开始查，节流 260 ms。
+     以前这个浮层只有输入框和一句提示，下面 id=searchRes 的区域永远是空的。 */
+  var searchTimer = null;
+  document.addEventListener('input', function (e) {
+    if (!e.target || e.target.id !== 'searchInput') return;
+    var q = e.target.value.trim();
+    var box = document.getElementById('searchRes');
+    if (!box) return;
+    clearTimeout(searchTimer);
+    if (q.length < 2) { box.innerHTML = ''; return; }
+    searchTimer = setTimeout(async function () {
+      try {
+        var res = await API.get('/search?q=' + encodeURIComponent(q) + '&limit=5');
+        if (!res.data.length) {
+          box.innerHTML = '<p class="searchlayer__none">Nothing matched “' + S.U.esc(q) + '”.</p>';
+          return;
+        }
+        box.innerHTML = res.data.map(function (p) {
+          return '<a class="slres" href="#/products/' + p.handle + '" data-act="close-search">' +
+            S.U.pic(p.images[0], { alt: '', w: 900, h: 900, sizes: '56px' }) +
+            '<span><b>' + S.U.esc(p.title) + '</b><em>' + S.U.money(p.price) + '</em></span></a>';
+        }).join('') +
+          '<a class="slres__all" href="#/search?q=' + encodeURIComponent(q) + '" data-act="close-search">See all ' +
+          res.meta.total + ' results →</a>';
+      } catch (err) { box.innerHTML = ''; }
+    }, 260);
+  });
+  /* 关闭搜索层时把结果清掉，下次打开不该看到上次的词 */
+  S.onClick('close-search', function () {
+    document.body.classList.remove('search-open');
+    var box = document.getElementById('searchRes');
+    if (box) box.innerHTML = '';
+    var si = document.getElementById('searchInput');
+    if (si) si.value = '';
   });
 
   /* ---------------- 启动 ---------------- */

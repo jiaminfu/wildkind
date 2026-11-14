@@ -40,6 +40,9 @@ function send(res, status, payload, extraHeaders) {
     'Content-Length': Buffer.byteLength(body),
     'Cache-Control': 'no-store',
     'X-Content-Type-Options': 'nosniff',
+    /* 413 时请求体还剩一大截没读，连接无法复用，必须显式关掉。
+       不然客户端会等一个永远不会来的响应尾巴。 */
+    ...(status === 413 ? { Connection: 'close' } : {}),
   }, CORS, extraHeaders || {}));
   res.end(body);
 }
@@ -60,23 +63,45 @@ const MAX_BODY = 1024 * 256;   // 256 KB，订单/商品都远小于此
 
 /* 图片上传走 base64 JSON，一张压缩后的实拍图约 300~550 KB，
    仅对上传接口单独放宽（见 index.js），其余接口保持 256 KB 不变，
-   免得给全站开了个 8 MB 的口子。 */
+   免得给全站开了个 8 MB 的口子。
+
+   超限的处理方式改过一次，值得记下来：
+   原先 reject 之后立刻 req.destroy()，socket 当场销毁——413 响应虽然写进了
+   res，但连接已经断了，客户端只看到 "connection reset"，用户界面上就是
+   「网络错误」。正确顺序是先让 413 响应发出去，再让连接关（send() 里带
+   Connection: close），期间暂停读取即可，不能提前销毁。 */
 function readBody(req, limit) {
   const max = limit || MAX_BODY;
   return new Promise((resolve, reject) => {
     if (req.method === 'GET' || req.method === 'HEAD') return resolve(null);
+
+    /* 有 Content-Length 且明显超限时，一个字节都不必读。
+       这是最常见的情形（浏览器、curl、fetch 都会带这个头）。 */
+    const declared = parseInt(req.headers['content-length'], 10);
+    if (declared && declared > max) {
+      req.resume();   // 丢弃剩余数据，但保持连接可写，好让 413 发出去
+      return reject(new ApiError(413, 'PAYLOAD_TOO_LARGE',
+        'Request body is too large (limit ' + Math.round(max / 1024) + ' KB).'));
+    }
+
     let size = 0;
+    let over = false;
     const chunks = [];
     req.on('data', c => {
+      if (over) return;                 // 超限后不再累积，避免内存被打爆
       size += c.length;
       if (size > max) {
-        reject(new ApiError(413, 'PAYLOAD_TOO_LARGE', 'Request body is too large.'));
-        req.destroy();
+        over = true;
+        chunks.length = 0;
+        req.pause();
+        reject(new ApiError(413, 'PAYLOAD_TOO_LARGE',
+          'Request body is too large (limit ' + Math.round(max / 1024) + ' KB).'));
         return;
       }
       chunks.push(c);
     });
     req.on('end', () => {
+      if (over) return;
       const raw = Buffer.concat(chunks).toString('utf8');
       if (!raw) return resolve({});
       const ct = String(req.headers['content-type'] || '');

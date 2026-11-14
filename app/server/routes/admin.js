@@ -1052,6 +1052,104 @@ function routes(router) {
     })));
   });
 
+  /* ---------------- 导出（CSV） ----------------
+     对账、打发货单、丢给 ERP 都要导出，一个都没有的话店主只能一屏屏手工抄。
+     排序按业务习惯：订单按时间倒序、商品按类目、客户按消费额。
+     表头用中英双语——Excel 里给会计看中文，导进系统认英文列名。 */
+  function sendCsv(res, filename, rows) {
+    /* BOM 不能少：Excel 双击打开无 BOM 的 UTF-8 CSV 会把中文认成 GBK */
+    const body = '\uFEFF' + csv.toCsv(rows);
+    res.writeHead(200, {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Length': Buffer.byteLength(body),
+      'Content-Disposition': 'attachment; filename="' + filename + '"',
+      'Cache-Control': 'no-store',
+      'Access-Control-Expose-Headers': 'Content-Disposition',
+      ...CORS,
+    });
+    res.end(body);
+  }
+
+  router.get('/api/v1/admin/export/orders.csv', (req, res) => {
+    const me = auth.requireAuth(req);
+    auth.requirePerm(me, 'orders:read');
+    const db = store.get();
+    let list = db.orders.slice().sort((a, b) =>
+      String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+    if (req.query.status) list = list.filter(o => o.status === req.query.status);
+
+    const rows = [[
+      'Order / 订单号', 'Date / 下单时间', 'Status / 状态', 'Customer / 客户',
+      'Email / 邮箱', 'Items / 件数', 'Subtotal / 小计', 'Discount / 优惠',
+      'Shipping / 运费', 'Total / 合计', 'Currency / 币种',
+      'Shipping method / 配送方式', 'Tracking / 运单号', 'Carrier / 承运商',
+    ]];
+    for (const o of list) {
+      rows.push([
+        o.number,
+        o.createdAt,
+        STATUS_LABEL[o.status] || o.status,
+        o.name || '',
+        o.email || '',
+        (o.items || []).reduce((a, i) => a + (i.qty || 0), 0),
+        o.subtotal, o.discount || 0, o.shipping || 0, o.total,
+        (db.settings.currency || 'USD'),
+        o.shippingMethod || '',
+        o.tracking || '', o.carrier || '',
+      ]);
+    }
+    sendCsv(res, 'tideglass-orders-' + new Date().toISOString().slice(0, 10) + '.csv', rows);
+  });
+
+  router.get('/api/v1/admin/export/products.csv', (req, res) => {
+    const me = auth.requireAuth(req);
+    auth.requirePerm(me, 'products:read');
+    const db = store.get();
+
+    /* 一行一个 SKU，不是一个商品一行——发货和盘点按 SKU 走，
+       一个商品三色合成一行的话，库存和成本都对不上。 */
+    const rows = [[
+      'Handle / 商品标识', 'Title / 名称', 'Category / 类目', 'Metal / 材质',
+      'SKU', 'Price / 售价', 'Cost / 成本价', 'Stock / 库存',
+      'Active / 已上架', 'Collections / 集合', 'Motif / 图案', 'Set / 系列',
+      'Created / 创建时间',
+    ]];
+    const sorted = db.products.slice().sort((a, b) =>
+      String(a.cat || '').localeCompare(String(b.cat || '')) || String(a.title).localeCompare(String(b.title)));
+    for (const p of sorted) {
+      const vs = (p.variants || []).length ? p.variants : [{ metal: '', sku: '', price: p.price, cost: p.cost, stock: 0 }];
+      for (const v of vs) {
+        rows.push([
+          p.handle, p.title, p.cat || '', v.metal || '',
+          v.sku || '', v.price != null ? v.price : p.price, v.cost != null ? v.cost : (p.cost != null ? p.cost : ''),
+          v.stock != null ? v.stock : 0,
+          p.active ? 'yes' : 'no',
+          (p.collections || []).join('|'),
+          p.motif || '', p.set || '',
+          p.createdAt || '',
+        ]);
+      }
+    }
+    sendCsv(res, 'tideglass-products-' + new Date().toISOString().slice(0, 10) + '.csv', rows);
+  });
+
+  router.get('/api/v1/admin/export/customers.csv', (req, res) => {
+    const me = auth.requireAuth(req);
+    auth.requirePerm(me, 'customers:read');
+    const db = store.get();
+    const rows = [[
+      'Email / 邮箱', 'Name / 姓名', 'Orders / 订单数', 'Spent / 累计消费',
+      'Tier / 分层', 'Last order / 最近下单', 'Marketing opt-in / 订阅',
+    ]];
+    db.customers.slice().sort((a, b) => (b.spent || 0) - (a.spent || 0)).forEach(c => {
+      rows.push([
+        c.email || '', c.name || '', c.orders || 0, c.spent || 0,
+        c.tier || '', c.last || '', c.marketing ? 'yes' : 'no',
+      ]);
+    });
+    sendCsv(res, 'tideglass-customers-' + new Date().toISOString().slice(0, 10) + '.csv', rows);
+  });
+
   /* ---------------- 优惠券 ---------------- */
   router.get('/api/v1/admin/coupons', (req, res) => {
     const me = auth.requireAuth(req);
@@ -1131,6 +1229,21 @@ function routes(router) {
     audit(me, 'review.moderate', r.id, { status });
     store.flush();
     ok(res, { review: r });
+  });
+
+  /* 删除评价。
+     以前只能改状态，接到第一条垃圾评论（带外链的推广、辱骂）就删不掉，
+     只能挂个 rejected 藏在库里——真出事时既是合规风险也是数据噪音。 */
+  router.delete('/api/v1/admin/reviews/:id', (req, res) => {
+    const me = auth.requireAuth(req);
+    auth.requirePerm(me, 'products:write');
+    const db = store.get();
+    const i = db.reviews.findIndex(x => x.id === req.params.id);
+    if (i < 0) throw E.notFound('Review not found.');
+    const [gone] = db.reviews.splice(i, 1);
+    audit(me, 'review.delete', gone.id, { productId: gone.productId, rating: gone.rating });
+    store.flush();
+    ok(res, { deleted: gone.id });
   });
 
   /* ---------------- 设置 ---------------- */

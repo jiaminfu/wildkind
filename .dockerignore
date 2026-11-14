@@ -21,3 +21,8 @@ README.md
 start.bat
 server.js
 data/
+
+# 图片母版（1.2–3.3MB 的原始 PNG，合计 22MB）只在本地生成 WebP 时用得到，
+# 运行时浏览器取的是 assets/img/opt/ 下的 WebP 与兜底 JPG。
+# 具体见 tools/opt-img2.js。
+app/web/assets/img/*.png

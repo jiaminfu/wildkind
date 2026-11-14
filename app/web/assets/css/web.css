@@ -429,3 +429,175 @@ body.pimp-open{overflow:hidden}
   .phd-r .admsearch{flex:1 1 140px}
 }
 
+
+/* ============================================================
+   修复层 · 2026-11-14 验收缺陷
+   承接 D-106 / D-119 ~ D-128，追加在最后，优先级高于前三层。
+   ============================================================ */
+
+/* ---------- 键盘焦点（D-119） ----------
+   前三层里有十几处 `outline:none`（输入框、下拉、搜索框），
+   它们的选择器特异性比 refine.css 的 :focus-visible 高，
+   结果键盘用户 Tab 过去什么都看不见。可达性是底线，用 !important 提权。 */
+:is(a, button, input, select, textarea, [tabindex], summary):focus-visible {
+  outline: 2px solid var(--sea) !important;
+  outline-offset: 3px;
+}
+
+/* ---------- 星级：区分空心与实心（D-120） ----------
+   原先 .st 统一 color:var(--brass)，空心实心长得一模一样，
+   0 条评价的商品照样是五颗金灿灿的星——等于给新品贴「五星好评」。
+   空星用极淡的墨色，一眼能分出「没评价」和「五星」。 */
+.st span { color: rgba(46, 42, 37, .18); }
+.st span.on { color: var(--brass); }
+.st span.half { color: var(--brass); opacity: .45; }
+.card__rate--none,
+.pdp__rate--none { color: var(--muted); font-size: 10.5px; letter-spacing: .04em; }
+.pdp__rate--none { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+
+/* ---------- 收藏按钮（D-123） ---------- */
+.card { position: relative; }
+.card__wish {
+  position: absolute; top: 10px; right: 10px; z-index: 3;
+  width: 32px; height: 32px; display: grid; place-items: center;
+  border-radius: 50%; background: rgba(250, 246, 239, .92);
+  color: var(--sea); opacity: 0; transition: opacity .2s var(--ease), background .2s;
+}
+.card:hover .card__wish, .card__wish:focus-visible, .card__wish.on { opacity: 1; }
+.card__wish:hover { background: var(--paper); }
+.card__wish svg { width: 15px; height: 15px; }
+.card__wish.on { color: var(--clay); }
+@media (hover: none) { .card__wish { opacity: 1; } }
+
+.pdp__wish {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
+  font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); transition: color .2s;
+}
+.pdp__wish svg { width: 15px; height: 15px; }
+.pdp__wish:hover { color: var(--sea); }
+.pdp__wish.on { color: var(--clay); }
+
+/* ---------- 评分分布与评价表单（D-107） ---------- */
+#reviews { scroll-margin-top: 90px; }
+.revwrap {
+  display: grid; grid-template-columns: 260px 1fr; gap: 56px;
+  padding: 56px 0; border-top: 1px solid var(--line);
+}
+.revwrap__sum { position: sticky; top: 96px; align-self: start; }
+.revavg { display: flex; align-items: center; gap: 16px; margin: 14px 0 20px; }
+.revavg b { font-family: var(--serif); font-size: 46px; line-height: 1; font-weight: 400; color: var(--ink); }
+.revavg .st { display: block; font-size: 13px; letter-spacing: 2px; }
+.revavg small { display: block; margin-top: 4px; font-size: 11px; color: var(--muted); }
+.revdist { display: grid; gap: 7px; }
+.revdist__row { display: grid; grid-template-columns: 46px 1fr 24px; align-items: center; gap: 10px; }
+.revdist__row span { font-size: 10.5px; color: var(--muted); }
+.revdist__row i { display: block; height: 4px; background: var(--line); }
+.revdist__row i em { display: block; height: 100%; background: var(--brass); }
+.revdist__row b { font-size: 10.5px; font-weight: 400; color: var(--muted); text-align: right; }
+
+.revwrap__list .rev {
+  padding: 20px 0; border-bottom: 1px solid var(--line);
+}
+.revwrap__list .rev:last-of-type { border-bottom: 0; }
+
+.revy {
+  margin-top: 32px; padding: 26px 28px; background: var(--cream-d);
+  border: 1px solid var(--line); max-width: 560px;
+}
+.revy__hd h4 { font-family: var(--serif); font-size: 22px; font-weight: 400; margin: 0 0 6px; }
+.revy__hd p { font-size: 12px; color: var(--muted); margin: 0 0 18px; }
+.revy .fld { margin-bottom: 14px; }
+.revy textarea { resize: vertical; min-height: 90px; }
+.revy .btn { width: 100%; margin-top: 6px; }
+.revy__done { padding: 8px 0; }
+.revy__done b { display: block; font-family: var(--serif); font-size: 20px; font-weight: 400; margin-bottom: 6px; }
+.revy__done p { font-size: 12px; color: var(--muted); margin: 0; }
+.revstars { display: flex; gap: 6px; margin-bottom: 16px; }
+.revstars label { cursor: pointer; }
+.revstars input { position: absolute; opacity: 0; width: 0; height: 0; }
+.revstars span {
+  display: inline-block; padding: 6px 11px; font-size: 11px; letter-spacing: .04em;
+  border: 1px solid var(--line-2); background: var(--paper); color: var(--muted);
+  transition: .16s;
+}
+.revstars input:checked + span { background: var(--sea); border-color: var(--sea); color: var(--cream); }
+.revstars input:focus-visible + span { outline: 2px solid var(--sea); outline-offset: 2px; }
+
+/* ---------- 搜索浮层结果 ---------- */
+.searchlayer__res { padding: 8px 0 24px; }
+.searchlayer__none { font-size: 12.5px; color: var(--muted); padding: 12px 2px; }
+.slres {
+  display: flex; gap: 14px; align-items: center; padding: 10px 2px;
+  border-bottom: 1px solid var(--line);
+}
+.slres img { width: 44px; height: 55px; object-fit: cover; background: var(--cream-d); }
+.slres span { display: flex; flex-direction: column; gap: 2px; }
+.slres b { font-weight: 400; font-size: 13px; color: var(--ink); }
+.slres em { font-style: normal; font-size: 11px; color: var(--muted); }
+.slres:hover b { text-decoration: underline; text-underline-offset: 3px; }
+.slres__all { display: block; padding: 14px 2px 0; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--sea); }
+
+/* ---------- hero 裁切（D-127） ----------
+   1100×1375 的竖图 cover 进 806×640 的横容器，上下各裁掉 170px，
+   人像只剩中间一条脖子。把裁切基准线往上提到 30%，
+   保住脸和锁骨，项链正好落在视觉中心。 */
+.hero__media img { object-position: center 30%; }
+
+/* ---------- 卡片图片占位（D-128） ---------- */
+.card__media img,
+.gal__main img,
+.gal__thumbs img {
+  background: var(--cream-d);
+}
+
+/* ---------- 响应式图片容器（D-111 / D-112） ----------
+   U.pic() 会输出 <picture><source webp><img 兜底>。
+   picture 本身不建盒子（display:contents），这样 .card__media > img、
+   .gal__main img 之类既有选择器和 flex/grid 布局完全不受影响，
+   相当于把 <picture> 从渲染树里「透明掉」。 */
+picture { display: contents; }
+
+/* ---------- 顶栏 1201–1400px 挤爆（D-129） ----------
+   refine.css 把 .hdr__inner 改成 flex、把导航 gap 提到 22px，
+   但它的断点只到 1200px（以下导航整体隐藏）。于是 1201–1400 这一段
+   没有任何压缩档：11 个 white-space:nowrap 的条目自然宽约 830px，
+   而 flex 槽位只有约 735px，多出来的直接压到右侧搜索/收藏图标上——
+   表现为「GIFTS」被图标盖住，变成 GIßS。
+   app.css 里本来有 1280 的压缩档，但被后加载的 refine.css 同权重盖掉了。
+
+   这里只压缩间距和字距，不动字号结构；不能用 overflow:hidden，
+   那会把 mega menu 一起裁掉（refine 里特意写了 overflow:visible）。 */
+@media (max-width: 1400px) {
+  .hdr__nav { gap: 12px; }
+  .hdr__nav a { letter-spacing: .03em; }
+}
+
+@media (max-width: 1240px) {
+  .hdr__nav { gap: 9px; }
+  .hdr__nav a { font-size: 10px; letter-spacing: .02em; }
+}
+
+/* ---------- mega menu 面板越出视口（D-129 续） ----------
+   面板宽 760px，锚在导航项上：left:-26px 时右边缘会顶出视口，
+   .mega--right 的 right:-26px 又会把左边缘推出左侧。
+   11 个导航项横跨约 550–1090px，760px 的面板无论左锚还是右锚
+   都必然有一半项目放不下——这是尺寸冲突，调阈值解决不了。
+
+   改成把面板锚到页头（.navitem 取消定位，让 .mega 对上最近的
+   定位祖先 .hdr，它是 sticky，等于整行宽度），水平居中。
+   760px 永远小于「视口 - 96px」，任何桌面宽度都不会越界。 */
+.hdr__nav .navitem { position: static; }
+.hdr__nav .mega,
+.hdr__nav .mega--right {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+}
+
+@media (max-width: 900px) {
+  .revwrap { grid-template-columns: 1fr; gap: 28px; padding: 40px 0; }
+  .revwrap__sum { position: static; }
+  .revy { padding: 20px 18px; }
+  .card__wish { opacity: 1; }
+}
