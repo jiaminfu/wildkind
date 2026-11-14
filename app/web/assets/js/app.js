@@ -238,7 +238,9 @@
       if (sec === 'products') {
         var pq = r.query.q ? '?q=' + encodeURIComponent(r.query.q) : '';
         var ps = await API.get('/admin/products' + pq, { auth: true });
-        return A.shell(A.products(ps.data, r.query.q), 'products', 'Products', staff);
+        var cols = await API.get('/admin/collections', { auth: true });
+        return A.shell(A.products(ps.data, r.query.q) + A.editorDrawer(cols.data, staff) + A.importModal(),
+          'products', 'Products', staff);
       }
       if (sec === 'inventory') {
         var inv = await API.get('/admin/inventory', { auth: true });
@@ -589,6 +591,429 @@
         { active: el.dataset.active !== '1' }, { auth: true });
       render();
     } catch (e) { S.toast(e.message, 'err'); }
+  });
+
+  /* ============================================================
+     商品编辑抽屉
+     抽屉是常驻 DOM、只切 class，不走路由——一重绘，填了半天的表单就没了。
+     ============================================================ */
+  var editing = null;
+  var dragFrom = null;
+  var METALS = ['Gold', 'Silver', 'Rose Gold'];
+
+  function dEl(id) { return document.getElementById(id); }
+
+  function renderDrawerImages() {
+    if (!editing || !dEl('pImgs')) return;
+    dEl('pImgs').innerHTML = A.imageCells(editing.images);
+    if (dEl('pImgHint')) {
+      dEl('pImgHint').textContent = editing.images.length
+        ? editing.images.length + ' / 6 images · the first one is the main image'
+        : 'No images yet. A product needs at least one before it can be published.';
+    }
+  }
+
+  function renderDrawerVariants() {
+    if (!editing || !dEl('pVars')) return;
+    dEl('pVars').innerHTML = A.variantRows(editing.variants, METALS);
+  }
+
+  function fillEditor(p) {
+    editing = p ? {
+      mode: 'edit', id: p.id, version: p.version, active: !!p.active,
+      images: (p.images || []).slice(),
+      variants: (p.variants || []).map(function (v) {
+        return { sku: v.sku, metal: v.metal, price: v.price, stock: v.stock };
+      }),
+    } : {
+      mode: 'new', images: [],
+      variants: [{ metal: 'Gold', sku: '', price: '', stock: 0 }],
+    };
+
+    dEl('pdrawerTitle').textContent = p ? 'Edit · ' + p.title : 'New product';
+    dEl('pTitle').value = p ? p.title : '';
+    dEl('pHandle').value = p ? p.handle : '';
+    dEl('pCat').value = p ? p.cat : 'necklaces';
+    dEl('pPrice').value = p ? p.price : '';
+    dEl('pCost').value = p && p.cost != null ? p.cost : '';
+    dEl('pCompare').value = p && p.compareAt != null ? p.compareAt : '';
+    dEl('pBadge').value = p && p.badge ? p.badge : '';
+    dEl('pMotif').value = p ? (p.motif || '') : '';
+    dEl('pSet').value = p ? (p.set || '') : '';
+    dEl('pDesc').value = p ? (p.desc || '') : '';
+    dEl('pSizes').value = p && (p.sizes || []).length ? p.sizes.join('|') : '';
+
+    var boxes = dEl('pCols') ? dEl('pCols').querySelectorAll('input') : [];
+    [].forEach.call(boxes, function (b) {
+      b.checked = !!(p && (p.collections || []).indexOf(b.value) >= 0);
+    });
+
+    dEl('pMeta').textContent = p
+      ? p.id + ' · v' + p.version + (p.active ? ' · live on the storefront' : ' · draft, not visible')
+      : 'Saved as a draft. Fill it in, add images, then Publish from the list.';
+    dEl('pSave').textContent = p && p.active ? 'Save changes' : 'Save draft';
+    dEl('pDup').hidden = !p;
+    dEl('pDel').hidden = !p;
+
+    renderDrawerImages();
+    renderDrawerVariants();
+    var bd = dEl('pdrawer') && dEl('pdrawer').querySelector('.pdrawer__bd');
+    if (bd) bd.scrollTop = 0;
+  }
+
+  function openEditor(product) {
+    fillEditor(product);
+    document.body.classList.add('pedit-open');
+    var t = dEl('pTitle');
+    if (t && !product) setTimeout(function () { t.focus(); }, 120);
+  }
+
+  function closeEditor() {
+    document.body.classList.remove('pedit-open');
+    editing = null;
+  }
+
+  S.onClick('pnew', function () { openEditor(null); });
+
+  S.onClick('pedit', async function (el) {
+    try {
+      var res = await API.get('/admin/products/' + encodeURIComponent(el.dataset.id), { auth: true });
+      openEditor(res.data);
+    } catch (e) { S.toast(e.message, 'err'); }
+  });
+
+  S.onClick('pclose', closeEditor);
+
+  /* ---------- 图片 ---------- */
+  S.onClick('pimgpick', function () {
+    var f = dEl('pFile');
+    if (f) f.click();
+  });
+
+  S.onClick('pimgdel', function (el) {
+    if (!editing) return;
+    editing.images.splice(Number(el.dataset.idx), 1);
+    renderDrawerImages();
+  });
+
+  S.onClick('pimgmain', function (el) {
+    if (!editing) return;
+    var i = Number(el.dataset.idx);
+    var moved = editing.images.splice(i, 1)[0];
+    editing.images.unshift(moved);
+    renderDrawerImages();
+  });
+
+  /* 浏览器端压缩：一张手机原图 3~6 MB，直传既慢又占卷。
+     压到 1600px / q0.82 后通常 200~400 KB，前台加载也快一截。 */
+  function compressImage(file) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      var url = URL.createObjectURL(file);
+      img.onload = function () {
+        try {
+          var max = 1600;
+          var w = img.naturalWidth || img.width;
+          var h = img.naturalHeight || img.height;
+          var sc = Math.min(1, max / Math.max(w, h));
+          var cw = Math.max(1, Math.round(w * sc));
+          var ch = Math.max(1, Math.round(h * sc));
+          var cv = document.createElement('canvas');
+          cv.width = cw;
+          cv.height = ch;
+          var ctx = cv.getContext('2d');
+          ctx.fillStyle = '#ffffff';   // 透明 PNG 转 JPEG 会变黑底，先铺白
+          ctx.fillRect(0, 0, cw, ch);
+          ctx.drawImage(img, 0, 0, cw, ch);
+          URL.revokeObjectURL(url);
+          resolve(cv.toDataURL('image/jpeg', 0.82));
+        } catch (err) { reject(err); }
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(url);
+        reject(new Error('That file is not a readable image.'));
+      };
+      img.src = url;
+    });
+  }
+
+  S.onChange('pimg', async function (input) {
+    if (!editing || !input.files || !input.files.length) return;
+    var room = 6 - editing.images.length;
+    var files = [].slice.call(input.files).slice(0, Math.max(0, room));
+    if (input.files.length > room) S.toast('Only ' + Math.max(0, room) + ' more image(s) fit', 'err');
+    input.value = '';
+    if (!files.length) return;
+
+    S.toast('Uploading ' + files.length + ' image(s)…', '');
+    for (var i = 0; i < files.length; i++) {
+      try {
+        var dataUrl = await compressImage(files[i]);
+        var res = await API.post('/admin/uploads', { dataUrl: dataUrl }, { auth: true });
+        editing.images.push(res.data.path);
+        renderDrawerImages();
+      } catch (e) {
+        S.toast(e.message || 'Upload failed', 'err');
+      }
+    }
+  });
+
+  /* 拖拽换序：第一张就是前台主图 */
+  document.addEventListener('dragstart', function (e) {
+    var c = e.target.closest ? e.target.closest('#pImgs .imgcell[draggable="true"]') : null;
+    if (!c) return;
+    dragFrom = Number(c.dataset.idx);
+  });
+  document.addEventListener('dragover', function (e) {
+    if (dragFrom == null) return;
+    if (e.target.closest && e.target.closest('#pImgs')) e.preventDefault();
+  });
+  document.addEventListener('drop', function (e) {
+    if (dragFrom == null || !editing) return;
+    var cell = e.target.closest ? e.target.closest('#pImgs .imgcell') : null;
+    if (!cell) { dragFrom = null; return; }
+    e.preventDefault();
+    var to = Number(cell.dataset.idx);
+    if (to < editing.images.length && to !== dragFrom) {
+      var moved = editing.images.splice(dragFrom, 1)[0];
+      editing.images.splice(to, 0, moved);
+      renderDrawerImages();
+    }
+    dragFrom = null;
+  });
+
+  /* ---------- 变体 ---------- */
+  S.onChange('pvar', function (el) {
+    if (!editing) return;
+    var i = Number(el.dataset.idx);
+    if (!editing.variants[i]) return;
+    editing.variants[i][el.dataset.f] = el.value;
+  });
+
+  S.onClick('pvaradd', function () {
+    if (!editing) return;
+    if (editing.variants.length >= 12) { S.toast('Max 12 variants per product', 'err'); return; }
+    editing.variants.push({ metal: 'Gold', sku: '', price: '', stock: 0 });
+    renderDrawerVariants();
+  });
+
+  S.onClick('pvardel', function (el) {
+    if (!editing || editing.variants.length <= 1) return;
+    editing.variants.splice(Number(el.dataset.idx), 1);
+    renderDrawerVariants();
+  });
+
+  /* ---------- 保存 ---------- */
+  function readEditor() {
+    var sizes = dEl('pSizes').value.split(/[|,]/).map(function (s) { return s.trim(); }).filter(Boolean);
+    var cols = [];
+    [].forEach.call(dEl('pCols').querySelectorAll('input:checked'), function (b) { cols.push(b.value); });
+
+    var body = {
+      title: dEl('pTitle').value.trim(),
+      cat: dEl('pCat').value,
+      price: Number(dEl('pPrice').value),
+      desc: dEl('pDesc').value,
+      motif: dEl('pMotif').value.trim(),
+      set: dEl('pSet').value.trim(),
+      badge: dEl('pBadge').value || null,
+      compareAt: dEl('pCompare').value === '' ? null : Number(dEl('pCompare').value),
+      sizes: sizes,
+      collections: cols,
+      images: editing.images.slice(),
+      variants: editing.variants.map(function (v) {
+        return {
+          sku: String(v.sku || '').trim(),
+          metal: v.metal,
+          price: v.price === '' || v.price == null ? null : Number(v.price),
+          stock: Number(v.stock) || 0,
+        };
+      }),
+    };
+    var h = dEl('pHandle').value.trim();
+    if (h) body.handle = h;
+    var costEl = dEl('pCost');
+    if (costEl && !costEl.disabled && costEl.value !== '') body.cost = Number(costEl.value);
+    return body;
+  }
+
+  S.onClick('psave', async function () {
+    if (!editing) return;
+    var body = readEditor();
+
+    if (!body.title) { S.toast('Title is required', 'err'); dEl('pTitle').focus(); return; }
+    if (!(body.price > 0)) { S.toast('Price must be greater than 0', 'err'); dEl('pPrice').focus(); return; }
+    if (!body.variants.length) { S.toast('Add at least one variant', 'err'); return; }
+
+    var btn = dEl('pSave');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+    try {
+      if (editing.mode === 'new') {
+        await API.post('/admin/products', body, { auth: true });
+        S.toast('Draft created — add images, then Publish', 'ok');
+      } else {
+        body.version = editing.version;
+        await API.patch('/admin/products/' + encodeURIComponent(editing.id), body, { auth: true });
+        S.toast('Saved', 'ok');
+      }
+      closeEditor();
+      render();
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.textContent = editing && editing.active ? 'Save changes' : 'Save draft'; }
+      S.toast(e.message || 'Save failed', 'err');
+      /* 字段级错误直接标到那个输入框上，别让人对着 toast 找是哪一项 */
+      var f = e.details && e.details[0] && e.details[0].field;
+      var map = { title: 'pTitle', price: 'pPrice', cost: 'pCost', compareAt: 'pCompare', handle: 'pHandle', cat: 'pCat', images: 'pImgs', variants: 'pVars' };
+      var target = f && dEl(map[String(f).split('.')[0]]);
+      if (target) {
+        target.classList.add('is-bad');
+        if (target.focus) target.focus();
+        setTimeout(function () { target.classList.remove('is-bad'); }, 2400);
+      }
+    }
+  });
+
+  S.onClick('pdup', async function () {
+    if (!editing || editing.mode !== 'edit') return;
+    try {
+      var res = await API.post('/admin/products/' + encodeURIComponent(editing.id) + '/duplicate', {}, { auth: true });
+      S.toast('Copied to ' + res.data.product.id + ' (stock reset to 0)', 'ok');
+      closeEditor();
+      render();
+    } catch (e) { S.toast(e.message, 'err'); }
+  });
+
+  S.onClick('pdel', async function () {
+    if (!editing || editing.mode !== 'edit') return;
+    if (!confirm('Delete ' + editing.id + '? This cannot be undone.')) return;
+    try {
+      await API.del('/admin/products/' + encodeURIComponent(editing.id), { auth: true });
+      S.toast('Deleted', 'ok');
+      closeEditor();
+      render();
+    } catch (e) {
+      /* 有订单引用的商品删不掉，会返回 409 —— 把原因原样说出来，别只报 "失败" */
+      S.toast(e.message, 'err');
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (document.body.classList.contains('pedit-open')) closeEditor();
+    if (document.body.classList.contains('pimp-open')) document.body.classList.remove('pimp-open');
+  });
+
+  /* ============================================================
+     CSV 批量导入
+     两段式：选文件先跑 preview（一行不写库），确认后才真写。
+     ============================================================ */
+  var impCsv = '';
+  var impPreview = null;
+
+  S.onClick('pimport', function () {
+    impCsv = '';
+    impPreview = null;
+    if (dEl('pImpResult')) dEl('pImpResult').innerHTML = '';
+    if (dEl('pImpGo')) { dEl('pImpGo').disabled = true; dEl('pImpGo').textContent = 'Import'; }
+    if (dEl('pImpHint')) dEl('pImpHint').textContent = 'Nothing is saved until you confirm.';
+    var f = dEl('pCsv');
+    if (f) f.value = '';
+    document.body.classList.add('pimp-open');
+  });
+
+  S.onClick('pimpclose', function () { document.body.classList.remove('pimp-open'); });
+
+  function renderImportPreview(d) {
+    var rows = (d.groups || []).slice(0, 40).map(function (g) {
+      return '<tr' + (g.ok ? '' : ' class="is-bad"') + '>' +
+        '<td>' + U.esc(g.title || g.key) + '</td>' +
+        '<td>' + U.esc(g.category || '') + '</td>' +
+        '<td class="num">' + U.money(g.price || 0) + '</td>' +
+        '<td class="num">' + g.variants + '</td>' +
+        '<td class="num">' + g.stock + '</td>' +
+        '<td>' + (g.ok ? '<span class="pill completed">OK</span>' : '<span class="pill cancelled">Fix</span>') + '</td></tr>';
+    }).join('');
+
+    var errs = (d.errors || []).slice(0, 20).map(function (e) {
+      return '<li>Line ' + e.line + ' · ' + U.esc(e.column) + ' — ' + U.esc(e.message) + '</li>';
+    }).join('');
+
+    var warn = (d.warnings || []).slice(0, 10).map(function (w) {
+      return '<li>Line ' + w.line + ' — ' + U.esc(w.message) + '</li>';
+    }).join('');
+
+    dEl('pImpResult').innerHTML =
+      '<div class="kpis kpis--tight">' +
+      '<div class="kpi"><span>Rows</span><b>' + d.totalRows + '</b></div>' +
+      '<div class="kpi"><span>Products</span><b>' + d.groupCount + '</b></div>' +
+      '<div class="kpi"><span>Ready</span><b>' + d.validGroups + '</b></div>' +
+      '<div class="kpi"><span>Errors</span><b>' + d.errorCount + '</b></div></div>' +
+      (rows ? '<table class="atable"><thead><tr><th>Product</th><th>Category</th>' +
+        '<th class="num">Price</th><th class="num">Variants</th><th class="num">Stock</th><th></th></tr></thead>' +
+        '<tbody>' + rows + '</tbody></table>' : '') +
+      (errs ? '<div class="falert falert--err"><b>Fix these rows</b><ul>' + errs + '</ul></div>' : '') +
+      (warn ? '<div class="falert falert--note"><b>Notes</b><ul>' + warn + '</ul></div>' : '');
+
+    var go = dEl('pImpGo');
+    go.disabled = d.validGroups === 0;
+    go.textContent = (d.errorCount ? 'Import ' + d.validGroups + ' valid' : 'Import ' + d.validGroups) + ' as drafts';
+    dEl('pImpHint').textContent = d.errorCount
+      ? d.errorCount + ' row(s) have problems — only the valid products get created.'
+      : 'All rows look fine. Products are created as drafts, priced and stocked as listed.';
+  }
+
+  S.onChange('pcsv', function (input) {
+    var f = input.files && input.files[0];
+    if (!f) return;
+    var rd = new FileReader();
+    rd.onload = async function () {
+      impCsv = String(rd.result || '');
+      dEl('pImpResult').innerHTML = '<p class="sub">Checking the file…</p>';
+      try {
+        var res = await API.post('/admin/products/import/preview', { csv: impCsv }, { auth: true });
+        impPreview = res.data;
+        renderImportPreview(res.data);
+      } catch (e) {
+        dEl('pImpResult').innerHTML = '<div class="falert falert--err">' + U.esc(e.message) + '</div>';
+      }
+    };
+    rd.readAsText(f, 'utf-8');
+  });
+
+  S.onClick('pimpgo', async function () {
+    if (!impCsv) return;
+    var mode = impPreview && impPreview.errorCount ? 'valid-only' : 'abort';
+    var btn = dEl('pImpGo');
+    if (btn) { btn.disabled = true; btn.textContent = 'Importing…'; }
+    try {
+      var res = await API.post('/admin/products/import', { csv: impCsv, mode: mode }, { auth: true });
+      S.toast(res.data.created + ' product(s) imported as drafts', 'ok');
+      document.body.classList.remove('pimp-open');
+      render();
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Import'; }
+      S.toast(e.message, 'err');
+    }
+  });
+
+  S.onClick('ptpl', async function (e) {
+    if (e && e.preventDefault) e.preventDefault();
+    try {
+      var res = await fetch(API.base + '/admin/products/import/template', {
+        headers: { Authorization: 'Bearer ' + API.token() },
+      });
+      if (!res.ok) throw new Error('Could not download the template.');
+      var blob = await res.blob();
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'tideglass-products-template.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+    } catch (err) {
+      S.toast(err.message || 'Download failed', 'err');
+    }
   });
 
   S.onClick('restock', async function (el) {

@@ -98,7 +98,19 @@ fi
 
 mv "$FILE.tmp" "$FILE"
 
+# 商品图单独打包：db.json 里存的是 uploads/xxx.jpg 这样的路径，
+# 只回滚数据不恢复图片，商品会全部变成裂图。图不多（100 款 × 3 张约 100MB），
+# 压完几十 MB，值得一起备。
+IMG="$DEST/uploads-$STAMP.tar.gz"
+if docker exec "$CONTAINER" sh -c 'ls -1 /app/app/server/data/uploads 2>/dev/null | head -1' | grep -q .; then
+  docker exec "$CONTAINER" tar -czf - -C /app/app/server/data uploads > "$IMG"
+  green "[ok] $IMG  ($(du -h "$IMG" | cut -f1))"
+else
+  echo "  （还没有上传过图片，跳过）"
+fi
+
 # 只留最近 KEEP 份
 ls -1t "$DEST"/db-*.json.gz 2>/dev/null | tail -n +$((KEEP + 1)) | xargs -r rm -f
+ls -1t "$DEST"/uploads-*.tar.gz 2>/dev/null | tail -n +$((KEEP + 1)) | xargs -r rm -f
 
 green "[ok] $FILE  ($(du -h "$FILE" | cut -f1))"

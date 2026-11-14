@@ -11,6 +11,7 @@ const fs = require('fs');
 const path = require('path');
 
 const store = require('./lib/store');
+const uploads = require('./lib/uploads');
 const { send, fail, readBody, E, CORS, ApiError, resetRateLimits } = require('./lib/http');
 
 const WEB_DIR = path.join(__dirname, '..', 'web');
@@ -127,6 +128,29 @@ function serveStatic(req, res, urlPath) {
   });
 }
 
+/* 上传的商品图存数据卷，单独一条静态路由。
+   不能交给 serveStatic——那玩意儿未命中会回 index.html（SPA 兜底），
+   图片 404 时浏览器会收到一段 HTML，前台显示成"裂图 + 控制台奇怪的 MIME 错误"。 */
+function serveUpload(req, res, pathname) {
+  const name = decodeURIComponent(pathname.replace(/^\/uploads\//, ''));
+  const file = uploads.resolve(name);
+  if (!file) return send(res, 404, { error: { code: 'NOT_FOUND', message: 'Image not found.' } });
+  fs.stat(file, (err, st) => {
+    if (err || !st.isFile()) {
+      return send(res, 404, { error: { code: 'NOT_FOUND', message: 'Image not found.' } });
+    }
+    const ext = path.extname(file).slice(1).toLowerCase();
+    res.writeHead(200, {
+      'Content-Type': uploads.EXT_MIME[ext] || 'application/octet-stream',
+      'Content-Length': st.size,
+      'Cache-Control': 'public, max-age=604800',
+      'X-Content-Type-Options': 'nosniff',
+      ...CORS,
+    });
+    fs.createReadStream(file).pipe(res);
+  });
+}
+
 /* ---------------- 主处理 ---------------- */
 const server = http.createServer(async (req, res) => {
   const started = Date.now();
@@ -149,6 +173,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       return send(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'Use GET.' } });
     }
+    if (pathname.startsWith('/uploads/')) return serveUpload(req, res, pathname);
     return serveStatic(req, res, pathname);
   }
 
@@ -176,7 +201,10 @@ const server = http.createServer(async (req, res) => {
       throw E.notFound('No such endpoint: ' + pathname);
     }
 
-    const body = await readBody(req);
+    /* 只有上传接口放宽到 8 MB（base64 后体积约是原图的 1.35 倍），
+       其余接口维持 256 KB，避免全站被一个大 body 拖住。 */
+    const bodyLimit = pathname === '/api/v1/admin/uploads' ? 8 * 1024 * 1024 : undefined;
+    const body = await readBody(req, bodyLimit);
     req.query = query;
     req.params = params;
     req.body = body;

@@ -207,21 +207,149 @@
 
   function products(list, q) {
     var rows = list.map(function (p) {
-      return '<tr><td><b>' + U.esc(p.title) + '</b><br><span class="sub">' + U.esc(p.id) + '</span></td>' +
+      return '<tr><td><b>' + U.esc(p.title) + '</b><br><span class="sub">' + U.esc(p.id) + ' · ' + U.esc(p.handle) + '</span></td>' +
         '<td class="num">' + U.money(p.price) + '</td>' +
-        '<td class="num">' + U.money(p.cost || 0) + '</td>' +
+        '<td class="num">' + (p.cost === null ? '<span class="sub">—</span>' : U.money(p.cost || 0)) + '</td>' +
         '<td class="num">' + p.stock + '</td>' +
         '<td>' + (p.active ? '<span class="pill completed">Live</span>' : '<span class="pill cancelled">Draft</span>') + '</td>' +
         '<td style="white-space:nowrap">' +
-        '<button class="abtn sm" data-act="price" data-id="' + U.esc(p.id) + '" data-price="' + p.price + '" data-version="' + p.version + '">Price</button> ' +
+        '<button class="abtn sm" data-act="pedit" data-id="' + U.esc(p.id) + '">Edit</button> ' +
         '<button class="abtn sm" data-act="toggle" data-id="' + U.esc(p.id) + '" data-active="' + (p.active ? 1 : 0) + '">' + (p.active ? 'Unlist' : 'Publish') + '</button>' +
         '</td></tr>';
     }).join('');
+
+    var live = list.filter(function (p) { return p.active; }).length;
+    var drafts = list.length - live;
+
     return '<div class="panel"><div class="panel__hd"><h2>Products</h2>' +
-      '<form class="admsearch" data-act="psearch"><input name="q" placeholder="Search products" value="' + U.esc(q || '') + '"></form></div>' +
+      '<div class="phd-r">' +
+      '<span class="sub">' + live + ' live · ' + drafts + ' draft</span>' +
+      '<form class="admsearch" data-act="psearch"><input name="q" placeholder="Search title or ID" value="' + U.esc(q || '') + '"></form>' +
+      '<button class="abtn sm" data-act="pimport">Import CSV</button>' +
+      '<button class="btn btn--sm" data-act="pnew">New product</button>' +
+      '</div></div>' +
       '<div class="panel__bd flush"><table class="atable"><thead><tr>' +
       '<th>Product</th><th class="num">Price</th><th class="num">Cost</th><th class="num">Stock</th><th>Status</th><th></th>' +
-      '</tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+      '</tr></thead><tbody>' + (rows || '<tr><td colspan="6" class="sub" style="padding:20px">No products yet. Click “New product” to add the first one.</td></tr>') +
+      '</tbody></table></div></div>';
+  }
+
+  /* ---------------- 商品编辑抽屉 ----------------
+     不放在路由里：抽屉一开就要连续填十几项，路由重绘会把已填内容清空。
+     所以它是一块常驻 DOM，打开时由 app.js 填内容。 */
+  function pcatOptions(cur) {
+    var cats = [['necklaces', 'Necklaces'], ['bracelets', 'Bracelets'], ['anklets', 'Anklets'],
+      ['rings', 'Rings'], ['hair', 'Hair accessories']];
+    return cats.map(function (c) {
+      return '<option value="' + c[0] + '"' + (cur === c[0] ? ' selected' : '') + '>' + c[1] + '</option>';
+    }).join('');
+  }
+
+  function imageCells(images) {
+    var out = '';
+    for (var i = 0; i < 6; i++) {
+      var src = images[i];
+      if (src) {
+        out += '<div class="imgcell on" draggable="true" data-idx="' + i + '">' +
+          '<img src="' + U.esc(src) + '" alt="">' +
+          (i === 0 ? '<span class="imgcell__main">Main</span>' : '') +
+          '<button type="button" class="imgcell__x" data-act="pimgdel" data-idx="' + i + '" title="Remove">×</button>' +
+          (i > 0 ? '<button type="button" class="imgcell__set" data-act="pimgmain" data-idx="' + i + '">Set main</button>' : '') +
+          '</div>';
+      } else {
+        out += '<button type="button" class="imgcell" data-act="pimgpick">' +
+          '<span>+</span><em>Add image</em></button>';
+      }
+    }
+    return out;
+  }
+
+  function variantRows(vs, metals) {
+    return vs.map(function (v, i) {
+      var opts = metals.map(function (m) {
+        return '<option value="' + U.esc(m) + '"' + (v.metal === m ? ' selected' : '') + '>' + U.esc(m) + '</option>';
+      }).join('');
+      return '<tr>' +
+        '<td><select class="ain" data-act="pvar" data-idx="' + i + '" data-f="metal">' + opts + '</select></td>' +
+        '<td><input class="ain" data-act="pvar" data-idx="' + i + '" data-f="sku" value="' + U.esc(v.sku || '') + '" placeholder="auto"></td>' +
+        '<td><input class="ain num" type="number" min="0" step="0.01" data-act="pvar" data-idx="' + i + '" data-f="price" value="' + (v.price == null ? '' : v.price) + '" placeholder="main"></td>' +
+        '<td><input class="ain num" type="number" min="0" step="1" data-act="pvar" data-idx="' + i + '" data-f="stock" value="' + (v.stock == null ? 0 : v.stock) + '"></td>' +
+        '<td><button type="button" class="abtn sm" data-act="pvardel" data-idx="' + i + '"' + (vs.length <= 1 ? ' disabled' : '') + '>×</button></td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function editorDrawer(collections, staff) {
+    return '<div class="pdrawer" id="pdrawer">' +
+      '<div class="pdrawer__ov" data-act="pclose"></div>' +
+      '<div class="pdrawer__panel">' +
+      '<div class="pdrawer__hd"><h2 id="pdrawerTitle">New product</h2>' +
+      '<button type="button" class="abtn sm" data-act="pclose">Close</button></div>' +
+      '<div class="pdrawer__bd">' +
+
+      '<section class="psec" data-sec="basic"><h3>Basics</h3>' +
+      '<div class="cform cform--2">' +
+      '<label class="afld" style="grid-column:1/-1"><span>Title *</span><input id="pTitle" maxlength="120" placeholder="Moonlit Hare Necklace"></label>' +
+      '<label class="afld"><span>Handle (URL)</span><input id="pHandle" placeholder="auto from title"></label>' +
+      '<label class="afld"><span>Category *</span><select id="pCat">' + pcatOptions('') + '</select></label>' +
+      '<label class="afld"><span>Price *</span><input id="pPrice" type="number" min="0" step="0.01" placeholder="76"></label>' +
+      '<label class="afld"><span>Cost <em class="sub">owner only</em></span><input id="pCost" type="number" min="0" step="0.01" placeholder="19.5"' +
+      (staff && staff.role !== 'owner' ? ' disabled' : '') + '></label>' +
+      '<label class="afld"><span>Compare at</span><input id="pCompare" type="number" min="0" step="0.01" placeholder="leave empty"></label>' +
+      '<label class="afld"><span>Badge</span><select id="pBadge"><option value="">None</option><option>New</option><option>Bestseller</option></select></label>' +
+      '<label class="afld"><span>Motif</span><input id="pMotif" placeholder="hare"></label>' +
+      '<label class="afld"><span>Set / series</span><input id="pSet" placeholder="woodland"></label>' +
+      '<label class="afld" style="grid-column:1/-1"><span>Description</span><textarea id="pDesc" rows="3" maxlength="2000"></textarea></label>' +
+      '<label class="afld" style="grid-column:1/-1"><span>Sizes (separate with | or comma, e.g. 16in|18in)</span><input id="pSizes" placeholder="16in|18in"></label>' +
+      '</div>' +
+      '<div class="afld" style="margin-top:10px"><span>Collections</span>' +
+      '<div class="chips" id="pCols">' + (collections || []).map(function (c) {
+        return '<label class="chip"><input type="checkbox" value="' + U.esc(c.handle) + '">' + U.esc(c.title) + '</label>';
+      }).join('') + '</div></div>' +
+      '</section>' +
+
+      '<section class="psec" data-sec="images"><h3>Images <em class="sub">first image is the main one · max 6 · JPG/PNG/WebP</em></h3>' +
+      '<div class="imggrid" id="pImgs">' + imageCells([]) + '</div>' +
+      '<input type="file" id="pFile" accept="image/jpeg,image/png,image/webp" multiple hidden data-act="pimg">' +
+      '<p class="sub" id="pImgHint">Up to 6 photos. Drag to reorder.</p>' +
+      '</section>' +
+
+      '<section class="psec" data-sec="variants"><h3>Variants &amp; stock</h3>' +
+      '<table class="atable atable--in"><thead><tr><th>Metal</th><th>SKU</th><th class="num">Price</th><th class="num">Stock</th><th></th></tr></thead>' +
+      '<tbody id="pVars">' + variantRows([], ['Gold', 'Silver', 'Rose Gold']) + '</tbody></table>' +
+      '<button type="button" class="abtn sm" data-act="pvaradd" style="margin-top:10px">+ Add variant</button>' +
+      '<p class="sub">Stock total is the sum of variants — it updates itself.</p>' +
+      '</section>' +
+
+      '</div>' +
+      '<div class="pdrawer__ft">' +
+      '<div class="pdrawer__meta" id="pMeta"></div>' +
+      '<div class="pdrawer__act">' +
+      '<button type="button" class="abtn sm danger" data-act="pdel" id="pDel" hidden>Delete</button>' +
+      '<button type="button" class="abtn sm" data-act="pdup" id="pDup" hidden>Duplicate</button>' +
+      '<button type="button" class="abtn" data-act="pclose">Cancel</button>' +
+      '<button type="button" class="btn btn--sm" data-act="psave" id="pSave">Save draft</button>' +
+      '</div></div>' +
+      '</div></div>';
+  }
+
+  /* ---------------- CSV 导入弹窗 ---------------- */
+  function importModal() {
+    return '<div class="pmodal" id="pmodal">' +
+      '<div class="pmodal__ov" data-act="pimpclose"></div>' +
+      '<div class="pmodal__box">' +
+      '<div class="pmodal__hd"><h2>Import products from CSV</h2>' +
+      '<a class="abtn sm" href="#" data-act="ptpl">Download template</a>' +
+      '<button type="button" class="abtn sm" data-act="pimpclose">Close</button></div>' +
+      '<div class="pmodal__bd">' +
+      '<div class="impdrop" id="pImpDrop"><b>Choose a CSV file</b><span>or drop it here · one row = one variant</span>' +
+      '<input type="file" id="pCsv" accept=".csv,text/csv" hidden data-act="pcsv"></div>' +
+      '<div id="pImpResult"></div>' +
+      '</div>' +
+      '<div class="pmodal__ft">' +
+      '<span class="sub" id="pImpHint">Nothing is saved until you confirm.</span>' +
+      '<button type="button" class="btn btn--sm" data-act="pimpgo" id="pImpGo" disabled>Import</button>' +
+      '</div></div></div>';
   }
 
   function inventory(rows) {
@@ -602,5 +730,7 @@
     coupons: coupons, reviews: reviews, customers: customers, ledger: ledger, audit: audit,
     collections: collections, collectionEdit: collectionEdit,
     custom: custom, customDetail: customDetail, content: content,
+    editorDrawer: editorDrawer, importModal: importModal,
+    imageCells: imageCells, variantRows: variantRows, pcatOptions: pcatOptions,
   };
 })();

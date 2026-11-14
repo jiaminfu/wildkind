@@ -58,14 +58,18 @@ function fail(res, err) {
 
 const MAX_BODY = 1024 * 256;   // 256 KB，订单/商品都远小于此
 
-function readBody(req) {
+/* 图片上传走 base64 JSON，一张压缩后的实拍图约 300~550 KB，
+   仅对上传接口单独放宽（见 index.js），其余接口保持 256 KB 不变，
+   免得给全站开了个 8 MB 的口子。 */
+function readBody(req, limit) {
+  const max = limit || MAX_BODY;
   return new Promise((resolve, reject) => {
     if (req.method === 'GET' || req.method === 'HEAD') return resolve(null);
     let size = 0;
     const chunks = [];
     req.on('data', c => {
       size += c.length;
-      if (size > MAX_BODY) {
+      if (size > max) {
         reject(new ApiError(413, 'PAYLOAD_TOO_LARGE', 'Request body is too large.'));
         req.destroy();
         return;

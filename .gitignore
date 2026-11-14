@@ -5,6 +5,8 @@ app/server/data/db.json
 app/server/data/db.seed.json
 app/server/data/db.json.tmp
 data/db.json
+# 后台传上来的商品实拍图：走 docker 数据卷持久化，不进版本库
+app/server/data/uploads/
 
 # ---------- 密钥与环境 ----------
 .env
