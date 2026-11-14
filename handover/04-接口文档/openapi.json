@@ -1495,6 +1495,7 @@
             "bearerAuth": []
           }
         ],
+        "description": "注意：本接口把商品对象**直接放在 data 下**（`data.id`），而 POST / PATCH 把商品包在 `data.product` 里。两个方向结构不一致，是历史遗留（前端按 `res.data` 取值），已登记为待统一项；按本文件对接时请留意差异。",
         "parameters": [
           {
             "name": "id",
@@ -1511,7 +1512,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AdminProductEnvelope"
+                  "$ref": "#/components/schemas/AdminProductDirect"
                 }
               }
             }
@@ -3458,6 +3459,17 @@
             "required": [
               "product"
             ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "AdminProductDirect": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminProduct"
           }
         },
         "required": [

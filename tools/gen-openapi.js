@@ -266,8 +266,10 @@ const paths = {
   [BASE + '/admin/products/{id}']: {
     get: {
       tags: ['后台 · 商品'], summary: '单件详情（编辑抽屉用，id 或 handle）', security: auth,
+      description: '注意：本接口把商品对象**直接放在 data 下**（`data.id`），而 POST / PATCH 把商品包在 `data.product` 里。'
+        + '两个方向结构不一致，是历史遗留（前端按 `res.data` 取值），已登记为待统一项；按本文件对接时请留意差异。',
       parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-      responses: { 200: okJson('AdminProductEnvelope'), 401: errRef('Unauthorized'), 403: errRef('Forbidden'), 404: errRef('NotFound') },
+      responses: { 200: okJson('AdminProductDirect'), 401: errRef('Unauthorized'), 403: errRef('Forbidden'), 404: errRef('NotFound') },
     },
     patch: {
       tags: ['后台 · 商品'], summary: '改商品（乐观锁；改价不得低于成本；草稿转上架校验图片与变体）', security: auth,
@@ -536,6 +538,9 @@ const schemas = {
     updatedAt: { type: 'string', format: 'date-time' },
   }),
   AdminProductEnvelope: S({ data: S({ product: { $ref: '#/components/schemas/AdminProduct' } }) }),
+  /* GET /admin/products/:id 的特例：data 直接是商品对象，没有 product 这层。
+     不是笔误——实现就是这样，前端也按 data.id 取值。写成 envelope 会让对接方取到 undefined。 */
+  AdminProductDirect: S({ data: { $ref: '#/components/schemas/AdminProduct' } }),
 
   /* 变体入参：sku / price 可留空，服务端按 id 与主价自动生成 */
   VariantInput: S({
