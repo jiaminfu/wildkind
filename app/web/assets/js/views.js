@@ -606,6 +606,12 @@
       '<h1>Thank you — it ships in 1–2 days.</h1>' +
       '<p class="lede">A confirmation is on its way to <b>' + esc(o.email) + '</b>. Keep the order number to track it.</p>' +
       '<div class="ordernum"><span>Order number</span><b>' + esc(o.number) + '</b></div>' +
+      /* 已发货的单子从支付回跳或订单链接进来，同样落在这个确认页。
+         以前这里只写「1–2 天发货」，客户看不到运单号，还得绕去 Track My Order 再查一遍。 */
+      (o.tracking ? '<div class="ordernum" style="margin-top:10px"><span>Tracking</span>' +
+        '<b><a class="link-u" target="_blank" rel="noopener noreferrer" href="' +
+        esc(U.carrierUrl(o.carrier, o.tracking)) + '">' + esc(o.tracking) + '</a></b>' +
+        (o.carrier ? ' <span class="small">· ' + esc(o.carrier) + '</span>' : '') + '</div>' : '') +
       '<div class="paysum" style="position:static;margin-top:22px"><h4>What you ordered</h4>' + rows +
       '<div class="sum" style="margin-top:12px">' +
       '<div class="sum__row"><span>Subtotal</span><span>' + money(o.subtotal) + '</span></div>' +
@@ -634,7 +640,12 @@
         '<div class="trackbar">' + steps.map(function (s, i) {
           return '<i class="' + (idx >= i ? 'on' : '') + '"><span></span>' + s + '</i>';
         }).join('') + '</div>' +
-        (order.tracking ? '<p class="small" style="margin:18px 0">Tracking <b>' + esc(order.tracking) + '</b> · ' + esc(order.carrier || '') + '</p>' : '') +
+        /* 单号必须可点：客户拿到纯文本只能自己复制去别处搜，
+           而承运商官网的查询页是唯一一定能查到真实轨迹的地方。 */
+        (order.tracking ? '<p class="small" style="margin:18px 0">Tracking ' +
+          '<a class="link-u" target="_blank" rel="noopener noreferrer" href="' +
+          esc(U.carrierUrl(order.carrier, order.tracking)) + '"><b>' + esc(order.tracking) + '</b></a>' +
+          (order.carrier ? ' · ' + esc(order.carrier) : '') + '</p>' : '') +
         '<div class="paysum"><h4>Items</h4>' + rows +
         '<div class="sum" style="margin-top:12px">' +
         '<div class="sum__row"><span>Subtotal</span><span>' + money(order.subtotal) + '</span></div>' +

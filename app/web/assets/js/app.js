@@ -471,6 +471,20 @@
     if (sub === 'wishlist') return renderWishlist();
     if (sub !== 'lookup') S.go('/account/lookup');
     var st = S.state.lookup || {};
+    /* 确认页的「Track this order」是带 number + email 的深链接，
+       但这里以前只读内存里的 state，点过去永远是一张空表单——
+       客户刚付完钱点「追踪订单」，还得把单号和邮箱再手打一遍。
+       带参数时补这一次查询，点一下就能看见自己的单。 */
+    if (!st.order && r.query.number && r.query.email) {
+      try {
+        var lr = await API.get('/orders/lookup?number=' + encodeURIComponent(r.query.number) +
+          '&email=' + encodeURIComponent(r.query.email));
+        st = { order: lr.data.order };
+      } catch (e) {
+        st = { err: e };
+      }
+      S.state.lookup = st;
+    }
     return V.lookup(st.order, st.err, st.form);
   }
 
@@ -990,15 +1004,27 @@
     } catch (e) { S.toast(e.message, 'err'); }
   });
 
-  S.onClick('tracking', async function (el) {
-    var t = prompt('Tracking number');
-    if (!t) return;
+  /* 保存运单号：承运商和单号一起提交。
+     老实现用 prompt 只问单号、承运商写死 USPS，
+     结果发 UPS 的单子在系统里是 USPS，客户查不到。 */
+  S.onClick('save-tracking', async function (el) {
+    var row = el.closest ? el.closest('.shiprow') : null;
+    if (!row) return;
+    var cSel = row.querySelector('[name="carrier"]');
+    var tInp = row.querySelector('[name="tracking"]');
+    var no = String((tInp && tInp.value) || '').trim();
+    if (!no) { S.toast('Paste the tracking number first', 'err'); if (tInp) tInp.focus(); return; }
+    if (no.length > 64) { S.toast('That tracking number is too long', 'err'); return; }
+    el.disabled = true;
     try {
       await API.post('/admin/orders/' + encodeURIComponent(el.dataset.num) + '/tracking',
-        { tracking: t, carrier: 'USPS' }, { auth: true });
+        { tracking: no, carrier: (cSel && cSel.value) || 'Other' }, { auth: true });
       S.toast('Tracking saved', 'ok');
       render();
-    } catch (e) { S.toast(e.message, 'err'); }
+    } catch (e) {
+      S.toast(e.message, 'err');
+      el.disabled = false;
+    }
   });
 
   S.onClick('price', async function (el) {

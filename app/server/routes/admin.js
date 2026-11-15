@@ -531,10 +531,9 @@ function routes(router) {
     }
     o.status = to;
     o.statusLabel = STATUS_LABEL[to];
-    if (to === 'fulfilled' && !o.tracking) {
-      o.tracking = '9400' + Math.floor(Math.random() * 1e10);
-      o.carrier = o.carrier || 'USPS';
-    }
+    /* 这里曾经在没有运单号时自动生成 '9400' + 随机数，冒充 USPS 单号。
+       客户拿着这个号去 USPS 查，永远查不到——比不显示运单号更糟。
+       现在只改状态，单号必须由人从承运商处如实录入（/tracking 接口）。 */
     audit(me, 'order.status', o.number, { to });
     store.flush();
     ok(res, { order: o });

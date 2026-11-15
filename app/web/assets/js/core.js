@@ -55,6 +55,32 @@
       }
       return out;
     },
+    /* ---------------- 承运商与官方查询链接 ----------------
+       本站没有自建轨迹页，客户点出去查是当前阶段唯一诚实的做法：
+       单号真实存在，点进承运商官网一定查得到结果。
+       兜底走 17TRACK 通用查询页，覆盖国际专线、以及承运商字段认不出的历史数据。
+       URL 前缀都以 = 结尾，单号拼在最后并做 encodeURIComponent。 */
+    carriers: [
+      { code: 'USPS', label: 'USPS', url: 'https://tools.usps.com/go/TrackConfirmAction?tLabels=' },
+      { code: 'UPS', label: 'UPS', url: 'https://www.ups.com/track?tracknum=' },
+      { code: 'FedEx', label: 'FedEx', url: 'https://www.fedex.com/fedextrack/?trknbr=' },
+      { code: 'DHL', label: 'DHL Express', url: 'https://www.dhl.com/us-en/home/tracking.html?tracking-id=' },
+      { code: 'Canada Post', label: 'Canada Post', url: 'https://www.canadapost-postescanada.ca/track-reperage/en#/search?searchFor=' },
+      { code: 'Royal Mail', label: 'Royal Mail', url: 'https://www.royalmail.com/track-your-item#/tracking-results/' },
+      { code: 'Other', label: 'Other carrier', url: 'https://t.17track.net/en#nums=' }
+    ],
+    carrierUrl: function (carrier, no) {
+      var n = String(no == null ? '' : no).trim();
+      if (!n) return '';
+      var want = String(carrier == null ? '' : carrier).trim().toLowerCase();
+      var hit = null;
+      for (var i = 0; i < U.carriers.length; i++) {
+        if (U.carriers[i].code.toLowerCase() === want) { hit = U.carriers[i]; break; }
+      }
+      /* 认不出承运商就走通用查询，不拼一个必死的链接出来 */
+      if (!hit) hit = U.carriers[U.carriers.length - 1];
+      return hit.url + encodeURIComponent(n);
+    },
     /* 把一个 opt 目录下的图片路径拆成 srcset 所需的信息。
        不是 opt 里的图（外链、运营临时填的地址）返回 null，调用方退回普通 img。
        两档宽度必须和 tools/opt-img2.js 里的 widthsFor() 保持一致。 */

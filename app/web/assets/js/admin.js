@@ -183,6 +183,17 @@
     return parts.join(', ');
   }
 
+  /* 承运商下拉：选项来自 U.carriers，与前台「点单号去哪查」共用同一张表。
+     以前这里只有一句 prompt  + 硬编码 'USPS'，发 UPS 也会存成 USPS，
+     客户拿着单号去 USPS 查不到，直接开投诉。 */
+  function carrierOpts(cur) {
+    var now = String(cur || 'USPS');
+    return U.carriers.map(function (c) {
+      return '<option value="' + U.esc(c.code) + '"' + (c.code === now ? ' selected' : '') + '>' +
+        U.esc(c.label) + '</option>';
+    }).join('');
+  }
+
   function orderDetail(o, transitions) {
     var rows = o.items.map(function (i) {
       return '<tr><td>' + U.esc(i.title) + (i.isGift ? ' <span class="tag">Gift</span>' : '') + '</td>' +
@@ -203,7 +214,20 @@
       '<span class="pill ' + o.status + '">' + U.esc(o.statusLabel) + '</span>' + acts +
       (transitions.indexOf('refunded') >= 0
         ? '<button class="abtn danger" data-act="refund" data-num="' + U.esc(o.number) + '">Refund</button>' : '') +
-      '<button class="abtn" data-act="tracking" data-num="' + U.esc(o.number) + '">Add tracking</button>' +
+      '</div>' +
+      '<div class="panel__bd">' +
+      '<div class="shiprow" data-num="' + U.esc(o.number) + '" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">' +
+      '<div class="afld" style="min-width:150px;margin:0"><label>Carrier</label>' +
+      '<select name="carrier">' + carrierOpts(o.carrier) + '</select></div>' +
+      '<div class="afld" style="flex:1;min-width:210px;margin:0"><label>Tracking number</label>' +
+      '<input name="tracking" value="' + U.esc(o.tracking || '') + '" autocomplete="off" spellcheck="false" ' +
+      'placeholder="Paste what the carrier gave you"></div>' +
+      '<button class="abtn" data-act="save-tracking" data-num="' + U.esc(o.number) + '">Save tracking</button>' +
+      (o.tracking ? '<a class="abtn sm" target="_blank" rel="noopener noreferrer" href="' +
+        U.esc(U.carrierUrl(o.carrier, o.tracking)) + '">Open on ' + U.esc(o.carrier || 'carrier') + ' ↗</a>' : '') +
+      '</div>' +
+      '<p class="sub" style="margin:9px 0 0">Saving a number moves the order to fulfilled. ' +
+      'Nothing is generated automatically — the customer sees exactly the number you paste here.</p>' +
       '</div>' +
       '<div class="panel__bd flush"><table class="atable"><thead><tr><th>Item</th><th>Finish</th><th>Size</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Line</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>' +
