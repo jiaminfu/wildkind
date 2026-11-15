@@ -217,12 +217,23 @@
       '<li><a href="#/pages/about">Our Story</a></li>' +
       '<li><a href="#/pages/materials">Materials</a></li>' +
       '<li><a href="#/custom">Custom orders</a></li>' +
-      '<li><a href="#/pages/contact">Contact</a></li>' +
-      '<li><a href="#/admin">Admin</a></li></ul></div>' +
+      '<li><a href="#/pages/journal">Field Notes</a></li>' +
+      '<li><a href="#/pages/contact">Contact</a></li></ul></div>' +
       '</div>' +
       '<div class="ftr__bot"><span>© 2026 TIDEGLASS. All rights reserved.</span>' +
-      '<div class="ftr__pay"><span>VISA</span><span>MC</span><span>AMEX</span><span>APPLE PAY</span><span>G PAY</span><span>SHOP PAY</span></div>' +
-      '<span>Privacy · Terms · Accessibility</span></div>' +
+      /* 支付标识必须和真实开通的通道一致：
+         原来写着 SHOP PAY，那是 Shopify 的产品，本站自研、从未接入，属于虚假标识；
+         收单机构审核会逐项核对网站上的卡组织/钱包 logo 与账户实际能力。 */
+      '<div class="ftr__pay"><span>VISA</span><span>MC</span><span>AMEX</span><span>APPLE PAY</span><span>G PAY</span><span>PAYPAL</span></div>' +
+      /* 底栏三个法务页原来是纯文本 <span>，点不进去。收单审核必须能一键打开隐私政策，
+         所以改成真链接，并把 Shipping / Returns 也放进来（同样是审核必查项）。 */
+      '<div class="ftr__legal">' +
+      '<a href="#/pages/privacy">Privacy Policy</a>' +
+      '<a href="#/pages/terms">Terms of Service</a>' +
+      '<a href="#/pages/shipping">Shipping Policy</a>' +
+      '<a href="#/pages/returns">Returns Policy</a>' +
+      '<a href="#/pages/accessibility">Accessibility</a>' +
+      '</div></div>' +
       '</div></footer>';
   }
 

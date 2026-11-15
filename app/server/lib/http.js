@@ -103,19 +103,32 @@ function readBody(req, limit) {
     req.on('end', () => {
       if (over) return;
       const raw = Buffer.concat(chunks).toString('utf8');
-      if (!raw) return resolve({});
+      if (!raw) return resolve(withRaw({}, ''));
       const ct = String(req.headers['content-type'] || '');
       if (ct.includes('application/json')) {
-        try { resolve(JSON.parse(raw)); }
+        try { resolve(withRaw(JSON.parse(raw), raw)); }
         catch (e) { reject(new ApiError(400, 'INVALID_JSON', 'Body is not valid JSON.')); }
       } else if (ct.includes('application/x-www-form-urlencoded')) {
-        resolve(Object.fromEntries(new URLSearchParams(raw)));
+        resolve(withRaw(Object.fromEntries(new URLSearchParams(raw)), raw));
       } else {
         resolve(raw);
       }
     });
     req.on('error', reject);
   });
+}
+
+/* 把原始请求体挂在解析结果上，供支付回调验签使用。
+   必须用 defineProperty 设成不可枚举 —— 否则 __raw 会跟着 JSON.stringify
+   进日志、进响应、进幂等键，既污染输出也把请求体积翻倍。
+   验签只能基于原始字节：JSON.parse 之后再序列化，空格和键序都可能变，签名必然对不上。 */
+function withRaw(value, raw) {
+  if (value && typeof value === 'object') {
+    Object.defineProperty(value, '__raw', {
+      value: raw, enumerable: false, writable: true, configurable: true,
+    });
+  }
+  return value;
 }
 
 /* 简易令牌桶：按 IP + 路由分组限流。

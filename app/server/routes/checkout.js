@@ -10,6 +10,7 @@ const crypto = require('crypto');
 const store = require('../lib/store');
 const pricing = require('../lib/pricing');
 const { E, ok, rateLimit, clientIp } = require('../lib/http');
+const payments = require('../lib/payments');
 
 const QUOTE_TTL_MS = 15 * 60 * 1000;
 const SUPPORTED_COUNTRIES = ['United States', 'Canada', 'United Kingdom'];
@@ -25,6 +26,106 @@ function ledger(db, entry) {
     id: 'L' + crypto.randomBytes(4).toString('hex'),
     createdAt: new Date().toISOString(),
   }, entry));
+}
+
+/* ------------------------------------------------------------
+   落单：扣库存、写流水、记账、建客户档案、幂等登记，全部在单个事务里。
+   抽成函数是因为支付通道有同步（mock）和异步（真实通道）两种收钱方式，
+   但「怎么落一张订单」必须只有一份实现 —— 两份迟早会漂移。
+   ctx: { fresh, customer, body, idem, quoteId, ref, status, statusLabel, payment }
+   ------------------------------------------------------------ */
+function buildOrder(d, ctx) {
+  const fresh = ctx.fresh;
+  const customer = ctx.customer;
+  const b = ctx.body || {};
+  const number = nextOrderNumber(d);
+
+  // 扣库存 + 写流水（主单 + 赠品）
+  const all = fresh.lines.concat(fresh.gift ? [fresh.gift] : []);
+  all.forEach(l => {
+    const p = pricing.findProduct(d, l.productId);
+    const v = p && (p.variants || []).find(x => x.metal === l.metal);
+    if (!v) return;
+    v.stock = Math.max(0, v.stock - l.qty);
+    p.stock = (p.variants || []).reduce((a, x) => a + x.stock, 0);
+    if (!l.isGift) p.sold30 = (p.sold30 || 0) + l.qty;
+    ledger(d, {
+      sku: v.sku, productId: p.id, delta: -l.qty, reason: 'sale',
+      refType: 'order', refId: number, balanceAfter: v.stock,
+    });
+  });
+
+  if (fresh.coupon) {
+    const cp = d.coupons.find(x => x.code.toUpperCase() === fresh.coupon.code.toUpperCase());
+    if (cp) cp.used = (cp.used || 0) + 1;
+  }
+
+  const items = fresh.lines.map(l => ({
+    productId: l.productId, title: l.title, variant: l.metal, size: l.size,
+    unitPrice: l.unitPrice, qty: l.qty,
+  }));
+  if (fresh.gift) {
+    items.push({
+      productId: fresh.gift.productId, title: fresh.gift.title,
+      variant: fresh.gift.metal, size: '', unitPrice: 0, qty: fresh.gift.qty, isGift: true,
+    });
+  }
+
+  const o = {
+    number,
+    email: customer.email,
+    name: customer.first + ' ' + customer.last,
+    status: ctx.status || 'paid',
+    statusLabel: ctx.statusLabel || 'Paid',
+    channel: 'Direct',
+    orderType: 'sale',
+    items,
+    subtotal: fresh.subtotal,
+    shipping: fresh.shipping,
+    discount: fresh.discount,
+    total: fresh.total,
+    address: customer.address,
+    shippingMethod: fresh.shippingMethod,
+    tracking: '',
+    carrier: '',
+    createdAt: new Date().toISOString(),
+    note: String(b.note || '').slice(0, 500),
+    couponCode: fresh.coupon ? fresh.coupon.code : '',
+    gift: fresh.gift ? { sku: '', name: d.giftRule.name, value: d.giftRule.value || 0 } : null,
+    payment: ctx.payment,
+    /* ref 是支付通道与本地订单之间的关联键。真实通道的 webhook 回来时，
+       订单号可能还没有（钱先到、单后落），所以两边都认这个值。 */
+    payRef: ctx.ref || '',
+    quoteId: ctx.quoteId,
+  };
+  d.orders.unshift(o);
+
+  // 客户档案（邮箱小写比对）
+  const exist = d.customers.find(x => String(x.email).toLowerCase() === customer.email);
+  if (exist) {
+    exist.orders = (exist.orders || 0) + 1;
+    exist.spent = pricing.round2((exist.spent || 0) + o.total);
+    exist.last = o.createdAt;
+    exist.tier = exist.orders >= 3 ? 'VIP' : exist.orders >= 2 ? 'Repeat' : 'New';
+  } else {
+    d.customers.unshift({
+      id: 'C' + String(d.customers.length + 1).padStart(3, '0'),
+      email: customer.email,
+      name: o.name,
+      orders: 1, spent: o.total,
+      first: o.createdAt, last: o.createdAt, tier: 'New',
+    });
+  }
+
+  if (ctx.idem) {
+    d.idempotency[ctx.idem] = { orderNumber: number, at: o.createdAt };
+    const keys = Object.keys(d.idempotency);
+    if (keys.length > 500) delete d.idempotency[keys[0]];
+  }
+
+  // 报价用掉即失效，防止同一报价被重复下单
+  d.quotes = d.quotes.filter(x => x.id !== ctx.quoteId);
+  return o;
 }
 
 function validateCustomerInfo(body) {
@@ -138,7 +239,7 @@ function routes(router) {
   });
 
   /* 下单。幂等：同一个 Idempotency-Key 重复提交只产生一单。 */
-  router.post('/api/v1/orders', (req, res) => {
+  router.post('/api/v1/orders', async (req, res) => {
     rateLimit('order:' + clientIp(req), 20, 60 * 1000);
     const b = req.body || {};
     const idem = req.headers['idempotency-key'];
@@ -171,98 +272,58 @@ function routes(router) {
         { quoted: quote.total, current: fresh.total, quoteId: quote.id });
     }
 
-    const order = store.tx(d => {
-      const number = nextOrderNumber(d);
+    /* 支付会话。mock 通道同步返回「已付」；真实通道返回 clientSecret / 跳转链接，
+       订单要等会话建好才落库。
+       顺序不能反：先扣库存再建会话的话，会话创建失败（密钥错、金额低于卡组织门槛、
+       通道超时）会留下「库存已扣减、订单挂着却永远收不到钱」的僵尸单，还得写回滚逻辑。 */
+    const provider = payments.getProvider();
+    if (!provider.isConfigured()) {
+      throw E.unprocessable('PAYMENT_NOT_CONFIGURED',
+        'Online payment is not available right now. Please contact us and we will take the order manually.');
+    }
 
-      // 扣库存 + 写流水（主单 + 赠品）
-      const all = fresh.lines.concat(fresh.gift ? [fresh.gift] : []);
-      all.forEach(l => {
-        const p = pricing.findProduct(d, l.productId);
-        const v = p && (p.variants || []).find(x => x.metal === l.metal);
-        if (!v) return;
-        v.stock = Math.max(0, v.stock - l.qty);
-        p.stock = (p.variants || []).reduce((a, x) => a + x.stock, 0);
-        if (!l.isGift) p.sold30 = (p.sold30 || 0) + l.qty;
-        ledger(d, {
-          sku: v.sku, productId: p.id, delta: -l.qty, reason: 'sale',
-          refType: 'order', refId: number, balanceAfter: v.stock,
-        });
-      });
+    const ref = 'RF' + crypto.randomBytes(8).toString('hex');
+    const payCtx = {
+      ref,
+      amount: fresh.total,
+      currency: 'USD',
+      email: customer.email,
+      last4: (b.payment || {}).last4,
+      description: 'TIDEGLASS \u00b7 ' + fresh.lines.reduce((n, l) => n + l.qty, 0) + ' item(s)',
+      meta: { quoteId: quote.id },
+    };
 
-      if (fresh.coupon) {
-        const c = d.coupons.find(x => x.code.toUpperCase() === fresh.coupon.code.toUpperCase());
-        if (c) c.used = (c.used || 0) + 1;
-      }
+    if (provider.isAsync) {
+      const session = await provider.createSession(payCtx);
 
-      const items = fresh.lines.map(l => ({
-        productId: l.productId, title: l.title, variant: l.metal, size: l.size,
-        unitPrice: l.unitPrice, qty: l.qty,
+      const order = store.tx(d => buildOrder(d, {
+        fresh, customer, body: b, idem, quoteId: quote.id, ref,
+        status: 'pending_payment', statusLabel: 'Awaiting payment',
+        payment: session.payment,
       }));
-      if (fresh.gift) {
-        items.push({
-          productId: fresh.gift.productId, title: fresh.gift.title,
-          variant: fresh.gift.metal, size: '', unitPrice: 0, qty: fresh.gift.qty, isGift: true,
-        });
-      }
 
-      const o = {
-        number,
-        email: customer.email,
-        name: customer.first + ' ' + customer.last,
-        status: 'paid',
-        statusLabel: 'Paid',
-        channel: 'Direct',
-        orderType: 'sale',
-        items,
-        subtotal: fresh.subtotal,
-        shipping: fresh.shipping,
-        discount: fresh.discount,
-        total: fresh.total,
-        address: customer.address,
-        shippingMethod: fresh.shippingMethod,
-        tracking: '',
-        carrier: '',
-        createdAt: new Date().toISOString(),
-        note: String(b.note || '').slice(0, 500),
-        couponCode: fresh.coupon ? fresh.coupon.code : '',
-        gift: fresh.gift ? { sku: '', name: d.giftRule.name, value: d.giftRule.value || 0 } : null,
+      /* 202 而不是 201：订单已建、钱未到。客户端要拿 clientSecret 去挂支付组件，
+         不能像 mock 那样直接跳成功页 —— 那等于把未付款订单当成已付。 */
+      return ok(res, {
+        order,
         payment: {
-          provider: 'stripe',
-          mode: 'simulated',
-          reference: 'sim_' + crypto.randomBytes(6).toString('hex'),
-          last4: String((b.payment || {}).last4 || '4242').slice(-4),
+          provider: provider.id,
+          mode: session.mode,
+          clientSecret: session.clientSecret || '',
+          approveUrl: session.approveUrl || '',
+          sessionId: session.sessionId || '',
         },
-        quoteId: quote.id,
-      };
-      d.orders.unshift(o);
+      }, 202);
+    }
 
-      // 客户档案（邮箱小写比对）
-      const c = d.customers.find(x => String(x.email).toLowerCase() === customer.email);
-      if (c) {
-        c.orders = (c.orders || 0) + 1;
-        c.spent = pricing.round2((c.spent || 0) + o.total);
-        c.last = o.createdAt;
-        c.tier = c.orders >= 3 ? 'VIP' : c.orders >= 2 ? 'Repeat' : 'New';
-      } else {
-        d.customers.unshift({
-          id: 'C' + String(d.customers.length + 1).padStart(3, '0'),
-          email: customer.email,
-          name: o.name,
-          orders: 1, spent: o.total,
-          first: o.createdAt, last: o.createdAt, tier: 'New',
-        });
-      }
-
-      if (idem) {
-        d.idempotency[idem] = { orderNumber: number, at: o.createdAt };
-        const keys = Object.keys(d.idempotency);
-        if (keys.length > 500) delete d.idempotency[keys[0]];
-      }
-
-      // 报价用掉即失效，防止同一报价被重复下单
-      d.quotes = d.quotes.filter(x => x.id !== quote.id);
-      return o;
-    });
+    /* 同步通道（mock）：响应形状必须与接入支付抽象层之前逐字段一致，
+       否则 200 多条接口用例会因为返回结构变化而集体失效。 */
+    const session = await provider.createSession(payCtx);
+    const order = store.tx(d => buildOrder(d, {
+      fresh, customer, body: b, idem, quoteId: quote.id, ref,
+      status: 'paid', statusLabel: 'Paid',
+      payment: session.payment,
+    }));
 
     ok(res, { order }, 201);
   });

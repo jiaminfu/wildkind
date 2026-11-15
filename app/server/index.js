@@ -47,6 +47,7 @@ const router = {
 
 require('./routes/catalog').routes(router);
 require('./routes/checkout').routes(router);
+require('./routes/payments').routes(router);
 require('./routes/admin').routes(router);
 
 /* ---------------- 测试复位端点（默认关闭） ----------------
@@ -439,6 +440,8 @@ const server = http.createServer(async (req, res) => {
     req.query = query;
     req.params = params;
     req.body = body;
+    /* 支付回调（webhook）验签必须基于原始字节 —— 见 lib/http.js 的 withRaw */
+    req.rawBody = (body && typeof body === 'object' && body.__raw) ? body.__raw : '';
 
     await matched.handler(req, res);
   } catch (err) {
@@ -471,4 +474,12 @@ server.listen(PORT, () => {
   console.log('  数据：%s（商品 %d / 订单 %d）', store.FILE, db.products.length, db.orders.length);
   console.log('  前台：http://localhost:%d/   后台：http://localhost:%d/#/admin', PORT, PORT);
   console.log('  健康检查：GET /api/v1/health');
+  /* 支付通道自检：生产环境若仍是 mock，等于全站免费下单，必须喊出来 */
+  const pay = require('./lib/payments');
+  const active = pay.getProvider();
+  pay.assertProductionSafe();
+  console.log('  支付通道：%s（%s，密钥%s）',
+    active.id,
+    active.isAsync ? '异步确认 · webhook 落账' : '同步 · 仅用于开发与回归',
+    active.isConfigured() ? '已配置' : '未配置');
 });

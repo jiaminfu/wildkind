@@ -111,8 +111,11 @@
   function orders(list, meta, q) {
     /* Tab 覆盖全部状态。
        原先只有 All/Paid/Preparing/Shipped/Refunded，但列表里会出现 Cancelled 和
-       Delivered 的单——能看到却筛不出来，想找「哪些被取消了」只能一页页翻。 */
-    var tabs = [['', 'All'], ['paid', 'Paid'], ['fulfilling', 'Preparing'],
+       Delivered 的单——能看到却筛不出来，想找「哪些被取消了」只能一页页翻。
+       pending_payment 是接入异步支付通道后新增的：钱还没到账的单必须能单独捞出来，
+       否则客服分不清「待付款」和「已付款待发货」。 */
+    var tabs = [['', 'All'], ['paid', 'Paid'], ['pending_payment', 'Awaiting payment'],
+      ['fulfilling', 'Preparing'],
       ['fulfilled', 'Shipped'], ['completed', 'Delivered'],
       ['cancelled', 'Cancelled'], ['refunded', 'Refunded']]
       .map(function (t) {

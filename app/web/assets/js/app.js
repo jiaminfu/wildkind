@@ -807,6 +807,31 @@
       var res = await API.post('/orders', body, {
         idempotencyKey: 'web-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
       });
+
+      /* 异步支付通道返回 202：订单已建、钱还没到，必须先把买家送去付款。
+         只有 mock 通道（mode: 'sync'）才会走到下面直接跳成功页的路径；
+         接入真实收单后如果还无条件跳成功页，等于把未付款订单当已付展示给客户。 */
+      var pay = res.data.payment || {};
+      if (pay.mode && pay.mode !== 'sync') {
+        S.state.lastOrder = res.data.order;
+        try { localStorage.setItem('tideglass_last_order', JSON.stringify(res.data.order)); } catch (e) { }
+        S.emptyCart();
+
+        if (pay.approveUrl) {
+          window.location.href = pay.approveUrl;
+          return;
+        }
+
+        /* TODO（拿到通道密钥后补）：在这里按 pay.mode 挂载支付组件 —
+           embedded  → stripe.initEmbeddedCheckout({ clientSecret: pay.clientSecret })
+           embed_sdk → paypal.Buttons({ createOrder: () => pay.sessionId })
+           组件走完流程后由 webhook 把订单从 pending_payment 改成 paid，
+           前端只需要轮询 #/order/<号> 或等回跳。 */
+        S.go('/order/' + res.data.order.number);
+        S.toast('This order is awaiting payment confirmation.', 'err');
+        return;
+      }
+
       S.state.lastOrder = res.data.order;
       try { localStorage.setItem('tideglass_last_order', JSON.stringify(res.data.order)); } catch (e) { }
       S.emptyCart();

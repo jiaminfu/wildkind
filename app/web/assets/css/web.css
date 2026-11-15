@@ -601,3 +601,37 @@ picture { display: contents; }
   .revy { padding: 20px 18px; }
   .card__wish { opacity: 1; }
 }
+
+/* ---------- 页脚法务链接（收单审核必查项，原先不可点击） ---------- */
+.ftr__legal {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.ftr__legal a {
+  color: inherit;
+  text-decoration: none;
+  opacity: .72;
+  transition: opacity .18s ease, color .18s ease;
+}
+.ftr__legal a:hover,
+.ftr__legal a:focus-visible {
+  opacity: 1;
+  color: var(--sea);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+@media (max-width: 760px) {
+  .ftr__legal { gap: 10px 14px; }
+}
+
+/* ---------- 待付款状态（异步支付通道） ----------
+   接入真实收单后订单会先停在 pending_payment，等 webhook 确认收款。
+   没有这条样式时 pill 会渲染成无底色的裸文字，和「已取消」难以区分。
+   配色刻意用琥珀色：既不同于「待发货」的绿，也不同于「已取消」的灰。 */
+.pill.pending_payment {
+  background: rgba(192, 138, 46, .18);
+  color: #8A5A10;
+  box-shadow: inset 0 0 0 1px rgba(192, 138, 46, .32);
+}

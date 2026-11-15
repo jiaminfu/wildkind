@@ -865,6 +865,46 @@ async function main() {
     /assets\/js\/app\.js\?v=[a-z0-9]+/.test(homeHtml),
     (homeHtml.match(/assets\/js\/app\.js[^"]*/) || [''])[0]);
 
+  /* ---------- P17 支付通道抽象 ---------- */
+  group('P17 支付通道');
+
+  const pmRes = await fetch(BASE + '/api/v1/payments/methods');
+  const pm = await pmRes.json().catch(() => ({}));
+  const pmd = pm.data || {};
+  chk('P17', '通道信息接口可用',
+    pmRes.status === 200 && !!pmd.provider,
+    'status=' + pmRes.status + ' provider=' + pmd.provider);
+  chk('P17', '本地默认走 mock 通道且为同步流程',
+    pmd.provider === 'mock' && pmd.flow === 'sync',
+    'provider=' + pmd.provider + ' flow=' + pmd.flow);
+  chk('P17', '注册表含 stripe / airwallex / paypal 三个真实通道',
+    ['stripe', 'airwallex', 'paypal'].every(k => (pmd.all || []).some(x => x.id === k)),
+    (pmd.all || []).map(x => x.id).join(','));
+  chk('P17', '没有密钥的通道如实标记为未配置',
+    (pmd.all || []).filter(x => x.id !== 'mock').every(x => x.configured === false),
+    JSON.stringify((pmd.all || []).map(x => [x.id, x.configured])));
+
+  /* 回调端点的两道闸：① 通道必须与当前启用的一致；② 签名必须真的能验过。
+     任一失效都意味着伪造事件可以改订单状态，所以这两条必须常驻回归。 */
+  const hookMock = await fetch(BASE + '/api/v1/payments/webhook/mock', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"id":"evt_x"}',
+  });
+  chk('P17', 'mock 通道没有真实回调，请求被拒', hookMock.status === 400,
+    'status=' + hookMock.status);
+
+  const hookWrong = await fetch(BASE + '/api/v1/payments/webhook/stripe', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"id":"evt_fake","type":"checkout.session.completed"}',
+  });
+  chk('P17', '非当前通道的回调路径被拒（不能伪造路径绕过验签）',
+    hookWrong.status === 400, 'status=' + hookWrong.status);
+
+  const hookEmpty = await fetch(BASE + '/api/v1/payments/webhook/mock', { method: 'POST' });
+  chk('P17', '空 body 的回调被拒', hookEmpty.status === 400, 'status=' + hookEmpty.status);
+
+  const payFail = await fetch(BASE + '/api/v1/payments/methods');
+  chk('P17', '通道信息不含任何密钥片段',
+    !/sk_(test|live)_|whsec_|secret/i.test(await payFail.text()), '响应体已检查');
+
   /* ---------- 收尾 ---------- */
   if (!KEEP) await cleanup();
   report();

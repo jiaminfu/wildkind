@@ -24,6 +24,12 @@
       exp: s.expressShip != null ? s.expressShip : 18,
       days: s.returnWindowDays != null ? s.returnWindowDays : 30,
       email: 'hello@tideglassjewelry.com',
+      /* GDPR / CCPA 要求隐私政策披露「数据控制者」的法定名称与注册地址。
+         收单机构（Stripe / Airwallex / PayPal）审核也会核对网站主体与开户主体是否一致。
+         品牌叙事里写的是 Portland 工作室，那是履约仓；法律主体必须如实写。
+         上线前请在后台把 legalName / legalAddr 填成营业执照上的完整信息。 */
+      legalName: s.legalName || 'Shenzhen Miaomiao Photography Co., Ltd.',
+      legalAddr: s.legalAddr || 'Shenzhen, Guangdong, China',
     };
   }
 
@@ -234,13 +240,18 @@
     if (kind === 'privacy') {
       return head('privacy', 'Legal', 'Privacy policy', 'What we collect, why, and how to get rid of it.') +
         prose(
-          '<p class="prose__meta">Last updated 13 November 2026</p>' +
+          '<p class="prose__meta">Last updated 15 November 2026</p>' +
+          '<h2>Who we are</h2>' +
+          '<p>TIDEGLASS is a trading name of ' + esc(c.legalName) + ', ' + esc(c.legalAddr) + '. We are the data controller for everything described on this page. Orders are picked and shipped from our fulfilment partner in Portland, Oregon; the company itself and this website are operated from China.</p>' +
           '<h2>What we collect</h2>' +
           '<p>Order details (name, shipping address, email), and anonymous page analytics. We do not buy data, and we do not sell it — not to advertisers, not to brokers.</p>' +
           '<h2>Cookies</h2>' +
           '<p>Two, unless you accept more: a session cookie that holds your bag, and an analytics cookie. No advertising trackers are set before you consent, and the banner remembers your answer for twelve months.</p>' +
           '<h2>Payment data</h2>' +
-          '<p>Card numbers never touch our servers. Stripe processes the payment and gives us a token and the last four digits. We store the token, not the card.</p>' +
+          /* 这里原本写死了 "Stripe processes the payment"。换收单机构（Airwallex / PayPal）
+             之后这句话就是错的，而隐私政策属于对外法律声明，写错不是笔误而是虚假陈述。
+             改成按「持牌支付服务商」描述，具体名称不影响法律效力，也就不会因换通道而失效。 */
+          '<p>Card numbers never touch our servers. The payment is processed by a PCI-DSS Level 1 certified payment provider, which returns only a token and the last four digits to us. We store the token, never the card number or the security code.</p>' +
           '<h2>How long we keep it</h2>' +
           '<p>Order records for seven years, because tax authorities require it. Analytics for twenty-six months. Marketing consent until you withdraw it.</p>' +
           '<h2>Your rights</h2>' +

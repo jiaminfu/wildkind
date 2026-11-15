@@ -742,6 +742,47 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
       JSON.stringify(mega));
     await shot('20-header-1280');
 
+    /* ═══ U13 页脚法务链接（收单机构审核必查项） ═══ */
+    console.log('\n─── U13 页脚法务链接 ───');
+    await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
+    await send('Page.navigate', { url: BASE + '/' });
+    await wait(1800);
+
+    const fl = await ev(`(function(){
+      var links = Array.prototype.slice.call(document.querySelectorAll('.ftr__legal a'));
+      var pay = Array.prototype.slice.call(document.querySelectorAll('.ftr__pay span')).map(function(s){return s.textContent.trim()});
+      var admin = Array.prototype.slice.call(document.querySelectorAll('footer a'))
+        .filter(function(a){return /admin/i.test(a.getAttribute('href')||'')}).length;
+      return {n:links.length, hrefs:links.map(function(a){return a.getAttribute('href')}), pay:pay, admin:admin};
+    })()`);
+
+    ok('U13', '页脚法务链接可点击且不少于 5 个',
+      fl.n >= 5 && fl.hrefs.every(function(h){ return /^#\/pages\//.test(h || ''); }),
+      JSON.stringify(fl.hrefs));
+    ok('U13', '页脚不再暴露后台入口', fl.admin === 0, 'admin 链接数=' + fl.admin);
+    ok('U13', '支付标识不含本站未接入的 SHOP PAY',
+      fl.pay.indexOf('SHOP PAY') < 0, JSON.stringify(fl.pay));
+
+    /* 链接存在但内容是空的，同样过不了审核 —— 逐个真打开看正文长度 */
+    const deadPages = [];
+    for (const h of fl.hrefs) {
+      await send('Page.navigate', { url: BASE + '/' + h });
+      await wait(1100);
+      const st = await ev(`(function(){
+        var p = document.querySelector('.prose');
+        var h1 = document.querySelector('h1');
+        return { chars: p ? p.innerText.trim().length : 0, h1: h1 ? h1.textContent.trim() : '' };
+      })()`);
+      if (st.chars < 200 || !st.h1) deadPages.push(h + '(' + st.chars + ')');
+    }
+    ok('U13', '五个法务页面都有实质正文（>200 字）', deadPages.length === 0, deadPages.join(', '));
+
+    await send('Page.navigate', { url: BASE + '/' });
+    await wait(1600);
+    await ev('window.scrollTo(0, document.body.scrollHeight)');
+    await wait(500);
+    await shot('21-footer-legal');
+
     /* ═══ U9 移动端 ═══ */
     console.log('\n─── U9 移动端 390px ───');
     await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
