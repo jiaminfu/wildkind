@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS Web · 前端核心
+   LASTGROVE Web · 前端核心
    职责边界：
      · 只做展示与交互，不做定价决策（金额以 /checkout/quote 返回为准）
      · 购物车存 localStorage（访客可用），下单时提交给服务端复核
@@ -8,9 +8,9 @@
 (function () {
   'use strict';
 
-  var CART_KEY = 'tideglass_cart_v1';
-  var COUPON_KEY = 'tideglass_coupon_v1';
-  var WISH_KEY = 'tideglass_wish_v1';
+  var CART_KEY = 'lastgrove_cart_v1';
+  var COUPON_KEY = 'lastgrove_coupon_v1';
+  var WISH_KEY = 'lastgrove_wish_v1';
 
   var U = {
     /* 价格显示遵循 DTC 惯例：整数不带小数（$48），有零头才显示两位（$48.50）。
@@ -117,8 +117,8 @@
     coupon: loadCoupon(),
     wish: loadJSON(WISH_KEY, []) || [],   // 收藏的 handle 列表，访客也能用
     quote: null,              // 服务端最近一次报价
-    lastOrder: loadJSON('tideglass_last_order', null),
-    admin: loadJSON('tideglass_admin', null),
+    lastOrder: loadJSON('lastgrove_last_order', null),
+    admin: loadJSON('lastgrove_admin', null),
     checkout: {},
     toast: null
   };

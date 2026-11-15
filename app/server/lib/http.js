@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS · HTTP 工具
+   LASTGROVE · HTTP 工具
    统一响应结构、CORS、JSON 解析、错误类型、限流。
    错误结构（全站一致，前端只需判断 error.code）：
      { "error": { "code": "OUT_OF_STOCK", "message": "...", "details": [...] } }

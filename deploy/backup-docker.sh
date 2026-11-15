@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ============================================================
-# TIDEGLASS · Docker 模式数据备份 / 恢复
+# LASTGROVE · Docker 模式数据备份 / 恢复
 #
-#   bash /opt/tideglass/backup.sh              备份一次
-#   bash /opt/tideglass/backup.sh --list       看已有备份
-#   bash /opt/tideglass/backup.sh --restore <文件>   从备份恢复
+#   bash /opt/lastgrove/backup.sh              备份一次
+#   bash /opt/lastgrove/backup.sh --list       看已有备份
+#   bash /opt/lastgrove/backup.sh --restore <文件>   从备份恢复
 #
 # 与仓库里 deploy/backup.sh 的区别：那份假设数据在宿主机目录、且宿主机有 node。
 # 这台机器是纯 Docker 部署、宿主机没有 node，所以数据从容器里取、用容器里的
@@ -15,10 +15,10 @@
 # ============================================================
 set -euo pipefail
 
-CONTAINER="tideglass"
-VOLUME="tideglass-data"
-IMAGE="tideglass:1.0.0"
-DEST="${BACKUP_DIR:-/var/backups/tideglass}"
+CONTAINER="lastgrove"
+VOLUME="lastgrove-data"
+IMAGE="lastgrove:1.0.0"
+DEST="${BACKUP_DIR:-/var/backups/lastgrove}"
 KEEP="${BACKUP_KEEP:-30}"
 
 red()   { printf '\033[31m%s\033[0m\n' "$*"; }
@@ -30,7 +30,7 @@ die()   { red "[x] $*"; exit 1; }
 # ---------- 恢复 ----------
 if [ "${1:-}" = "--restore" ]; then
   SRC="${2:-}"
-  [ -n "$SRC" ] || die "用法：bash /opt/tideglass/backup.sh --restore /var/backups/tideglass/db-xxx.json.gz"
+  [ -n "$SRC" ] || die "用法：bash /opt/lastgrove/backup.sh --restore /var/backups/lastgrove/db-xxx.json.gz"
   [ -f "$SRC" ] || die "找不到文件：$SRC"
 
   TMP="$(mktemp)"
@@ -57,7 +57,7 @@ if [ "${1:-}" = "--restore" ]; then
   echo "即将用 $SRC 覆盖现网数据，5 秒后开始（Ctrl+C 取消）"
   sleep 5
 
-  cd /opt/tideglass/current/deploy
+  cd /opt/lastgrove/current/deploy
   docker compose stop >/dev/null
   # 以 root 写卷，写完把属主调回 10001，否则容器起来写不了数据
   docker run --rm --user 0:0 -v "$VOLUME":/data -v "$TMP":/chk.json:ro --entrypoint sh "$IMAGE" \

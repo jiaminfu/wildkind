@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300" role="img" aria-label="Lastgrove">
+  <title>Lastgrove — stacked lockup</title><desc>Mark above centered wordmark</desc>
+  
+  <g transform="translate(140 8) scale(1)">
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 66.68 12.47 A 48 48 0 1 1 53.32 12.47" stroke="#4A7C6F" stroke-width="5"/>
+    <path d="M 60 103 V 64 M 60 82 L 48 68 M 60 82 L 72 68" stroke="#4A7C6F" stroke-width="5"/>
+  </g>
+  <circle cx="60" cy="12.47" r="4.5" fill="#A85F4B"/></g>
+   <text x="200" y="218" fill="#1B2B2E" text-anchor="middle"
+    font-family="'Cormorant Garamond', Georgia, 'Times New Roman', serif"
+    font-size="58" font-weight="500" letter-spacing="1.2">lastgrove</text>
+</svg>

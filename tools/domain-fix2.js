@@ -28,7 +28,7 @@ function whois(server, dom) {
 
 const coms = [
   'naiadejewelry.com', 'getnaiade.com', 'naiadestudio.com',
-  'tideglass.com', 'getselkie.com', 'selkiestudio.com',
+  'lastgrove.com', 'getselkie.com', 'selkiestudio.com',
   'sereia.com', 'marea.com', 'everwave.com', 'selkie.com', 'naiade.com',
 ];
 
@@ -53,7 +53,7 @@ const coms = [
     await new Promise((x) => setTimeout(x, 700));
   }
 
-  for (const d of ['sereia.co', 'marea.co', 'tideglass.co', 'naiade.co', 'everwave.co', 'selkie.co']) {
+  for (const d of ['sereia.co', 'marea.co', 'lastgrove.co', 'naiade.co', 'everwave.co', 'selkie.co']) {
     const w = await whois('whois.nic.co', d);
     const avail = /No Data Found|NOT FOUND|No match|not found|Domain not found/i.test(w);
     const st = avail ? 'AVAILABLE' : /Domain Name:/i.test(w) ? 'TAKEN' : 'UNKNOWN';

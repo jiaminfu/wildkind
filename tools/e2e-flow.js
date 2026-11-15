@@ -231,7 +231,7 @@ const chk = (name, cond, extra) => cond ? ok(name, extra) : bad(name, extra);
   /* ---- 12 老账号登录看到历史订单 ---- */
   console.log('\n[12] Demo 账号登录');
   await fill('form[data-act="acc-signin"] input[name="email"]', 'maya.patel@gmail.com');
-  await fill('form[data-act="acc-signin"] input[name="pw"]', 'tideglass2026');
+  await fill('form[data-act="acc-signin"] input[name="pw"]', 'lastgrove2026');
   await click('form[data-act="acc-signin"] button[type="submit"]');
   await waitFor('location.hash === "#/account"', 4000);
   chk('demo 账号登录成功', /Hello, Maya/.test(await text()));
@@ -256,7 +256,7 @@ const chk = (name, cond, extra) => cond ? ok(name, extra) : bad(name, extra);
   await evalJS('location.hash = "#/account/login?next=/checkout"; 1');
   await waitFor('!!document.querySelector("form[data-act=\\"acc-signin\\"]")', 4000);
   await fill('form[data-act="acc-signin"] input[name="email"]', 'maya.patel@gmail.com');
-  await fill('form[data-act="acc-signin"] input[name="pw"]', 'tideglass2026');
+  await fill('form[data-act="acc-signin"] input[name="pw"]', 'lastgrove2026');
   await click('form[data-act="acc-signin"] button[type="submit"]');
   const backToCo = await waitFor('location.hash === "#/checkout"', 4000);
   chk('登录后回到结算页（next 生效）', backToCo, 'hash=' + (await hash()));

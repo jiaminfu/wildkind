@@ -23,7 +23,7 @@ const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJA
 
 (async () => {
   await req('POST', '/api/v1/__test/reset');
-  const login = await req('POST', '/api/v1/admin/login', { email: 'owner@tideglassjewelry.com', password: 'tideglass2026' });
+  const login = await req('POST', '/api/v1/admin/login', { email: 'owner@lastgrove.com', password: 'lastgrove2026' });
   TOK = login.data && login.data.token;
   ok('owner 登录', !!TOK);
 
@@ -36,12 +36,12 @@ const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJA
   ok('新建返回 201', created.status === 201, created);
   const p = created.data && created.data.product;
   const NEW = p && p.id;
-  ok('id 从最大编号 +1', p && p.id === 'TG-803', p && p.id);
+  ok('id 从最大编号 +1', p && p.id === 'LG-803', p && p.id);
   ok('handle 自动生成', p && p.handle === 'probe-hare', p && p.handle);
   ok('默认草稿', p && p.active === false);
   ok('库存汇总 = 11+10', p && p.stock === 21, p && p.stock);
   ok('尺码 16in → 16"', p && p.sizes && p.sizes[0] === '16"', p && p.sizes);
-  ok('SKU 自动生成', p && p.variants[0].sku === 'TG-803-GO', p && p.variants);
+  ok('SKU 自动生成', p && p.variants[0].sku === 'LG-803-GO', p && p.variants);
 
   // 2 无图上架被拦
   const pub = await req('PATCH', '/api/v1/admin/products/' + NEW, { active: true }, TOK);
@@ -84,7 +84,7 @@ const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJA
   const DUP = dup.data && dup.data.product.id;
 
   // 8 ops 权限边界
-  const opsLogin = await req('POST', '/api/v1/admin/login', { email: 'ops@tideglassjewelry.com', password: 'tideglass-ops' });
+  const opsLogin = await req('POST', '/api/v1/admin/login', { email: 'ops@lastgrove.com', password: 'lastgrove-ops' });
   if (opsLogin.data && opsLogin.data.token) {
     const list = await req('GET', '/api/v1/admin/products?q=probe', null, opsLogin.data.token);
     const row = (list.data || [])[0];
@@ -103,7 +103,7 @@ const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJA
   // 9 删除
   const del = await req('DELETE', '/api/v1/admin/products/' + DUP, null, TOK);
   ok('删除无订单商品成功', del.status === 200, del);
-  const delUsed = await req('DELETE', '/api/v1/admin/products/TG-102', null, TOK);
+  const delUsed = await req('DELETE', '/api/v1/admin/products/LG-102', null, TOK);
   ok('删除有订单商品被拒 409', delUsed.status === 409, delUsed);
 
   // 10 CSV 导入

@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS API · 入口
+   LASTGROVE API · 入口
    零第三方依赖：只用 node: 内置模块。
    启动：node app/server/index.js  （默认 4600）
    同时托管 app/web 静态前端，便于本地联调；
@@ -19,7 +19,7 @@ const WEB_DIR = path.join(__dirname, '..', 'web');
 const PORT = process.env.API_PORT || process.env.PORT || 4600;
 
 /* 对外可访问的站点根地址。用于 sitemap 里的绝对 URL 与 og:url。
-   容器的 8080 是明文端口，接上域名后设 PUBLIC_URL=https://tideglassjewelry.com 即可。 */
+   容器的 8080 是明文端口，接上域名后设 PUBLIC_URL=https://lastgrove.com 即可。 */
 const PUBLIC_URL = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
 
 /* ---------------- 路由表 ---------------- */
@@ -470,7 +470,7 @@ store.load();
 
 server.listen(PORT, () => {
   const db = store.get();
-  console.log('TIDEGLASS API 已启动 → http://localhost:' + PORT);
+  console.log('LASTGROVE API 已启动 → http://localhost:' + PORT);
   console.log('  数据：%s（商品 %d / 订单 %d）', store.FILE, db.products.length, db.orders.length);
   console.log('  前台：http://localhost:%d/   后台：http://localhost:%d/#/admin', PORT, PORT);
   console.log('  健康检查：GET /api/v1/health');

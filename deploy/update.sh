@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # ============================================================
-# TIDEGLASS · 更新发布
-#   sudo bash /opt/tideglass/deploy/update.sh
+# LASTGROVE · 更新发布
+#   sudo bash /opt/lastgrove/deploy/update.sh
 #
 # 顺序刻意如此：先备份 → 再拉代码 → 再重启 → 再探活。
 # 反过来的话，新代码一旦起不来，旧数据和旧代码都在，但你已经没有干净的备份了。
 # ============================================================
 set -euo pipefail
 
-APP_DIR="/opt/tideglass/current"
-SERVICE="tideglass-api"
-ENV_FILE="/etc/tideglass/tideglass.env"
+APP_DIR="/opt/lastgrove/current"
+SERVICE="lastgrove-api"
+ENV_FILE="/etc/lastgrove/lastgrove.env"
 
 red()   { printf '\033[31m%s\033[0m\n' "$*"; }
 green() { printf '\033[32m%s\033[0m\n' "$*"; }
@@ -40,7 +40,7 @@ else
 fi
 
 # 静态文件是 Nginx 直接读的，权限要保持可读
-chown -R tideglass:tideglass "$APP_DIR"
+chown -R lastgrove:lastgrove "$APP_DIR"
 chmod -R a+rX "$APP_DIR/app/web"
 
 # ---------- 3. 重启 ----------

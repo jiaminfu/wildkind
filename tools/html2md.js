@@ -374,7 +374,7 @@ const BATCH = [
   ['review/FRD-功能需求说明书-v2.5.html', 'handover/01-产品需求/FRD-功能需求说明书-v2.5.md'],
   ['review/SDD-系统设计说明书-v2.3.html', 'handover/02-系统设计/SDD-系统设计说明书-v2.3.md'],
   ['review/UI设计说明书-v1.2.html', 'handover/03-UI与品牌/UI设计说明书-v1.2.md'],
-  ['branding/TIDEGLASS品牌方案-v2.1.html', 'handover/03-UI与品牌/品牌方案-v2.1.md'],
+  ['branding/LASTGROVE品牌方案-v2.1.html', 'handover/03-UI与品牌/品牌方案-v2.1.md'],
   // 原型-线框图 不转 Markdown：它的主体是灰块+线条的视觉稿，
   // 转成文字会退化成无法阅读的碎片，且其中品牌名仍是更名前的 Wildkind。
   // 原型交付方式见 handover/06-原型/原型说明.md（在线地址 + 截图）。

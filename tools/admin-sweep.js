@@ -13,8 +13,8 @@ const EDGE = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const PORT = 9389;
 const BASE = (process.argv[2] || 'http://localhost:4600').replace(/\/+$/, '');
 const WIDTH = Number(process.argv[3] || 1440);
-const EMAIL = process.argv[4] || 'owner@tideglassjewelry.com';
-const PASS = process.argv[5] || 'tideglass2026';
+const EMAIL = process.argv[4] || 'owner@lastgrove.com';
+const PASS = process.argv[5] || 'lastgrove2026';
 const SHOT = process.env.SHOT || '';   // 给目录就顺带整页截图，便于肉眼复核
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -177,7 +177,7 @@ const getJSON = u => new Promise((res, rej) => {
   /* 后台写操作：找一个 paid 订单，在页面上点一次状态按钮，再用接口核对结果。
      只读巡查会放过"按钮在但点了没反应"这类问题——而那正是运营每天都在做的事。 */
   const write = await ev(`(async function(){
-    var t=(JSON.parse(localStorage.getItem('tideglass_admin')||'{}').token)||'';
+    var t=(JSON.parse(localStorage.getItem('lastgrove_admin')||'{}').token)||'';
     var h={'Content-Type':'application/json',Authorization:'Bearer '+t};
     var list=await fetch('/api/v1/admin/orders?status=paid&limit=1',{headers:h}).then(function(r){return r.json()});
     var o=(list.data||[])[0];
@@ -202,8 +202,8 @@ const getJSON = u => new Promise((res, rej) => {
      早先 401 是静默删令牌，用户只会看到自己突然被踢出来。
      现在要求：掉回登录页 + 明确说明原因。 */
   await ev(`(function(){
-    var s=JSON.parse(localStorage.getItem('tideglass_admin')||'{}');
-    s.token='expired-token-for-test'; localStorage.setItem('tideglass_admin',JSON.stringify(s));
+    var s=JSON.parse(localStorage.getItem('lastgrove_admin')||'{}');
+    s.token='expired-token-for-test'; localStorage.setItem('lastgrove_admin',JSON.stringify(s));
   })()`);
   await ev(`(function(){var a=[].slice.call(document.querySelectorAll('.adm__nav a'))[0]; a&&a.click();})()`);
   await wait(1200);

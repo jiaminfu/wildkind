@@ -78,7 +78,7 @@ const getJSON = u => new Promise((res, rej) => {
   // 1) 用真实表单登录
   const filled = await ev(`(function(){
     var f=document.querySelector('form[data-act=login]'); if(!f) return 'no form';
-    f.email.value='owner@tideglassjewelry.com'; f.password.value='tideglass2026';
+    f.email.value='owner@lastgrove.com'; f.password.value='lastgrove2026';
     f.querySelector('button[type=submit],button').click(); return 'submitted';
   })()`);
   console.log('登录表单：' + filled);
@@ -88,7 +88,7 @@ const getJSON = u => new Promise((res, rej) => {
     await wait(250);
   }
   console.log('登录后看板渲染：' + (okDash ? 'OK' : '失败'));
-  console.log('localStorage：' + await ev(`(function(){try{var v=JSON.parse(localStorage.getItem('tideglass_admin')||'null');
+  console.log('localStorage：' + await ev(`(function(){try{var v=JSON.parse(localStorage.getItem('lastgrove_admin')||'null');
     return v? 'token '+String(v.token).slice(0,8)+'… role '+v.staff.role : '无';}catch(e){return '解析失败 '+e.message}})()`));
 
   // 2) 记录当前 hash，然后点侧边栏 Orders 链接（真实交互）

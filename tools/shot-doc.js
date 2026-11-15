@@ -106,25 +106,25 @@ const JOBS = onlyArg === 'admin' ? ADMIN : onlyArg === 'store' ? STORE : ADMIN.c
   const login = await ev(`(async()=>{
     try{
       const r = await fetch('/api/v1/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({email:'owner@tideglassjewelry.com',password:'tideglass2026'})});
+        body:JSON.stringify({email:'owner@lastgrove.com',password:'lastgrove2026'})});
       const j = await r.json();
       if(!j.data||!j.data.token) return 'login-fail:'+JSON.stringify(j).slice(0,120);
-      localStorage.setItem('tideglass_admin', JSON.stringify({token:j.data.token, staff:j.data.staff}));
+      localStorage.setItem('lastgrove_admin', JSON.stringify({token:j.data.token, staff:j.data.staff}));
       return 'ok';
     }catch(e){ return 'ERR '+e.message; }
   })()`);
   console.log('后台登录：' + login);
 
   // 关掉 Cookie 同意条：它是 position:fixed，整页截图时会浮在页面中段挡住正文。
-  // 该条只在 tideglass_cookie 为空时渲染，所以要先写值再重载。
-  await ev(`localStorage.setItem('tideglass_cookie','all')`);
+  // 该条只在 lastgrove_cookie 为空时渲染，所以要先写值再重载。
+  await ev(`localStorage.setItem('lastgrove_cookie','all')`);
   await send('Page.reload', { ignoreCache: false });
   await wait(1500);
 
   // 购物车/结算页在空车时只渲染空态，截图就失去意义：先灌两条真实行项目（价格与库存取自接口实测值）
   const CART_SEED = [
-    { productId: 'TG-102', handle: 'moonlit-hare-necklace', title: 'Moonlit Hare Necklace', image: 'assets/img/opt/p-necklace-moon-silver.jpg', metal: 'Silver', size: '16"', qty: 1, unitPrice: 76, stock: 10 },
-    { productId: 'TG-101', handle: 'foxtrot-pendant-necklace', title: 'Foxtrot Pendant Necklace', image: 'assets/img/opt/p-necklace-fox-gold.jpg', metal: 'Gold', size: '18"', qty: 1, unitPrice: 85, stock: 37 }
+    { productId: 'LG-102', handle: 'moonlit-hare-necklace', title: 'Moonlit Hare Necklace', image: 'assets/img/opt/p-necklace-moon-silver.jpg', metal: 'Silver', size: '16"', qty: 1, unitPrice: 76, stock: 10 },
+    { productId: 'LG-101', handle: 'foxtrot-pendant-necklace', title: 'Foxtrot Pendant Necklace', image: 'assets/img/opt/p-necklace-fox-gold.jpg', metal: 'Gold', size: '18"', qty: 1, unitPrice: 85, stock: 37 }
   ];
 
   let ok = 0, bad = 0, cartSeeded = false;
@@ -132,7 +132,7 @@ const JOBS = onlyArg === 'admin' ? ADMIN : onlyArg === 'store' ? STORE : ADMIN.c
     // 注入后必须整页重载：内存里的 state.cart 是在首屏加载时读的，改 hash 不会重新读取
     // 注意 hash 以 '#' 开头，'/cart' 的索引是 1 而不是 0
     if (!cartSeeded && (hash.indexOf('/cart') > -1 || hash.indexOf('/checkout') > -1)) {
-      await ev(`localStorage.setItem('tideglass_cart_v1', ${JSON.stringify(JSON.stringify(CART_SEED))})`);
+      await ev(`localStorage.setItem('lastgrove_cart_v1', ${JSON.stringify(JSON.stringify(CART_SEED))})`);
       await send('Page.reload', { ignoreCache: false });
       await wait(1800);
       cartSeeded = true;

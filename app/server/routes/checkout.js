@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS · 结算与下单
+   LASTGROVE · 结算与下单
    两条铁律：
    ① 金额只由服务端算，前端传来的任何价格字段一律丢弃；
    ② 报价（quote）锁定 15 分钟，超时或库存变动必须重新报价，
@@ -289,7 +289,7 @@ function routes(router) {
       currency: 'USD',
       email: customer.email,
       last4: (b.payment || {}).last4,
-      description: 'TIDEGLASS \u00b7 ' + fresh.lines.reduce((n, l) => n + l.qty, 0) + ' item(s)',
+      description: 'LASTGROVE \u00b7 ' + fresh.lines.reduce((n, l) => n + l.qty, 0) + ' item(s)',
       meta: { quoteId: quote.id },
     };
 

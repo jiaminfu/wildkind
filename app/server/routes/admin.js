@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS · 后台接口（全部需要 Bearer 令牌 + 权限位）
+   LASTGROVE · 后台接口（全部需要 Bearer 令牌 + 权限位）
    路由前缀 /api/v1/admin/*；每个写操作都写 auditLog。
    ============================================================ */
 'use strict';
@@ -57,10 +57,12 @@ function slugify(s) {
 function nextProductId(db) {
   let max = 100;
   (db.products || []).forEach(p => {
-    const m = /^TG-(\d+)$/.exec(String(p.id));
+    // 兼容旧数据：历史上编号前缀是 TG-，改名后写入 LG-，两者都要认，
+    // 否则老数据里的高位编号会被忽略，新商品可能撞号。
+    const m = /^(?:TG|LG)-(\d+)$/.exec(String(p.id));
     if (m) max = Math.max(max, Number(m[1]));
   });
-  return 'TG-' + (max + 1);
+  return 'LG-' + (max + 1);
 }
 
 /* handle 是 URL 的一部分。改标题时如果顺手改了 handle，
@@ -78,7 +80,7 @@ function fieldError(field, message) {
   return E.badRequest(message, [{ field, message }]);
 }
 
-/* 变体：金属必须是固定三种，SKU 商品内唯一，缺 SKU 就按 TG-编号-金属码 自动生成。
+/* 变体：金属必须是固定三种，SKU 商品内唯一，缺 SKU 就按 LG-编号-金属码 自动生成。
    自由填金属会让前台筛选、库存报表按 metal 分组时出现 "gold" / "Gold " 这类脏数据。 */
 function normalizeVariants(input, idNum, mainPrice, existing) {
   const list = Array.isArray(input) ? input : null;
@@ -105,7 +107,7 @@ function normalizeVariants(input, idNum, mainPrice, existing) {
     }
 
     let sku = String(v.sku || '').trim().toUpperCase();
-    if (!sku) sku = 'TG-' + idNum + '-' + METAL_CODE[metal];
+    if (!sku) sku = 'LG-' + idNum + '-' + METAL_CODE[metal];
     if (!/^[A-Z0-9-]{3,32}$/.test(sku)) {
       throw fieldError('variants.' + i + '.sku', 'SKU must be 3–32 chars, letters/numbers/hyphen.');
     }
@@ -703,7 +705,7 @@ function routes(router) {
     p.handle = handle;
     p.title = String(src.title).slice(0, 110) + ' (copy)';
     p.variants = (src.variants || []).map(v => ({
-      sku: 'TG-' + idNum + '-' + METAL_CODE[v.metal] || v.sku,
+      sku: 'LG-' + idNum + '-' + METAL_CODE[v.metal] || v.sku,
       metal: v.metal, price: v.price, stock: 0,
     }));
     p.images = (src.images || []).slice();
@@ -799,7 +801,7 @@ function routes(router) {
         const now = new Date().toISOString();
         const variants = g.variants.map(v => {
           let sku = String(v.sku || '').trim().toUpperCase();
-          if (!sku) sku = 'TG-' + idNum + '-' + METAL_CODE[v.metal];
+          if (!sku) sku = 'LG-' + idNum + '-' + METAL_CODE[v.metal];
           return {
             sku,
             metal: v.metal,
@@ -853,7 +855,7 @@ function routes(router) {
     const body = csv.template();
     res.writeHead(200, {
       'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': 'attachment; filename="tideglass-products-template.csv"',
+      'Content-Disposition': 'attachment; filename="lastgrove-products-template.csv"',
       'Content-Length': Buffer.byteLength(body, 'utf8'),
       ...CORS,
     });
@@ -1098,7 +1100,7 @@ function routes(router) {
         o.tracking || '', o.carrier || '',
       ]);
     }
-    sendCsv(res, 'tideglass-orders-' + new Date().toISOString().slice(0, 10) + '.csv', rows);
+    sendCsv(res, 'lastgrove-orders-' + new Date().toISOString().slice(0, 10) + '.csv', rows);
   });
 
   router.get('/api/v1/admin/export/products.csv', (req, res) => {
@@ -1130,7 +1132,7 @@ function routes(router) {
         ]);
       }
     }
-    sendCsv(res, 'tideglass-products-' + new Date().toISOString().slice(0, 10) + '.csv', rows);
+    sendCsv(res, 'lastgrove-products-' + new Date().toISOString().slice(0, 10) + '.csv', rows);
   });
 
   router.get('/api/v1/admin/export/customers.csv', (req, res) => {
@@ -1147,7 +1149,7 @@ function routes(router) {
         c.tier || '', c.last || '', c.marketing ? 'yes' : 'no',
       ]);
     });
-    sendCsv(res, 'tideglass-customers-' + new Date().toISOString().slice(0, 10) + '.csv', rows);
+    sendCsv(res, 'lastgrove-customers-' + new Date().toISOString().slice(0, 10) + '.csv', rows);
   });
 
   /* ---------------- 优惠券 ---------------- */

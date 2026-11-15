@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS · 后端数据初始化
+   LASTGROVE · 后端数据初始化
    数据源只有一处：prototype/assets/js/data.js（window.SEED）。
    原型与 API 共用同一份商品/订单/客户数据，避免「演示一套、接口另一套」。
    用法：node app/server/seed.js
@@ -81,14 +81,14 @@ function buildLedger(d) {
 }
 
 const seed = readSeed();
-const password = process.env.ADMIN_PASSWORD || 'tideglass2026';
+const password = process.env.ADMIN_PASSWORD || 'lastgrove2026';
 
 const ownerPw = auth.hashPassword(password);
-const opsPw = auth.hashPassword(process.env.OPS_PASSWORD || 'tideglass-ops');
+const opsPw = auth.hashPassword(process.env.OPS_PASSWORD || 'lastgrove-ops');
 
 const db = {
   meta: {
-    brand: 'TIDEGLASS',
+    brand: 'LASTGROVE',
     version: '1.0.0',
     currency: 'USD',
     seededAt: new Date().toISOString(),
@@ -126,7 +126,7 @@ const db = {
   staff: [
     {
       id: 'S001',
-      email: 'owner@tideglassjewelry.com',
+      email: 'owner@lastgrove.com',
       name: 'Store owner',
       role: 'owner',
       status: 'active',
@@ -137,7 +137,7 @@ const db = {
     },
     {
       id: 'S002',
-      email: 'ops@tideglassjewelry.com',
+      email: 'ops@lastgrove.com',
       name: 'Operations',
       role: 'ops',
       status: 'active',
@@ -172,6 +172,6 @@ console.log('       ' + SEED_OUT + '（基线快照，供测试复位）');
 console.log('  商品 %d · 集合 %d · 订单 %d · 客户 %d · 优惠码 %d · 评价 %d',
   db.products.length, db.collections.length, db.orders.length,
   db.customers.length, db.coupons.length, db.reviews.length);
-console.log('  后台账号：owner@tideglassjewelry.com / %s（owner，全权限）', password);
-console.log('            ops@tideglassjewelry.com / %s（ops，无设置权限）', process.env.OPS_PASSWORD || 'tideglass-ops');
+console.log('  后台账号：owner@lastgrove.com / %s（owner，全权限）', password);
+console.log('            ops@lastgrove.com / %s（ops，无设置权限）', process.env.OPS_PASSWORD || 'lastgrove-ops');
 console.log('  下一个单号：#TG%d', db.sequences.order);

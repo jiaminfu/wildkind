@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS Web · 视图层
+   LASTGROVE Web · 视图层
    每个函数只接收「已经从 API 取到的数据」，不自己发请求，
    也不读 localStorage —— 渲染与取数分离，便于单测与替换。
    ============================================================ */
@@ -40,7 +40,7 @@
     var worldDefs = [
       { h: 'best-sellers', t: 'Best sellers', s: 'The pieces everyone reorders.', i: 'assets/img/opt/c-ocean.jpg' },
       { h: 'new', t: 'New in', s: 'Fresh from the bench this month.', i: 'assets/img/opt/c-woodland.jpg' },
-      { h: 'sea-glass', t: 'Sea glass', s: 'Soft greens and worn edges.', i: 'assets/img/opt/c-celestial.jpg' },
+      { h: 'ocean', t: 'Ocean', s: 'Deep water tones, salt-worn edges.', i: 'assets/img/opt/c-celestial.jpg' },
     ];
     var have = (S.DB.collections || []).map(function (x) { return x.handle; });
     var worlds = worldDefs.filter(function (w) { return have.indexOf(w.h) >= 0; });
@@ -104,7 +104,7 @@
       '<div class="hero__meta">' +
       '<div><b>316L</b>surgical steel</div>' +
       '<div><b>PVD</b>colour lock</div>' +
-      '<div><b>Lifetime</b>colour guarantee</div>' +
+      '<div><b>1 free</b>colour replacement</div>' +
       '<div><b>30 days</b>free returns</div>' +
       '</div></div>' +
       '<div class="hero__media" id="heroMedia">' + slides +
@@ -115,7 +115,7 @@
       proof +
 
       '<div class="wrap"><div class="sec-head"><div><div class="eyebrow">' +
-      esc((S.DB.settings || {}).bestSellersEyebrow || 'As seen on TikTok') + '</div><h2>Best sellers</h2></div>' +
+      esc((S.DB.settings || {}).bestSellersEyebrow || 'Customer favorites') + '</div><h2>Best sellers</h2></div>' +
       '<div class="sec-head__arrow">' +
       '<button class="arrow-btn" data-act="rail" data-d="-1" data-target="railBest" aria-label="Scroll left">' + ui.icon('left') + '</button>' +
       '<button class="arrow-btn" data-act="rail" data-d="1" data-target="railBest" aria-label="Scroll right">' + ui.icon('right') + '</button>' +
@@ -389,7 +389,7 @@
       '<div class="eta">' + ui.icon('truck') + '<span>' + ui.etaText(7, 12) + '</span></div>' +
       (descText ? '<div class="pdp__desc">' + esc(descText) + '</div>' : '') +
       '<ul class="usp-list">' +
-      '<li>' + ui.icon('shield') + '<span><b>Lifetime colour guarantee.</b> If it fades, we replace it once.</span></li>' +
+      '<li>' + ui.icon('shield') + '<span><b>Colour guarantee.</b> If it fades, we replace it once.</span></li>' +
       '<li>' + ui.icon('shield') + '<span><b>Waterproof &amp; tarnish-free.</b> 0.8 micron PVD — swim, shower, sleep in it.</span></li>' +
       '<li>' + ui.icon('shield') + '<span><b>Hypoallergenic 316L steel.</b> Nickel-safe, no green wrists.</span></li>' +
       '<li>' + ui.icon('truck') + '<span><b>Free shipping over $' + S.DB.settings.freeShip + '.</b> Tracked, no surprise fees.</span></li>' +

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Lastgrove">
+  <title>Lastgrove — favicon</title><desc>Simplified ring and tree, legible at 16px</desc>
+  
+  <rect width="64" height="64" rx="13" fill="#1B2B2E"/>
+   <g transform="translate(2 2) scale(0.5)" fill="none" stroke="#EDF1F0"
+      stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+     <circle cx="60" cy="60" r="45"/>
+     <path d="M 60 103 V 64 M 60 82 L 48 68 M 60 82 L 72 68"/>
+   </g>
+</svg>

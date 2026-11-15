@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS · Airwallex 通道（骨架，待密钥到位后联调）
+   LASTGROVE · Airwallex 通道（骨架，待密钥到位后联调）
    ------------------------------------------------------------
    选它的理由：目前唯一同时满足「中国大陆营业执照可开户 + 真卡收单 +
    Apple/Google Pay + 直接结汇到对公人民币账户」的通道，是本项目
@@ -117,7 +117,7 @@ module.exports = {
       merchant_order_id: String(c.orderNumber || ''),
       return_url: c.returnUrl || ((process.env.PUBLIC_URL || '') + '/#/order/confirm'),
       /* [TODO-VERIFY] descriptor 有长度上限（常见 22 字符），且会显示在持卡人账单上 */
-      descriptor: String(c.description || 'TIDEGLASS').slice(0, 22),
+      descriptor: String(c.description || 'LASTGROVE').slice(0, 22),
       metadata: Object.assign({ ref: c.ref || '', orderNumber: c.orderNumber || '' }, c.meta || {}),
     };
 

@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS Web · 内容页
+   LASTGROVE Web · 内容页
    页脚和正文里一共有 8 个内容页链接（Our Story / Materials / Contact /
    Shipping & Duties / Returns / Care Guide / Size Guide / FAQ），
    加上底栏三个法务页（Privacy / Terms / Accessibility）和 Journal。
@@ -23,7 +23,7 @@
       std: s.standardShip != null ? s.standardShip : 6.9,
       exp: s.expressShip != null ? s.expressShip : 18,
       days: s.returnWindowDays != null ? s.returnWindowDays : 30,
-      email: 'hello@tideglassjewelry.com',
+      email: 'hello@lastgrove.com',
       /* GDPR / CCPA 要求隐私政策披露「数据控制者」的法定名称与注册地址。
          收单机构（Stripe / Airwallex / PayPal）审核也会核对网站主体与开户主体是否一致。
          品牌叙事里写的是 Portland 工作室，那是履约仓；法律主体必须如实写。
@@ -105,7 +105,7 @@
     if (kind === 'about') {
       return head('about', 'Since 2024', 'Our story', 'A small studio that makes one thing well: jewellery you never have to take off.') +
         prose(
-          '<p>TIDEGLASS started with a complaint. Everything affordable turned the wearer\'s neck green within a month, and everything that lasted cost a week\'s rent. The middle was empty.</p>' +
+          '<p>LASTGROVE started with a complaint. Everything affordable turned the wearer\'s neck green within a month, and everything that lasted cost a week\'s rent. The middle was empty.</p>' +
           '<p>So we went to the material instead of the marketing. 316L stainless steel is what surgical instruments and dive watches are made of — it does not corrode, it does not react with sweat, and it costs almost nothing at scale. Bond 18k gold onto it with physical vapour deposition and you get a piece that survives the sea for the price of two lunches.</p>' +
           '<h2>What we will not do</h2>' +
           '<p>We will not plate brass and call it gold. We will not sell a piece we have not swum in. And we will not run a sale every three weeks to make a full price look like a bargain.</p>' +
@@ -242,7 +242,7 @@
         prose(
           '<p class="prose__meta">Last updated 15 November 2026</p>' +
           '<h2>Who we are</h2>' +
-          '<p>TIDEGLASS is a trading name of ' + esc(c.legalName) + ', ' + esc(c.legalAddr) + '. We are the data controller for everything described on this page. Orders are picked and shipped from our fulfilment partner in Portland, Oregon; the company itself and this website are operated from China.</p>' +
+          '<p>LASTGROVE is a trading name of ' + esc(c.legalName) + ', ' + esc(c.legalAddr) + '. We are the data controller for everything described on this page. Orders are picked and shipped from our fulfilment partner in Portland, Oregon; the company itself and this website are operated from China.</p>' +
           '<h2>What we collect</h2>' +
           '<p>Order details (name, shipping address, email), and anonymous page analytics. We do not buy data, and we do not sell it — not to advertisers, not to brokers.</p>' +
           '<h2>Cookies</h2>' +

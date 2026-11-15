@@ -93,7 +93,7 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
     ok('首页渲染出商品卡', rendered);
     const cardCount = await ev(`document.querySelectorAll('a[href*="#/products/"]').length`);
     ok('商品卡数量合理（≥8）', cardCount >= 8, 'actual=' + cardCount);
-    ok('首页标题正确', (await ev('document.title')).indexOf('TIDEGLASS') >= 0, await ev('document.title'));
+    ok('首页标题正确', (await ev('document.title')).indexOf('LASTGROVE') >= 0, await ev('document.title'));
     await shot('01-home');
 
     /* 2. Cookie 横幅：会盖住底部按钮，测试前先关掉；顺便验证它可关 */
@@ -106,7 +106,7 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
       await ev(`(function(){var b=document.querySelector('[data-act=ck-essential]');if(b)b.click();return true})()`);
       bannerClosed = await waitFor(`!document.body.classList.contains('ck-open')`, 6000);
     }
-    const ckChoice = await ev(`localStorage.getItem('tideglass_cookie')`);
+    const ckChoice = await ev(`localStorage.getItem('lastgrove_cookie')`);
     ok('Cookie 横幅「仅必要」可关闭并记录选择', bannerClosed === true, '初始显示=' + hadBanner + ' 选择=' + ckChoice);
 
     /* 3. 点第一张商品卡进详情 */

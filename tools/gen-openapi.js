@@ -544,7 +544,7 @@ const schemas = {
 
   /* 变体入参：sku / price 可留空，服务端按 id 与主价自动生成 */
   VariantInput: S({
-    sku: { type: 'string', description: '留空自动生成 TG-{id}-{GO|SI|RO}；3–32 位 A-Z / 0-9 / -' },
+    sku: { type: 'string', description: '留空自动生成 LG-{id}-{GO|SI|RO}；3–32 位 A-Z / 0-9 / -' },
     metal: { type: 'string', enum: ['Gold', 'Silver', 'Rose Gold'] },
     price: { type: 'number', description: '留空继承主价' },
     stock: { type: 'integer', minimum: 0 },
@@ -811,10 +811,10 @@ const schemas = {
 const doc = {
   openapi: '3.0.3',
   info: {
-    title: 'TIDEGLASS API',
+    title: 'LASTGROVE API',
     version: '1.2.0',
     description: [
-      'TIDEGLASS 跨境饰品独立站接口。',
+      'LASTGROVE 跨境饰品独立站接口。',
       '',
       '**响应信封**：成功 `{ "data": … }`；分页 `{ "data": [], "meta": {} }`；失败 `{ "error": { code, message, details } }`。',
       '前端必须按 `code` 分支，不要按 `message` 文案匹配。',

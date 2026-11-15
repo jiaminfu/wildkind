@@ -7,7 +7,7 @@
 const zlib = require('zlib');
 
 const BASE = process.env.BASE || 'http://127.0.0.1:4600';
-const EMAIL = process.env.ADMIN_EMAIL || 'owner@tideglassjewelry.com';
+const EMAIL = process.env.ADMIN_EMAIL || 'owner@lastgrove.com';
 const PASS = process.env.ADMIN_PASS;
 
 /* ---------- 极简 PNG 编码（画“海玻璃”质感色块） ---------- */

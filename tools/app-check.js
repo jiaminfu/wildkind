@@ -11,8 +11,8 @@ const http = require('http'), path = require('path'), os = require('os'), fs = r
 const EDGE = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const PORT = 9385;
 const BASE = 'http://localhost:4600';
-const OWNER = { email: 'owner@tideglassjewelry.com', password: 'tideglass2026' };
-const OPS = { email: 'ops@tideglassjewelry.com', password: 'tideglass-ops' };
+const OWNER = { email: 'owner@lastgrove.com', password: 'lastgrove2026' };
+const OPS = { email: 'ops@lastgrove.com', password: 'lastgrove-ops' };
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const getJSON = u => new Promise((res, rej) => {
@@ -110,7 +110,7 @@ const WIDTHS = [390, 768, 1440];
   await wait(1200);
   const login = await ev(`fetch('/api/v1/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify(${JSON.stringify(OWNER)})}).then(function(r){return r.json()}).then(function(j){
-    localStorage.setItem('tideglass_admin',JSON.stringify({token:j.data.token,staff:j.data.staff}));
+    localStorage.setItem('lastgrove_admin',JSON.stringify({token:j.data.token,staff:j.data.staff}));
     return 'token ok: '+j.data.staff.role;})`);
   console.log('登录：' + login + '\n');
 

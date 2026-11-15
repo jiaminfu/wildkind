@@ -13,10 +13,10 @@
 | `update.sh` | 更新发布：备份 → 拉代码 → 重启 → 探活，失败给回滚命令 |
 | `backup.sh` | 备份 / 列备份 / 恢复，带 JSON 合法性硬校验（**裸机部署**用，依赖宿主机 `node`） |
 | `backup-docker.sh` | 同上，**Docker 部署**用：数据从容器里取、用容器里的 node 校验（宿主机无需 node） |
-| `tideglass-api.service` | systemd 单元，含最小权限加固 |
-| `nginx-tideglass.conf` | 有域名版：Nginx 反代 + 静态托管 + HTTPS + 安全头 |
-| `nginx-tideglass-port.conf` | **无域名版**：只听独立端口，不碰已有站点的 80/443 |
-| `.env.example` | 生产环境变量样例（systemd 方式复制到 `/etc/tideglass/`，Docker 方式复制到 `deploy/.env`） |
+| `lastgrove-api.service` | systemd 单元，含最小权限加固 |
+| `nginx-lastgrove.conf` | 有域名版：Nginx 反代 + 静态托管 + HTTPS + 安全头 |
+| `nginx-lastgrove-port.conf` | **无域名版**：只听独立端口，不碰已有站点的 80/443 |
+| `.env.example` | 生产环境变量样例（systemd 方式复制到 `/etc/lastgrove/`，Docker 方式复制到 `deploy/.env`） |
 | `Dockerfile` / `docker-compose.yml` / `docker-entrypoint.sh` | 容器方案（数据挂卷、首次启动自动初始化、端口由 `.env` 驱动） |
 
 ## 最短路径
@@ -25,16 +25,16 @@
 
 ```bash
 # 服务器上（root）
-mkdir -p /opt/tideglass
-git clone https://github.com/jiaminfu/wildkind.git /opt/tideglass/current
-sudo bash /opt/tideglass/current/deploy/install.sh shop.你的域名.com \
+mkdir -p /opt/lastgrove
+git clone https://github.com/jiaminfu/wildkind.git /opt/lastgrove/current
+sudo bash /opt/lastgrove/current/deploy/install.sh shop.你的域名.com \
      https://github.com/jiaminfu/wildkind.git you@mail.com
 ```
 
 **还没有域名 / 80·443 已被别的项目占用（宿主机可用 Nginx）：**
 
 ```bash
-sudo LISTEN_PORT=8080 bash /opt/tideglass/current/deploy/install.sh - \
+sudo LISTEN_PORT=8080 bash /opt/lastgrove/current/deploy/install.sh - \
      https://github.com/jiaminfu/wildkind.git
 # → http://<服务器IP>:8080/
 ```
@@ -47,11 +47,11 @@ sudo LISTEN_PORT=8080 bash /opt/tideglass/current/deploy/install.sh - \
 ```bash
 # ① 直连模式：连 nginx 这个包都不装
 sudo NO_NGINX=1 LISTEN_PORT=8080 \
-     bash /opt/tideglass/current/deploy/install.sh - \
+     bash /opt/lastgrove/current/deploy/install.sh - \
      https://github.com/jiaminfu/wildkind.git
 
 # ② 或者用 Docker，独立 compose 项目，端口从 .env 读
-cd /opt/tideglass/current/deploy
+cd /opt/lastgrove/current/deploy
 cp .env.example .env && nano .env      # 填口令，去掉 BIND_ADDR/HOST_PORT 的注释
 #   BIND_ADDR=0.0.0.0
 #   HOST_PORT=8080

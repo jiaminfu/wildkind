@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Lastgrove">
+  <title>Lastgrove — mono symbol</title><desc>Single-colour version for embossing and engraving</desc>
+  
+  
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 66.68 12.47 A 48 48 0 1 1 53.32 12.47" stroke="#1B2B2E" stroke-width="5"/>
+    <path d="M 60 103 V 64 M 60 82 L 48 68 M 60 82 L 72 68" stroke="#1B2B2E" stroke-width="5"/>
+  </g>
+  <circle cx="60" cy="12.47" r="4.5" fill="#1B2B2E"/>
+</svg>

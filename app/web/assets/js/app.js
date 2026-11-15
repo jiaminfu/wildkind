@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS Web · 路由与交互
+   LASTGROVE Web · 路由与交互
    每个视图先取数、再渲染；取数失败落到错误页而不是白屏。
    ============================================================ */
 (function () {
@@ -60,7 +60,7 @@
   }
 
   function applySeo(seg, r) {
-    var brand = 'TIDEGLASS';
+    var brand = 'LASTGROVE';
     var title, desc, image, canonical, ld = null;
     var origin = location.origin + location.pathname;
 
@@ -137,8 +137,8 @@
       desc = 'Pieces you saved at ' + brand + '.';
       canonical = origin + '#/account/wishlist';
     } else {
-      title = brand + ' — Sea glass doesn\'t fade.';
-      desc = '316L stainless steel jewellery with a PVD colour layer that does not fade. ' +
+      title = brand + ' — Grows on you.';
+      desc = '316L stainless steel jewelry, made in short runs. Unplated silver, 18k gold PVD. ' +
         'Swim in it. Shower in it. Sleep in it. Duties included, 30-day returns.';
       canonical = origin;
       image = origin + 'assets/img/opt/hero-necklaces.jpg';
@@ -423,7 +423,7 @@
   /* ---------------- 后台 ---------------- */
   function adminToken() {
     try {
-      var a = JSON.parse(localStorage.getItem('tideglass_admin') || 'null');
+      var a = JSON.parse(localStorage.getItem('lastgrove_admin') || 'null');
       return a && a.token ? a : null;
     } catch (e) { return null; }
   }
@@ -749,11 +749,11 @@
   });
 
   S.onClick('ck-all', function () {
-    try { localStorage.setItem('tideglass_cookie', 'all'); } catch (e) { }
+    try { localStorage.setItem('lastgrove_cookie', 'all'); } catch (e) { }
     render();
   });
   S.onClick('ck-essential', function () {
-    try { localStorage.setItem('tideglass_cookie', 'essential'); } catch (e) { }
+    try { localStorage.setItem('lastgrove_cookie', 'essential'); } catch (e) { }
     render();
   });
 
@@ -814,7 +814,7 @@
       var pay = res.data.payment || {};
       if (pay.mode && pay.mode !== 'sync') {
         S.state.lastOrder = res.data.order;
-        try { localStorage.setItem('tideglass_last_order', JSON.stringify(res.data.order)); } catch (e) { }
+        try { localStorage.setItem('lastgrove_last_order', JSON.stringify(res.data.order)); } catch (e) { }
         S.emptyCart();
 
         if (pay.approveUrl) {
@@ -833,7 +833,7 @@
       }
 
       S.state.lastOrder = res.data.order;
-      try { localStorage.setItem('tideglass_last_order', JSON.stringify(res.data.order)); } catch (e) { }
+      try { localStorage.setItem('lastgrove_last_order', JSON.stringify(res.data.order)); } catch (e) { }
       S.emptyCart();
       S.state.checkoutForm = null;
       S.go('/order/' + res.data.order.number);
@@ -864,7 +864,7 @@
       var res = await API.post('/admin/login', {
         email: form.email.value, password: form.password.value,
       });
-      localStorage.setItem('tideglass_admin', JSON.stringify({
+      localStorage.setItem('lastgrove_admin', JSON.stringify({
         token: res.data.token, staff: res.data.staff,
       }));
       render();
@@ -876,7 +876,7 @@
 
   S.onClick('logout', async function () {
     try { await API.post('/admin/logout', {}, { auth: true }); } catch (e) { }
-    localStorage.removeItem('tideglass_admin');
+    localStorage.removeItem('lastgrove_admin');
     S.go('/admin');
     render();
   });
@@ -1386,7 +1386,7 @@
       var blob = await res.blob();
       var a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'tideglass-products-template.csv';
+      a.download = 'lastgrove-products-template.csv';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

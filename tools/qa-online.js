@@ -25,9 +25,9 @@ const BASE = process.env.BASE || 'http://194.36.85.20:8080';
    用法：
      QA_OWNER_PASS=<owner 口令> QA_OPS_PASS=<ops 口令> node tools/qa-online.js
    两个口令都可以在服务器的 deploy/.env 里取到。 */
-const OWNER_EMAIL = process.env.QA_OWNER_EMAIL || 'owner@tideglassjewelry.com';
+const OWNER_EMAIL = process.env.QA_OWNER_EMAIL || 'owner@lastgrove.com';
 const OWNER_PASS = process.env.QA_OWNER_PASS || '';
-const OPS_EMAIL = process.env.QA_OPS_EMAIL || 'ops@tideglassjewelry.com';
+const OPS_EMAIL = process.env.QA_OPS_EMAIL || 'ops@lastgrove.com';
 const OPS_PASS = process.env.QA_OPS_PASS || '';
 const STAMP = Date.now().toString(36).slice(-5);
 const TAG = 'QA-' + STAMP;            // 商品标题前缀

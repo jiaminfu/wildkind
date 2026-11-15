@@ -10,8 +10,8 @@ const os = require('os');
 const EDGE = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9444;
 const BASE = process.argv[2] || 'http://127.0.0.1:4610';
-const EMAIL = process.env.TG_EMAIL || 'owner@tideglassjewelry.com';
-const PW = process.env.TG_PW || 'tideglass2026';
+const EMAIL = process.env.TG_EMAIL || 'owner@lastgrove.com';
+const PW = process.env.TG_PW || 'lastgrove2026';
 const SHOTS = path.join(os.tmpdir(), 'tg-e2e-shots');
 const PROF = path.join(os.tmpdir(), 'edge_e2e_prof');
 const IMG = path.resolve(__dirname, '..', 'app', 'web', 'assets', 'img', 'opt',
@@ -98,7 +98,7 @@ function get(url) {
     /* 1. 登录（先清掉上次的会话，否则会直接进后台、没有登录表单） */
     await send('Page.navigate', { url: BASE + '/#/admin' });
     await wait(900);
-    await evalJs(`try{localStorage.removeItem('tideglass_admin');location.reload();}catch(e){} true`);
+    await evalJs(`try{localStorage.removeItem('lastgrove_admin');location.reload();}catch(e){} true`);
     await wait(1500);
     let hasForm = false;
     for (let i = 0; i < 12; i++) {

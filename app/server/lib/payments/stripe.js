@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS · Stripe 通道
+   LASTGROVE · Stripe 通道
    ------------------------------------------------------------
    零依赖实现：本仓库不带任何 npm 包，所以这里直接用 node:https 调 REST，
    自己算 webhook 的 HMAC 签名，不引入 stripe-node。
@@ -143,7 +143,7 @@ module.exports = {
           currency: String(c.currency || 'usd').toLowerCase(),
           unit_amount: amount,
           product_data: {
-            name: c.description || ('TIDEGLASS order ' + (c.orderNumber || '')),
+            name: c.description || ('LASTGROVE order ' + (c.orderNumber || '')),
           },
         },
       }],

@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS Web · API 客户端
+   LASTGROVE Web · API 客户端
    所有请求集中在这里：统一错误解析、令牌注入、401 自动清理。
    前端任何地方都不直接写 fetch。
    ============================================================ */
@@ -10,7 +10,7 @@
 
   function token() {
     try {
-      var a = JSON.parse(localStorage.getItem('tideglass_admin') || 'null');
+      var a = JSON.parse(localStorage.getItem('lastgrove_admin') || 'null');
       return a && a.token ? a.token : '';
     } catch (e) { return ''; }
   }
@@ -53,9 +53,9 @@
         /* 令牌失效：清掉本地会话，并留一句原因给登录页显示。
            早先这里是静默删除——用户点一个菜单就「退出登录」，没有任何解释，
            分不清是自己操作错了还是系统出问题。会话过期是正常事件，必须说清楚。 */
-        localStorage.removeItem('tideglass_admin');
+        localStorage.removeItem('lastgrove_admin');
         try {
-          sessionStorage.setItem('tideglass_admin_notice',
+          sessionStorage.setItem('lastgrove_admin_notice',
             err.message || 'Your session expired. Please sign in again.');
         } catch (e) { /* 隐私模式下 sessionStorage 可能不可写，忽略 */ }
       }
@@ -68,8 +68,8 @@
   /* 取走「为什么被踢出来」的说明，取过即清，避免下次刷新还挂着 */
   function takeNotice() {
     try {
-      var m = sessionStorage.getItem('tideglass_admin_notice');
-      if (m) sessionStorage.removeItem('tideglass_admin_notice');
+      var m = sessionStorage.getItem('lastgrove_admin_notice');
+      if (m) sessionStorage.removeItem('lastgrove_admin_notice');
       return m || '';
     } catch (e) { return ''; }
   }

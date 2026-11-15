@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS Admin · 后台视图（独立 SPA，只通过 API 读写）
+   LASTGROVE Admin · 后台视图（独立 SPA，只通过 API 读写）
    模块（12）：Dashboard / Orders / Products / Collections / Inventory /
          Coupons / Reviews / Custom requests / Customers /
          Stock ledger / Audit log / Settings
@@ -27,7 +27,7 @@
 
     var who = staff ? (staff.name || staff.email).split(' ')[0] : '—';
     return '<div class="adm">' +
-      '<aside class="adm__side"><div class="adm__brand"><span>TIDEGLASS<em>Admin</em></span></div>' +
+      '<aside class="adm__side"><div class="adm__brand"><span>LASTGROVE<em>Admin</em></span></div>' +
       '<nav class="adm__nav">' + nav + '</nav>' +
       '<div class="adm__foot">Connected to /api/v1<br>' +
       (staff ? U.esc(staff.email) + '<br>' + U.esc((staff.permissions || []).length + ' permissions') : '') +
@@ -47,14 +47,14 @@
     var msg = err ? (typeof err === 'string' ? err : (err.message || '')) : '';
     return '<div class="loginwrap">' +
       '<div class="loginwrap__img"><img src="assets/img/opt/c-ocean.jpg" alt="">' +
-      '<div class="cap"><b>Sea glass doesn\'t fade.</b><span>TIDEGLASS admin</span></div></div>' +
+      '<div class="cap"><b>Grows on you.</b><span>LASTGROVE admin</span></div></div>' +
       '<div class="loginwrap__form">' +
       '<a href="#/" class="brand" style="margin-bottom:26px"><span class="brand__mark">' + window.UI.MARK + '</span>' +
-      '<span class="brand__word">TIDEGLASS</span></a>' +
+      '<span class="brand__word">LASTGROVE</span></a>' +
       '<h1>Sign in</h1><p>Manage orders, stock and storefront settings.</p>' +
       (msg ? '<div class="falert falert--note">' + U.esc(msg) + '</div>' : '') +
       '<form data-act="login">' +
-      '<div class="afld"><label>Email</label><input name="email" value="owner@tideglassjewelry.com" autocomplete="username" required></div>' +
+      '<div class="afld"><label>Email</label><input name="email" value="owner@lastgrove.com" autocomplete="username" required></div>' +
       '<div class="afld"><label>Password</label><input name="password" type="password" placeholder="••••••••" autocomplete="current-password" required></div>' +
       '<button class="btn btn--full" type="submit" style="margin-top:6px">Sign in</button></form>' +
       // 这里绝对不能再写默认口令：这一页挂在公网上，等于把账号密码挂牌公示。

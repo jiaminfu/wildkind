@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS · 共用 UI 组件
+   LASTGROVE · 共用 UI 组件
    ============================================================ */
 (function () {
   'use strict';
@@ -43,11 +43,13 @@
     return '<svg class="' + (cls || '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + (ICON[name] || '') + '</svg>';
   }
 
+  /* 品牌 mark：一枚几乎闭合的环（搭扣）+ 环内一棵小树（grove）。
+     缺口在 12 点、跨约 16°，上方实心点是「扣上」的动作 —— 对应名字里
+     clasp 的佩戴语义与 grove 的生长语义。纯几何 path，不依赖字体。 */
   var MARK = '<svg viewBox="0 0 120 120" fill="none" aria-hidden="true">' +
-    '<circle cx="60" cy="60" r="51" stroke="currentColor" stroke-width="3"/>' +
-    '<circle cx="60" cy="35" r="3.2" fill="currentColor"/>' +
-    '<path d="M25 70C35 54 47 54 57 62C67 70 81 70 95 53" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>' +
-    '<path d="M25 86C35 70 47 70 57 78C67 86 81 86 95 69" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".5"/>' +
+    '<path d="M 66.68 12.47 A 48 48 0 1 1 53.32 12.47" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>' +
+    '<path d="M 60 103 V 64 M 60 82 L 48 68 M 60 82 L 72 68" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<circle cx="60" cy="12.47" r="4.5" fill="currentColor" opacity=".6"/>' +
     '</svg>';
 
   var NAV_ORDER = ['best-sellers', 'custom', 'sale', 'new', 'necklaces', 'rings', 'pearls', 'earrings', 'bracelets', 'anklets', 'gifts'];
@@ -162,7 +164,7 @@
       '<header class="hdr" id="hdr"><div class="wrap"><div class="hdr__inner">' +
       '<button class="mob-menu-btn" data-act="open-menu" aria-label="Menu">' + icon('menu') + '</button>' +
       '<nav class="hdr__nav">' + nav + '</nav>' +
-      '<a href="#/" class="brand" aria-label="TIDEGLASS home"><span class="brand__mark" aria-hidden="true">' + MARK + '</span><span class="brand__word">TIDEGLASS</span></a>' +
+      '<a href="#/" class="brand" aria-label="LASTGROVE home"><span class="brand__mark" aria-hidden="true">' + MARK + '</span><span class="brand__word">LASTGROVE</span></a>' +
       '<div class="hdr__tools">' +
       '<button class="icon-btn" data-act="open-search" aria-label="Search">' + icon('search') + '</button>' +
       '<a class="icon-btn hdr__acct" href="#/account" aria-label="Account">' + icon('user') + '</a>' +
@@ -198,8 +200,8 @@
 
     return '<footer class="ftr"><div class="wrap">' +
       '<div class="ftr__top">' +
-      '<div class="ftr__brand"><a href="#/" class="brand" aria-label="TIDEGLASS home"><span class="brand__mark" aria-hidden="true">' + MARK + '</span><span class="brand__word">TIDEGLASS</span></a>' +
-      '<p>316L stainless steel with PVD colour. Sea glass doesn\'t fade — and neither do we.</p>' +
+      '<div class="ftr__brand"><a href="#/" class="brand" aria-label="LASTGROVE home"><span class="brand__mark" aria-hidden="true">' + MARK + '</span><span class="brand__word">LASTGROVE</span></a>' +
+      '<p>316L stainless steel, made in short runs. Silver pieces are unplated; gold is 18k PVD over steel.</p>' +
       '<div style="display:flex;gap:14px;margin-top:18px">' +
       '<a href="#/pages/about" aria-label="Instagram">' + icon('instagram') + '</a>' +
       '<a href="#/pages/about" aria-label="Pinterest">' + icon('pinterest') + '</a>' +
@@ -220,7 +222,7 @@
       '<li><a href="#/pages/journal">Field Notes</a></li>' +
       '<li><a href="#/pages/contact">Contact</a></li></ul></div>' +
       '</div>' +
-      '<div class="ftr__bot"><span>© 2026 TIDEGLASS. All rights reserved.</span>' +
+      '<div class="ftr__bot"><span>© 2026 LASTGROVE. All rights reserved.</span>' +
       /* 支付标识必须和真实开通的通道一致：
          原来写着 SHOP PAY，那是 Shopify 的产品，本站自研、从未接入，属于虚假标识；
          收单机构审核会逐项核对网站上的卡组织/钱包 logo 与账户实际能力。 */
@@ -386,7 +388,7 @@
   // 而不是放在某个页面里——任何入口进来都要能看到。
   function cookieBar() {
     var v = null;
-    try { v = localStorage.getItem('tideglass_cookie'); } catch (e) { }
+    try { v = localStorage.getItem('lastgrove_cookie'); } catch (e) { }
     if (v) return '';
     return '<div class="ckbar" id="ckbar" role="dialog" aria-label="Cookie preferences">' +
       '<p>We use cookies to run the store and, with your permission, to understand how it is used. ' +
@@ -422,9 +424,9 @@
 
     return '<div class="adm">' +
       '<aside class="adm__side" id="admSide">' +
-      '<div class="adm__brand"><span>TIDEGLASS<em>Admin</em></span></div>' +
+      '<div class="adm__brand"><span>LASTGROVE<em>Admin</em></span></div>' +
       '<nav class="adm__nav">' + nav + '</nav>' +
-      '<div class="adm__foot">Prototype build v1.0<br>Signed in as owner@tideglass.co</div>' +
+      '<div class="adm__foot">Prototype build v1.0<br>Signed in as owner@lastgrove.co</div>' +
       '</aside>' +
       '<div class="adm__main">' +
       '<div class="adm__top"><div style="display:flex;align-items:center;gap:12px">' +

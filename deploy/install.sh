@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# TIDEGLASS · 首次部署脚本（Ubuntu 22.04 / 24.04 / Debian 12）
+# LASTGROVE · 首次部署脚本（Ubuntu 22.04 / 24.04 / Debian 12）
 #
 # 有域名：
 #   sudo bash deploy/install.sh shop.example.com git@github.com:jiaminfu/wildkind.git you@mail.com
@@ -34,11 +34,11 @@ DOMAIN="${1:-}"
 REPO="${2:-}"
 EMAIL="${3:-}"
 
-APP_USER="tideglass"
-APP_DIR="/opt/tideglass/current"
-ENV_DIR="/etc/tideglass"
-ENV_FILE="$ENV_DIR/tideglass.env"
-SERVICE="tideglass-api"
+APP_USER="lastgrove"
+APP_DIR="/opt/lastgrove/current"
+ENV_DIR="/etc/lastgrove"
+ENV_FILE="$ENV_DIR/lastgrove.env"
+SERVICE="lastgrove-api"
 PORT_DEFAULT="${APP_PORT:-4600}"
 LISTEN_PORT="${LISTEN_PORT:-8080}"
 
@@ -138,7 +138,7 @@ NODE_BIN="$(command -v node)"
 # ---------- 3. 系统用户 ----------
 step "准备运行账号 $APP_USER"
 if ! id "$APP_USER" >/dev/null 2>&1; then
-  adduser --system --group --home /opt/tideglass --shell /usr/sbin/nologin "$APP_USER" >/dev/null
+  adduser --system --group --home /opt/lastgrove --shell /usr/sbin/nologin "$APP_USER" >/dev/null
   green "    已创建系统用户"
 else
   green "    用户已存在"
@@ -146,7 +146,7 @@ fi
 
 # ---------- 4. 代码 ----------
 step "拉取代码到 $APP_DIR"
-mkdir -p /opt/tideglass
+mkdir -p /opt/lastgrove
 if [ -d "$APP_DIR/.git" ]; then
   git -C "$APP_DIR" fetch --depth 1 origin main
   git -C "$APP_DIR" reset --hard origin/main
@@ -192,9 +192,9 @@ EOF
   fi
   echo "    ┌──────────────────────────────────────────────"
   echo "    │ 后台地址： $ADD_HINT"
-  echo "    │ 老板账号： owner@tideglassjewelry.com"
+  echo "    │ 老板账号： owner@lastgrove.com"
   echo "    │ 密码　　： $OWNER_PW"
-  echo "    │ 运营账号： ops@tideglassjewelry.com"
+  echo "    │ 运营账号： ops@lastgrove.com"
   echo "    │ 密码　　： $OPS_PW"
   echo "    └──────────────────────────────────────────────"
 fi
@@ -206,7 +206,7 @@ PORT="${PORT:-$PORT_DEFAULT}"
 # ---------- 6. 目录权限 ----------
 step "修正目录权限"
 chown -R "$APP_USER":"$APP_USER" "$APP_DIR"
-chmod 755 /opt/tideglass /opt/tideglass/current
+chmod 755 /opt/lastgrove /opt/lastgrove/current
 # Nginx 需要能读静态文件
 chmod -R a+rX "$APP_DIR/app/web"
 mkdir -p "$APP_DIR/app/server/data"
@@ -219,7 +219,7 @@ if [ -f "$APP_DIR/app/server/data/db.json" ]; then
   green "    db.json 已存在，跳过（不会覆盖现网数据）"
 else
   sudo -u "$APP_USER" env ADMIN_PASSWORD="$ADMIN_PASSWORD" OPS_PASSWORD="$OPS_PASSWORD" \
-       HOME=/opt/tideglass "$NODE_BIN" "$APP_DIR/app/server/seed.js"
+       HOME=/opt/lastgrove "$NODE_BIN" "$APP_DIR/app/server/seed.js"
   chown "$APP_USER":"$APP_USER" "$APP_DIR/app/server/data/db.json" "$APP_DIR/app/server/data/db.seed.json"
   green "    已生成演示数据"
 fi
@@ -230,7 +230,7 @@ sed -e "s#/usr/bin/node#$NODE_BIN#" \
     -e "s#WorkingDirectory=.*#WorkingDirectory=$APP_DIR#" \
     -e "s#EnvironmentFile=.*#EnvironmentFile=$ENV_FILE#" \
     -e "s#ReadWritePaths=.*#ReadWritePaths=$APP_DIR/app/server/data#" \
-    "$APP_DIR/deploy/tideglass-api.service" > "/etc/systemd/system/$SERVICE.service"
+    "$APP_DIR/deploy/lastgrove-api.service" > "/etc/systemd/system/$SERVICE.service"
 systemctl daemon-reload
 systemctl enable "$SERVICE" >/dev/null 2>&1 || true
 systemctl restart "$SERVICE"
@@ -251,24 +251,24 @@ if [ "$NO_NGINX" -eq 1 ]; then
 else
   step "配置 Nginx"
   mkdir -p /var/www/certbot
-  NGX_SITE="/etc/nginx/sites-available/tideglass.conf"
+  NGX_SITE="/etc/nginx/sites-available/lastgrove.conf"
 
   if [ "$NO_DOMAIN" -eq 1 ]; then
     sed -e "s/__LISTEN_PORT__/$LISTEN_PORT/g" -e "s/__APP_PORT__/$PORT/g" \
-        "$APP_DIR/deploy/nginx-tideglass-port.conf" > "$NGX_SITE"
+        "$APP_DIR/deploy/nginx-lastgrove-port.conf" > "$NGX_SITE"
   else
-    sed "s/__DOMAIN__/$DOMAIN/g" "$APP_DIR/deploy/nginx-tideglass.conf" > "$NGX_SITE"
+    sed "s/__DOMAIN__/$DOMAIN/g" "$APP_DIR/deploy/nginx-lastgrove.conf" > "$NGX_SITE"
   fi
-  ln -sf "$NGX_SITE" /etc/nginx/sites-enabled/tideglass.conf
+  ln -sf "$NGX_SITE" /etc/nginx/sites-enabled/lastgrove.conf
 
   # 配置写错就把自己的站点摘掉，别把别人正在跑的服务一起带下水
-  if ! nginx -t 2>/tmp/nginx-tideglass-test.log; then
-    rm -f /etc/nginx/sites-enabled/tideglass.conf
-    cat /tmp/nginx-tideglass-test.log
+  if ! nginx -t 2>/tmp/nginx-lastgrove-test.log; then
+    rm -f /etc/nginx/sites-enabled/lastgrove.conf
+    cat /tmp/nginx-lastgrove-test.log
     die "Nginx 配置校验失败，已撤销本次站点配置（已有站点未受影响）"
   fi
   if ! systemctl reload nginx; then
-    rm -f /etc/nginx/sites-enabled/tideglass.conf
+    rm -f /etc/nginx/sites-enabled/lastgrove.conf
     systemctl reload nginx || true
     die "Nginx reload 失败（常见原因：IPv6 未启用却写了 listen [::]），已撤销本次站点配置"
   fi
@@ -390,7 +390,7 @@ EOF
 EOF
   else
     cat <<EOF
-      把 deploy/nginx-tideglass-port.conf 里的 allow / deny 两行取消注释并填你的 IP
+      把 deploy/nginx-lastgrove-port.conf 里的 allow / deny 两行取消注释并填你的 IP
 EOF
   fi
   cat <<EOF

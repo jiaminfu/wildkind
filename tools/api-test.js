@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS API · 接口自动化测试
+   LASTGROVE API · 接口自动化测试
    覆盖：健康检查 / 目录 / 筛选 / 详情 / 报价 / 下单 / 幂等 /
         查单 / 库存扣减 / 赠品 / 后台登录 / 权限 / 状态机 / 退款回补
    用法：node tools/api-test.js [baseUrl]
@@ -68,7 +68,7 @@ async function call(method, path, body, headers) {
   chk('价格升序排序正确', prices.every((v, i) => i === 0 || prices[i - 1] <= v));
 
   const pdp = await call('GET', '/api/v1/products/foxtrot-pendant-necklace');
-  chk('商品详情 200', pdp.status === 200 && pdp.body.data.product.id === 'TG-101');
+  chk('商品详情 200', pdp.status === 200 && pdp.body.data.product.id === 'LG-101');
   chk('详情含评价', Array.isArray(pdp.body.data.reviews));
   chk('详情含关联推荐', pdp.body.data.related.length > 0, pdp.body.data.related.length + ' 款');
 
@@ -78,8 +78,8 @@ async function call(method, path, body, headers) {
   /* ---------- 2. 报价 ---------- */
   section('2 报价与定价规则');
   const items = [
-    { productId: 'TG-101', metal: 'Gold', qty: 1 },
-    { productId: 'TG-102', metal: 'Silver', qty: 1 },
+    { productId: 'LG-101', metal: 'Gold', qty: 1 },
+    { productId: 'LG-102', metal: 'Silver', qty: 1 },
   ];
   const q1 = await call('POST', '/api/v1/checkout/quote', { items });
   chk('报价 200', q1.status === 200, q1.body.error && q1.body.error.message);
@@ -93,22 +93,22 @@ async function call(method, path, body, headers) {
   chk('Express 运费 $18', qx.body.data.shipping === 18, qx.body.data.shipping);
 
   const bogusPrice = await call('POST', '/api/v1/checkout/quote', {
-    items: [{ productId: 'TG-101', metal: 'Gold', qty: 1, unitPrice: 1, lineTotal: 1 }],
+    items: [{ productId: 'LG-101', metal: 'Gold', qty: 1, unitPrice: 1, lineTotal: 1 }],
   });
   chk('前端伪造价格被忽略', bogusPrice.body.data.subtotal === 82, bogusPrice.body.data.subtotal);
 
   const oos = await call('POST', '/api/v1/checkout/quote', {
-    items: [{ productId: 'TG-101', metal: 'Gold', qty: 99 }],
+    items: [{ productId: 'LG-101', metal: 'Gold', qty: 99 }],
   });
   chk('超量数量被拒（>10 限购）', oos.status === 422 && oos.body.error.code === 'CART_INVALID',
     oos.body.error && oos.body.error.code);
 
-  const couponOk = await call('POST', '/api/v1/coupons/validate', { code: 'TIDEGLASS10', items });
+  const couponOk = await call('POST', '/api/v1/coupons/validate', { code: 'LASTGROVE10', items });
   chk('优惠码校验 200', couponOk.status === 200);
   chk('10% 折扣 = 15.8', couponOk.body.data.discount === 15.8, couponOk.body.data.discount);
 
   const couponMin = await call('POST', '/api/v1/coupons/validate', {
-    code: 'WELCOME15', items: [{ productId: 'TG-101', metal: 'Gold', qty: 1 }],
+    code: 'WELCOME15', items: [{ productId: 'LG-101', metal: 'Gold', qty: 1 }],
   });
   chk('未达门槛返回 COUPON_MIN_SUBTOTAL', couponMin.status === 422 &&
     couponMin.body.error.code === 'COUPON_MIN_SUBTOTAL', couponMin.body.error && couponMin.body.error.code);
@@ -131,8 +131,8 @@ async function call(method, path, body, headers) {
     .body.data.product.variants.find(v => v.metal === 'Gold').stock;
 
   const q2 = await call('POST', '/api/v1/checkout/quote', {
-    items: [{ productId: 'TG-101', metal: 'Gold', qty: 2 }],
-    couponCode: 'TIDEGLASS10',
+    items: [{ productId: 'LG-101', metal: 'Gold', qty: 2 }],
+    couponCode: 'LASTGROVE10',
   });
   const quoteId = q2.body.data.quoteId;
 
@@ -198,12 +198,12 @@ async function call(method, path, body, headers) {
   chk('未登录访问后台 401', noAuth.status === 401 && noAuth.body.error.code === 'UNAUTHORIZED');
 
   const wrongPw = await call('POST', '/api/v1/admin/login', {
-    email: 'owner@tideglassjewelry.com', password: 'wrong',
+    email: 'owner@lastgrove.com', password: 'wrong',
   });
   chk('错误密码 401', wrongPw.status === 401);
 
   const login = await call('POST', '/api/v1/admin/login', {
-    email: 'owner@tideglassjewelry.com', password: 'tideglass2026',
+    email: 'owner@lastgrove.com', password: 'lastgrove2026',
   });
   chk('正确密码登录 200', login.status === 200, login.body.error && login.body.error.message);
   const token = login.body.data.token;
@@ -216,7 +216,7 @@ async function call(method, path, body, headers) {
     me.body.data.staff.permissions.length + ' 项');
 
   const opsLogin = await call('POST', '/api/v1/admin/login', {
-    email: 'ops@tideglassjewelry.com', password: 'tideglass-ops',
+    email: 'ops@lastgrove.com', password: 'lastgrove-ops',
   });
   const opsAuth = { Authorization: 'Bearer ' + opsLogin.body.data.token };
   const opsSettings = await call('GET', '/api/v1/admin/settings', undefined, opsAuth);
@@ -279,7 +279,7 @@ async function call(method, path, body, headers) {
     {}, AUTH);
   chk('重复退款 409', refundAgain.status === 409, refundAgain.status);
 
-  const ledger = await call('GET', '/api/v1/admin/stock-ledger?sku=TG-101-GO', undefined, AUTH);
+  const ledger = await call('GET', '/api/v1/admin/stock-ledger?sku=LG-101-GO', undefined, AUTH);
   chk('库存流水有记录', ledger.body.data.length > 0, ledger.body.data.length + ' 条');
   chk('流水含 sale 与 refund', ledger.body.data.some(l => l.reason === 'sale') &&
     ledger.body.data.some(l => l.reason === 'refund'));

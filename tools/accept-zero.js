@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /* ============================================================
-   TIDEGLASS · 从零验收（AZ 系列）
+   LASTGROVE · 从零验收（AZ 系列）
    前提：目标库已被清空（产品/订单/客户/券/评价/定制单/审计日志归零）。
    做法：不读演示数据，全部自己建；每条业务链路从入口走到出口，
         并对「该返回什么」逐条断言。跑完只删自己建的东西。
    用法：
      BASE=http://194.36.85.20:8080 \
-     ADMIN_EMAIL=owner@tideglassjewelry.com ADMIN_PASS=*** \
-     OPS_EMAIL=ops@tideglassjewelry.com OPS_PASS=*** \
+     ADMIN_EMAIL=owner@lastgrove.com ADMIN_PASS=*** \
+     OPS_EMAIL=ops@lastgrove.com OPS_PASS=*** \
      node tools/accept-zero.js
    可选：
      ZERO=1     开跑前断言库是空的（首轮用）
@@ -19,9 +19,9 @@ const fs = require('fs');
 const path = require('path');
 
 const BASE = (process.env.BASE || 'http://194.36.85.20:8080').replace(/\/$/, '');
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'owner@tideglassjewelry.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'owner@lastgrove.com';
 const ADMIN_PASS = process.env.ADMIN_PASS || '';
-const OPS_EMAIL = process.env.OPS_EMAIL || 'ops@tideglassjewelry.com';
+const OPS_EMAIL = process.env.OPS_EMAIL || 'ops@lastgrove.com';
 const OPS_PASS = process.env.OPS_PASS || '';
 const ZERO = process.env.ZERO === '1';
 const KEEP = process.env.KEEP === '1';
@@ -119,7 +119,7 @@ async function publishProduct(pid, patch) {
    主流程
    ============================================================ */
 async function main() {
-  console.log(`\nTIDEGLASS 从零验收 · 目标 ${BASE} · 批次 ${SUF}\n`);
+  console.log(`\nLASTGROVE 从零验收 · 目标 ${BASE} · 批次 ${SUF}\n`);
 
   /* ---------- P0 基线 ---------- */
   group('P0 环境基线');
@@ -244,10 +244,10 @@ async function main() {
     },
   });
   const P1 = okBody(mk) && okBody(mk).product;
-  chk('P3', '新建商品成功并自动分配 TG 编号', mk.status === 201 && P1 && /^TG-\d+$/.test(P1.id), `HTTP ${mk.status} ${mk.text.slice(0, 160)}`);
+  chk('P3', '新建商品成功并自动分配 LG 编号', mk.status === 201 && P1 && /^LG-\d+$/.test(P1.id), `HTTP ${mk.status} ${mk.text.slice(0, 160)}`);
   created.products.push(P1.id);
   eq('P3', '新建后默认不上架（active=false）', P1.active, false);
-  eq('P3', '自动生成变体 SKU（金属码后缀）', P1.variants.map(v => v.metal + ':' + /^TG-\d+-(GO|SI|RO)$/.test(v.sku)).sort(), ['Gold:true', 'Silver:true']);
+  eq('P3', '自动生成变体 SKU（金属码后缀）', P1.variants.map(v => v.metal + ':' + /^LG-\d+-(GO|SI|RO)$/.test(v.sku)).sort(), ['Gold:true', 'Silver:true']);
   eq('P3', '总库存按变体求和', P1.stock, 7);
   eq('P3', 'handle 由标题推导且唯一', P1.handle, ('az-tide-necklace-' + SUF).toLowerCase());
 

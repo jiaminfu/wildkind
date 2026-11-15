@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* ============================================================
-   TIDEGLASS · 前台 + 后台 UI 验收（AU 系列）
+   LASTGROVE · 前台 + 后台 UI 验收（AU 系列）
    真浏览器（headless Edge + CDP），真点真填，会把订单走完。
    与 accept-zero.js 的分工：那边验接口语义，这边验"人能不能用"。
 
@@ -17,7 +17,7 @@ const path = require('path');
 const EDGE = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9451;
 const BASE = (process.env.BASE || 'http://127.0.0.1:4600').replace(/\/$/, '');
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'owner@tideglassjewelry.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'owner@lastgrove.com';
 const ADMIN_PASS = process.env.ADMIN_PASS || '';
 const SUF = Date.now().toString(36).slice(-5).toUpperCase();
 const SHOTS = path.join(__dirname, '..', 'tmp_qa', 'ui');
@@ -122,7 +122,7 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
     await closeCookie();
     const cards = await ev(`document.querySelectorAll('a[href*="#/products/"]').length`);
     ok('U1', '首页商品卡数量 ≥ 4', cards >= 4, 'actual=' + cards);
-    ok('U1', '标题含品牌名', /TIDEGLASS/i.test(await ev('document.title')), await ev('document.title'));
+    ok('U1', '标题含品牌名', /LASTGROVE/i.test(await ev('document.title')), await ev('document.title'));
     const navLinks = await ev(`document.querySelectorAll('header a[href*="#/collections/"], nav a[href*="#/collections/"]').length`);
     ok('U1', '顶部导航有集合入口', navLinks >= 2, 'actual=' + navLinks);
     const annText = await ev(`(function(){var e=document.querySelector('.annbar');return e?e.innerText.trim().replace(/\\s+/g,' ').slice(0,60):''})()`);
@@ -306,7 +306,7 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
       /* 同一浏览器配置目录会保留上一轮的令牌，先清掉才能验"未登录看到登录页" */
       await send('Page.navigate', { url: BASE + '/?r=' + Date.now() });
       await waitFor(`!!document.body`, 15000);
-      await ev(`(function(){localStorage.removeItem('tideglass_admin');return true})()`);
+      await ev(`(function(){localStorage.removeItem('lastgrove_admin');return true})()`);
       await goto(BASE + '/#/admin', `!!document.querySelector('form[data-act=login]') || !!document.querySelector('[data-act=logout]')`, 25000);
       ok('U7', '未登录访问后台显示登录页', await ev(`!!document.querySelector('form[data-act=login]')`),
         'hash=' + (await ev('location.hash')));
@@ -510,7 +510,7 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
       };
     })()`);
     ok('U10', '详情页 title 是该商品名（不再全站同一句）',
-      seo.title && seo.title.indexOf('TIDEGLASS') >= 0 && seo.title.indexOf('—') > 0,
+      seo.title && seo.title.indexOf('LASTGROVE') >= 0 && seo.title.indexOf('—') > 0,
       seo.title);
     ok('U10', '详情页有 og:image 与 og:type=product',
       !!seo.ogImage && seo.ogType === 'product', 'image=' + (seo.ogImage || '').slice(-40) + ' type=' + seo.ogType);

@@ -115,9 +115,9 @@ function getJSON(path) {
     if (drawerLines === 2) ok('抽屉行数', drawerLines + ' 行'); else bad('抽屉行数', drawerLines);
 
     // 3 优惠码
-    await evalJS('var i=document.querySelector(".coupon input"); i.value="TIDEGLASS10"; document.querySelector(".coupon").dispatchEvent(new Event("submit",{cancelable:true,bubbles:true})); 1');
+    await evalJS('var i=document.querySelector(".coupon input"); i.value="LASTGROVE10"; document.querySelector(".coupon").dispatchEvent(new Event("submit",{cancelable:true,bubbles:true})); 1');
     await sleep(500);
-    // 断言折扣金额等于小计的 10%（TIDEGLASS10 为百分比券），不写死金额——价格带调整后金额必然变
+    // 断言折扣金额等于小计的 10%（LASTGROVE10 为百分比券），不写死金额——价格带调整后金额必然变
     const discCheck = await evalJS(`(function(){
       var rows=document.querySelectorAll(".sum__row");
       var num=function(t){return parseFloat(String(t).replace(/[^0-9.]/g,""));};
@@ -127,8 +127,8 @@ function getJSON(path) {
       return JSON.stringify({sub:sub,off:off,ok:off>0&&Math.abs(off-sub*0.1)<=0.06});
     })()`);
     const dc = JSON.parse(discCheck);
-    if (dc.ok) ok('优惠码 TIDEGLASS10 生效', '小计 $' + dc.sub + ' → 折 $' + dc.off);
-    else bad('优惠码 TIDEGLASS10', '小计 ' + dc.sub + ' 折 ' + dc.off);
+    if (dc.ok) ok('优惠码 LASTGROVE10 生效', '小计 $' + dc.sub + ' → 折 $' + dc.off);
+    else bad('优惠码 LASTGROVE10', '小计 ' + dc.sub + ' 折 ' + dc.off);
 
     // 4 赠品门槛
     const giftTxt = await evalJS('(document.querySelector(".progress .progress__txt")||{}).textContent || ""');
@@ -148,7 +148,7 @@ function getJSON(path) {
 
     // 填写并继续
     await evalJS(`
-      var d={email:'test@tideglass.co',first:'Ava',last:'Reed',line1:'12 Ocean Ave',city:'Santa Monica',state:'CA',zip:'90401'};
+      var d={email:'test@lastgrove.co',first:'Ava',last:'Reed',line1:'12 Ocean Ave',city:'Santa Monica',state:'CA',zip:'90401'};
       Object.keys(d).forEach(function(k){
         var el=document.querySelector('.co input[name="'+k+'"]');
         if(el){el.value=d[k]; S.state.checkoutData[k]=d[k];}
@@ -187,7 +187,7 @@ function getJSON(path) {
     await evalJS(`
       var f=document.querySelector('[data-act="lookup"]');
       f.number.value=${JSON.stringify(orderNo)};
-      f.email.value='test@tideglass.co';
+      f.email.value='test@lastgrove.co';
       f.dispatchEvent(new Event('submit',{cancelable:true,bubbles:true})); 1`);
     await sleep(700);
     const found = await evalJS('!!document.querySelector(".pill.paid")');

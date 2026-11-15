@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# TIDEGLASS · 数据备份 / 恢复
+# LASTGROVE · 数据备份 / 恢复
 #
 #   sudo bash deploy/backup.sh                  备份一次
 #   sudo bash deploy/backup.sh --list           看已有备份
@@ -12,9 +12,9 @@
 # ============================================================
 set -euo pipefail
 
-DATA_DIR="/opt/tideglass/current/app/server/data"
+DATA_DIR="/opt/lastgrove/current/app/server/data"
 DB="$DATA_DIR/db.json"
-DEST="${BACKUP_DIR:-/var/backups/tideglass}"
+DEST="${BACKUP_DIR:-/var/backups/lastgrove}"
 KEEP="${BACKUP_KEEP:-30}"
 
 red()   { printf '\033[31m%s\033[0m\n' "$*"; }
@@ -54,14 +54,14 @@ case "${1:-}" in
 
     # 覆盖前先把现状存一份，恢复错了还能退回来
     cp "$DB" "$DEST/before-restore-$(date +%Y%m%d-%H%M%S).json"
-    systemctl stop tideglass-api
-    install -o tideglass -g tideglass -m 640 "$TMP" "$DB"
+    systemctl stop lastgrove-api
+    install -o lastgrove -g lastgrove -m 640 "$TMP" "$DB"
     rm -f "$TMP"
-    systemctl start tideglass-api
+    systemctl start lastgrove-api
     sleep 2
-    systemctl is-active --quiet tideglass-api \
+    systemctl is-active --quiet lastgrove-api \
       && green "    已恢复并重启成功" \
-      || die "恢复后服务没起来，看 journalctl -u tideglass-api"
+      || die "恢复后服务没起来，看 journalctl -u lastgrove-api"
     exit 0
     ;;
 esac
@@ -96,7 +96,7 @@ fi
 # ---------- 异地一份（可选） ----------
 # 服务器整机挂了，本地备份跟着一起没。若配了 rclone 就顺手推到对象存储：
 #   apt install -y rclone && rclone config    # 建一个名为 oss 的远端
-#   export RCLONE_REMOTE=oss:tideglass-backup
+#   export RCLONE_REMOTE=oss:lastgrove-backup
 if [ -n "${RCLONE_REMOTE:-}" ] && command -v rclone >/dev/null 2>&1; then
   rclone copy "$OUT.gz" "$RCLONE_REMOTE" --quiet && green "    已同步到 $RCLONE_REMOTE"
 fi

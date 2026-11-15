@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS · PayPal 通道（骨架，待密钥到位后联调）
+   LASTGROVE · PayPal 通道（骨架，待密钥到位后联调）
    ------------------------------------------------------------
    定位是「兜底 + 转化」而不是主通道：
    - 美国消费者 PayPal 渗透率约两到三成，很多人在看不到 PayPal 按钮时会直接弃单；
@@ -121,14 +121,14 @@ module.exports = {
       purchase_units: [{
         reference_id: String(c.ref || c.orderNumber || ''),
         custom_id: String(c.ref || c.orderNumber || ''),
-        description: String(c.description || 'TIDEGLASS order').slice(0, 127),
+        description: String(c.description || 'LASTGROVE order').slice(0, 127),
         amount: {
           currency_code: String(c.currency || 'USD').toUpperCase(),
           value: amount.toFixed(2),
         },
       }],
       application_context: {
-        brand_name: 'TIDEGLASS',
+        brand_name: 'LASTGROVE',
         shipping_preference: 'NO_SHIPPING',   // 运费地址在自家结算页收，避免在 PayPal 里再填一遍
         user_action: 'PAY_NOW',
         return_url: c.returnUrl || (base + '/#/order/confirm'),

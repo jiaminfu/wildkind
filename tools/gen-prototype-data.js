@@ -261,7 +261,7 @@ products.slice(0, 14).forEach((p, pi) => {
 
 // ---------- 营销 ----------
 const coupons = [
-  { code: 'TIDEGLASS10', type: 'percent', value: 10, minSubtotal: 0, used: 84, limit: 500, startsAt: '2026-10-01', endsAt: '2026-12-31', status: 'active', note: 'Welcome code, always on' },
+  { code: 'LASTGROVE10', type: 'percent', value: 10, minSubtotal: 0, used: 84, limit: 500, startsAt: '2026-10-01', endsAt: '2026-12-31', status: 'active', note: 'Welcome code, always on' },
   { code: 'WELCOME15', type: 'fixed', value: 15, minSubtotal: 95, used: 212, limit: 1000, startsAt: '2026-09-01', endsAt: '2026-12-31', status: 'active', note: 'Newsletter popup' },
   { code: 'BF30', type: 'percent', value: 30, minSubtotal: 120, used: 0, limit: 300, startsAt: '2026-11-25', endsAt: '2026-11-30', status: 'scheduled', note: 'Black Friday' },
   { code: 'SUMMER20', type: 'percent', value: 20, minSubtotal: 0, used: 640, limit: 640, startsAt: '2026-06-01', endsAt: '2026-08-31', status: 'expired', note: 'Summer campaign' }
@@ -271,7 +271,7 @@ const promotions = [
   { id: 'P2', name: 'Free shipping over $95', scope: 'all', kind: 'freeship', value: 0, startsAt: '2026-01-01', endsAt: '', status: 'active', priority: 2 },
   { id: 'P3', name: 'Gift with $120+', scope: 'all', kind: 'gift', value: 0, startsAt: '2026-11-10', endsAt: '2026-12-25', status: 'active', priority: 3 }
 ];
-const giftRule = { threshold: 120, sku: 'TG-601', name: 'Pearl Studs', value: 38, maxPerOrder: 1 };
+const giftRule = { threshold: 120, sku: 'LG-601', name: 'Pearl Studs', value: 38, maxPerOrder: 1 };
 
 // ---------- 定制单 ----------
 const customRequests = [
@@ -281,7 +281,7 @@ const customRequests = [
 ];
 
 const settings = {
-  brand: 'TIDEGLASS',
+  brand: 'LASTGROVE',
   tagline: "Sea glass doesn't fade.",
   currency: 'USD',
   freeShip: 95,
