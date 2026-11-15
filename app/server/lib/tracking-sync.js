@@ -63,6 +63,21 @@ async function syncOrder(order, opts) {
     if (!live) return { ok: false, reason: 'gone' };
 
     if (!reg.ok) {
+      /* 额度用完要和「单号有问题」分开说。
+         都写成「订阅失败」的话，运营看到会去找客户重报单号，
+         而真正该做的是等下月 1 号重置、或者去买套餐。 */
+      if (reg.quotaExhausted) {
+        tracking.applyRegisterError(live, {
+          code: reg.code,
+          message: 'Automatic tracking is paused — this month\'s quota is used up. '
+            + 'It resets on the 1st of next month. Until then, check the carrier site directly.',
+        });
+        audit('tracking.quota_exhausted', live.number, { code: reg.code });
+        store.flush();
+        console.warn('[tracking] 订阅额度已用完 order=%s code=%s', live.number, reg.code);
+        return { ok: false, reason: 'quota-exhausted', code: reg.code };
+      }
+
       /* 硬失败（比如 USPS 在试用额度下被策略挡住 -18019823）：
          记在订单上，前台如实降级，别让客户对着空轨迹框等。 */
       tracking.applyRegisterError(live, reg);

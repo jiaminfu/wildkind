@@ -869,14 +869,25 @@ refunded / cancelled    → 终态
 
 #### 🔑 `GET /admin/tracking/quota`
 
-权限 `orders:read`。剩余查询额度与订阅数。
+权限 `orders:read`。订阅额度读数。后台设置页的 `Tracking quota` 面板消费此接口。
 
 ```json
 { "data": { "configured": true,
-  "quota": { "success": true, "data": { "quota_remain": 47, "quota_total": 50 } } } }
+  "quota": { "total": 100, "used": 13, "remain": 87, "todayUsed": 3, "maxDaily": 100 } } }
 ```
 
 未配密钥时返回 `{ "configured": false }`；上游异常时返回 `{ "configured": true, "error": "…" }`，**不抛 5xx**——这是一个状态查询接口，查不到额度不该让后台页面报错。
+
+**额度语义（官方计费规则，直接决定成本，改代码前先读这段）**
+
+| 规则 | 影响 |
+| --- | --- |
+| 免费账户每月 **100** 个订阅额度，1 号重置，**月底清零不累积** | 上个月用不完的不能挪到下个月；旺季前要提前买 |
+| **只有 `register` 扣额度**（1 个单号 1 个额度） | 订阅成功后的查询、刷新、webhook 推送、自动追踪**全部不扣**。一次订阅，终身免费查 |
+| 注册时传 `lang` 会额外扣 1（`registration + translation = 2`） | **代码刻意不传 `lang`**。本站只发美/加/英，承运商轨迹本就是英文，传了等于把 100 单砍成 50 单 |
+| 同一单号注册到不同承运商各扣 1 | 所以 `register` 也不传 `carrier`，让 17TRACK 自己识别，避免重复订阅 |
+
+**额度耗尽时的行为**：`register` 返回 `-18019908`（额度用完）或 `-18019907`（撞当日上限）。这两类**不写进订单的「单号无效」**，而是单独标记并在 `trackingState.error` 上写明「本月额度已用完，1 号恢复」。**保存运单号、发发货信、订单转 `fulfilled` 全部照常** —— 物流是体验问题，不能把发货动作搞挂。
 
 #### 🔑 `GET /admin/tracking/health`
 

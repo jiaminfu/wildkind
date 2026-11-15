@@ -19,6 +19,15 @@
      报 -18019823），失败必须被记下来并在前台如实降级成「去承运商官网查」，
      不能让客户对着一个永远空着的轨迹框。
    - 拒绝在内网/前端调用：密钥只存在服务端环境变量里。
+
+   关于额度（免费账户每月 100 个，月底清零、不累积，官方计费规则原文）：
+   - 只有 register 扣额度。订阅成功之后，重复查询、自动追踪、webhook 推送
+     都不再扣。所以「注册一次、随便查」是把免费额度用足的正确姿势，
+     代码里用 trackingState.registeredFor 记住订过哪个单号，避免重复注册。
+   - 传 lang 会让注册变成 2 个额度（registration + translation）。
+     我们只发美/加/英，承运商轨迹本来就是英文，翻成英文是白扔一半额度，
+     所以注册时不传 lang。这条别改回去。
+   - 同一单号注册到不同承运商各扣 1。所以别乱传 carrier。
    ============================================================ */
 'use strict';
 
@@ -98,11 +107,20 @@ function call(path, payload) {
 /* ---------------- 出站：订阅单号 ---------------- */
 /* tag 用订单号：webhook 推回来时凭它找订单。
    单号本身也能匹配，但客户改单号（输错重输）后 tag 仍指向原订单，更稳。 */
+/* 额度耗尽的错误码。官方文档：-18019908 = Your quotas have ran out.
+   -18019907 是「超过当日上限」。两者都不是单号的问题，不能记到单号头上。 */
+const QUOTA_CODES = [-18019908, -18019907];
+
 async function register(number, tag) {
+  /* 刻意不传 lang。
+     官方计费规则原文：register 时指定翻译语言，会为「成功的翻译」额外扣 1 个额度
+     （registration + translation = 2）。免费账每月只有 100 个额度，
+     传 lang 等于把 100 单砍成 50 单。
+     而我们只发美/加/英，USPS、UPS、FedEx 的轨迹本来就是英文，
+     传 lang:'en' 是花钱把英文翻成英文。 */
   const data = await call('/register', [{
     number: String(number),
     tag: tag ? String(tag) : undefined,
-    lang: 'en',
   }]);
   const okList = data.accepted || [];
   const badList = data.rejected || [];
@@ -133,6 +151,19 @@ async function register(number, tag) {
       number: String(number),
       carrier: (badList[0] && badList[0].carrier) || null,
       origin: null,
+    };
+  }
+
+  /* 额度用完 / 撞当日上限：这跟单号本身没关系，是账户没量了。
+     单独标出来，否则订单上会显示成「订阅失败」，运营会去找客户重报单号，
+     而真正该做的是等下月 1 号重置或去买套餐。 */
+  if (QUOTA_CODES.indexOf(err.code) >= 0) {
+    return {
+      ok: false,
+      quotaExhausted: true,
+      number: String(number),
+      code: err.code,
+      message: err.message || 'Tracking quota exhausted.',
     };
   }
 

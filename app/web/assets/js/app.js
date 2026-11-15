@@ -613,7 +613,14 @@
       }
       if (sec === 'settings') {
         var st2 = await API.get('/admin/settings', { auth: true });
-        return A.shell(A.settings(st2.data), 'settings', 'Settings', staff);
+        /* 额度读不到不该让整个设置页白屏 —— 它只是一块参考信息 */
+        var tq = null;
+        try {
+          tq = (await API.get('/admin/tracking/quota', { auth: true })).data;
+        } catch (e) {
+          tq = { configured: true, error: e.message };
+        }
+        return A.shell(A.settings(st2.data, tq), 'settings', 'Settings', staff);
       }
       if (sec === 'tax') {
         var qsT = new URLSearchParams();

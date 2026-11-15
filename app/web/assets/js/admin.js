@@ -496,7 +496,7 @@
       '</tr></thead><tbody>' + body + '</tbody></table></div></div>';
   }
 
-  function settings(s) {
+  function settings(s, tq) {
     var c = s.content || {};
     return '<div class="panel"><div class="panel__hd"><h2>Store settings</h2><span class="sub">Changes go live on the storefront immediately</span></div>' +
       '<div class="panel__bd"><form data-act="savesettings" style="max-width:520px;display:grid;gap:14px">' +
@@ -510,8 +510,61 @@
       '<input type="checkbox" name="storeOpen"' + (s.storeOpen ? ' checked' : '') + ' style="width:auto"> <span>Store is accepting orders</span></label>' +
       '<button class="btn" type="submit">Save settings</button>' +
       '</form></div></div>' +
-      taxPanel(s.tax || {} );
+      taxPanel(s.tax || {} ) +
+      trackingPanel(tq);
   }
+
+  /* ---------------- 物流订阅额度 ----------------
+     免费账户每月 100 个订阅额度（官方口径：月底清零、不累积，
+     只有 register 扣，查详情与 webhook 推送都不扣）。
+     这个面板存在的唯一理由：额度会在月中悄悄用完。
+     等发货时看到「怎么没有轨迹」才去查，已经晚了一批单。 */
+  function trackingPanel(tq) {
+    var q = (tq && tq.quota) || null;
+    var body;
+
+    if (!tq || tq.configured === false) {
+      body = '<p class="sub" style="margin:0">17TRACK is not configured yet. ' +
+        'Tracking numbers can still be saved and shown to the customer — ' +
+        'there is just no automatic scan history until a key is added.</p>';
+    } else if (tq.error || !q) {
+      body = '<p class="sub" style="margin:0;color:var(--clay)">Could not read the quota — ' +
+        U.esc(tq.error || 'no data returned') + '</p>';
+    } else {
+      var total = Number(q.total) || 0;
+      var used = Number(q.used) || 0;
+      var remain = Number(q.remain) || 0;
+      /* quota_total 是「这个月一共能用多少」还是「还剩多少」，两家口径不一样。
+         用 remain 有值就算 remain，否则用 total - used 兜底，不猜。 */
+      if (!remain && total) remain = Math.max(0, total - used);
+      var pct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
+      var low = total > 0 && remain <= 20;
+
+      body = '<div style="display:flex;gap:28px;flex-wrap:wrap;align-items:baseline;margin-bottom:10px">' +
+        '<div><div style="font-size:26px;font-weight:600;letter-spacing:-.02em;color:' +
+        (low ? 'var(--clay)' : 'inherit') + '">' + remain + '</div>' +
+        '<div class="sub" style="margin:0">shipments left this month</div></div>' +
+        '<div><div style="font-size:26px;font-weight:600;letter-spacing:-.02em">' + used + '</div>' +
+        '<div class="sub" style="margin:0">used</div></div>' +
+        '<div><div style="font-size:26px;font-weight:600;letter-spacing:-.02em">' + total + '</div>' +
+        '<div class="sub" style="margin:0">monthly allowance</div></div>' +
+        '</div>' +
+        '<div style="height:6px;background:var(--line);border-radius:3px;overflow:hidden">' +
+        '<div style="width:' + pct + '%;height:100%;background:' +
+        (low ? 'var(--clay)' : 'var(--ink)') + ';border-radius:3px"></div></div>' +
+        (low ? '<p style="margin:10px 0 0;font-size:11.5px;color:var(--clay)">' +
+          'Running low. New shipments stop auto-subscribing when this hits zero — ' +
+          'they still ship, they just have no scan history until the 1st.</p>' : '') +
+        '<p class="hint" style="margin-top:10px">One quota is spent the first time a tracking number is registered. ' +
+        'Reading it afterwards, refreshing it, and the carrier webhook pushes are all free. ' +
+        'The allowance resets on the 1st and does not carry over.</p>';
+    }
+
+    return '<div class="panel"><div class="panel__hd"><h2>Tracking quota</h2>' +
+      '<span class="sub">17TRACK · free tier</span></div>' +
+      '<div class="panel__bd">' + body + '</div></div>';
+  }
+
 
   /* ---------------- 销售税配置 ----------------
      税率用 textarea 一行一州，而不是动态增删行：

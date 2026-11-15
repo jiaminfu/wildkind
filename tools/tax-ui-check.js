@@ -90,6 +90,22 @@ const getJSON = p => new Promise((res, rej) => {
     await send('Page.navigate', { url: BASE + '/#/admin/settings' });
     const hasPanel = await waitFor('!!document.querySelector(\'form[data-act="savetax"]\')', 40, 400);
     ok('设置页出现 Sales tax 面板', !!hasPanel);
+
+    /* ①b 设置页：物流订阅额度
+       免费账户每月 100 个订阅额度，用完就订不进去。
+       这块不在页面上，运营就只能等发货时发现「怎么没轨迹了」。 */
+    const tkPanel = await waitFor(
+      'Array.from(document.querySelectorAll(".panel__hd h2")).some(function(h){return h.textContent.indexOf("Tracking quota")>=0})',
+      20, 300);
+    ok('设置页出现 Tracking quota 面板', !!tkPanel);
+    if (tkPanel) {
+      const tkText = await js('document.querySelector(".panel:last-child").textContent');
+      const tk = String(tkText || '');
+      /* 没配 key 时说清「不配也能发货」，配了 key 要说清额度的重置规则。
+         两种状态都合法，但必须有话说，不能是空白面板。 */
+      ok('额度面板有状态说明（未配置或读数）',
+        /not configured|shipments left this month|Could not read/.test(tk), tk.slice(0, 110));
+    }
     if (hasPanel) {
       const info = await js(`(() => {
         const f = document.querySelector('form[data-act="savetax"]');
