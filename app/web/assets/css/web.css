@@ -662,3 +662,40 @@ picture { display: contents; }
 /* 结算页里的说明文字左对齐：这个类在购物袋抽屉里是居中用的，
    搬进结算表单后还居中就跟左边的标签、输入框全错位了。 */
 .co__block .drawer__note{text-align:left; font-size:11px; line-height:1.6; margin-top:10px; max-width:62ch}
+
+/* ---------- 物流时间线（前台订单页 / 查单页） ----------
+   数据在 order.trackingState，由 17TRACK 的 webhook 推进来。
+   竖线 + 圆点的写法是为了让「最新一条」在视觉上明确压在顶部：
+   客户点进来只想知道「到哪了」，所以最新事件加粗、点实心、其余灰掉。 */
+.trk{margin:20px 0 0; border:1px solid var(--line); background:#fff; padding:18px 20px}
+.trk__hd{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:14px}
+.trk__st{font-family:var(--serif); font-size:19px; line-height:1.2; color:var(--ink); letter-spacing:.02em}
+.trk__st.is-done{color:var(--olive)}
+.trk__meta{font-size:11px; letter-spacing:.06em; color:var(--muted)}
+.trk__list{position:relative; margin:0; padding:0; list-style:none}
+.trk__list::before{content:""; position:absolute; left:4px; top:7px; bottom:9px; width:1px; background:var(--line)}
+.trk__list li{position:relative; padding:0 0 14px 22px}
+.trk__list li:last-child{padding-bottom:0}
+.trk__list li::before{
+  content:""; position:absolute; left:0; top:4px; width:9px; height:9px; border-radius:50%;
+  background:var(--cream); border:1px solid var(--line-2);
+}
+.trk__list li.on::before{background:var(--sea); border-color:var(--sea); box-shadow:0 0 0 3px rgba(27,58,52,.10)}
+.trk__list time{display:block; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted-2)}
+.trk__list p{margin:2px 0 0; font-size:13px; line-height:1.5; color:var(--ink-2)}
+.trk__list li.on p{color:var(--ink)}
+.trk__list span{display:block; margin-top:1px; font-size:11.5px; color:var(--muted)}
+.trk__note{margin:0; font-size:12px; line-height:1.65; color:var(--muted)}
+.trk__more{margin:12px 0 0; font-size:11.5px; color:var(--muted)}
+@media (max-width:640px){
+  .trk{padding:14px 15px}
+  .trk__st{font-size:17px}
+  .trk__list p{font-size:12.5px}
+}
+
+/* 订单行有时没有缩略图（确认页、查单页只有标题和金额）。
+   .paysum__line 的栅格是「46px 图 | 1fr 标题 | auto 金额」，
+   少一张图时标题就被挤进 46px 那一列，在窄屏上会拆成一字一行。
+   两列版本单独给一份栅格，不去改默认的三列。 */
+.paysum__line--ni{grid-template-columns:1fr auto}
+.paysum__line--ni > div:first-child{min-width:0}

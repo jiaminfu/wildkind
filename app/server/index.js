@@ -48,6 +48,7 @@ const router = {
 require('./routes/catalog').routes(router);
 require('./routes/checkout').routes(router);
 require('./routes/payments').routes(router);
+require('./routes/tracking').routes(router);
 require('./routes/admin').routes(router);
 
 /* ---------------- 测试复位端点（默认关闭） ----------------
@@ -486,4 +487,10 @@ server.listen(PORT, () => {
      「以为客户收到确认信了，其实日志里躺了一堆未发送」。 */
   const mailer = require('./lib/mailer');
   console.log('  事务邮件：%s', mailer.statusLine());
+  /* 物流追踪同理：没密钥时单号照样能存、能点去承运商官网，
+     但不会有自动轨迹。启动时说清楚，免得以为已经在跟。 */
+  const track = require('./lib/tracking');
+  console.log('  物流追踪：17TRACK %s', track.isConfigured()
+    ? '已配置（webhook 推送）'
+    : '未配置 · 前台只显示承运商官网链接');
 });

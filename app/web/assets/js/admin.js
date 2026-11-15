@@ -194,6 +194,40 @@
     }).join('');
   }
 
+  /* 物流面板：后台要能一眼看出「订上了没、承运商扫到哪了、上次同步是什么时候」。
+     三种状态在这里必须都看得见，因为运营要做判断：
+     有轨迹 → 看最新一条；订上了没扫件 → 正常等待，别去催；
+     订阅被拒（USPS 在试用额度下会被 17TRACK 策略挡住）→ 要看到原因，
+     否则运营会以为「系统坏了」而反复点刷新。 */
+  function trackBox(o) {
+    if (!o.tracking) return '';
+    var st = o.trackingState || {};
+    var rows = (st.events || []).slice(0, 5).map(function (e) {
+      return '<li style="display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)">' +
+        '<span style="flex:none;width:108px;font-size:11px;color:var(--muted)">' + U.esc(U.fmtDateTime(e.at)) + '</span>' +
+        '<span style="flex:1;min-width:0"><b style="font-weight:500">' + U.esc(e.text) + '</b>' +
+        (e.place ? '<br><span style="font-size:11px;color:var(--muted)">' + U.esc(e.place) + '</span>' : '') +
+        '</span></li>';
+    }).join('');
+
+    var badge = st.status
+      ? '<span class="pill ' + (st.status === 'Delivered' ? 'completed' : 'fulfilled') + '">' +
+        U.esc(st.label || st.status) + '</span>'
+      : (st.error ? '<span class="pill refunded">Not subscribed</span>' : '<span class="pill">Waiting</span>');
+
+    return '<div class="panel__bd">' +
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' + badge +
+      '<span style="font-size:11.5px;color:var(--muted)">' + U.esc(st.provider || o.carrier || '17TRACK') +
+      (st.lastEventAt ? ' · last scan ' + U.esc(U.fmtDateTime(st.lastEventAt)) : '') +
+      (st.updatedAt ? ' · checked ' + U.esc(U.fmtDateTime(st.updatedAt)) : ' · never checked') + '</span>' +
+      '<button class="abtn sm" style="margin-left:auto" data-act="refresh-tracking" data-num="' +
+      U.esc(o.number) + '">Refresh tracking</button></div>' +
+      (st.error ? '<p style="margin:9px 0 0;font-size:11.5px;color:var(--clay)">Auto-tracking unavailable — ' +
+        U.esc(st.error) + '</p>' : '') +
+      (rows ? '<ul style="margin:8px 0 0;padding:0;list-style:none">' + rows + '</ul>' : '') +
+      '</div>';
+  }
+
   function orderDetail(o, transitions) {
     var rows = o.items.map(function (i) {
       return '<tr><td>' + U.esc(i.title) + (i.isGift ? ' <span class="tag">Gift</span>' : '') + '</td>' +
@@ -229,6 +263,7 @@
       '<p class="sub" style="margin:9px 0 0">Saving a number moves the order to fulfilled. ' +
       'Nothing is generated automatically — the customer sees exactly the number you paste here.</p>' +
       '</div>' +
+      trackBox(o) +
       '<div class="panel__bd flush"><table class="atable"><thead><tr><th>Item</th><th>Finish</th><th>Size</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Line</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>' +
       '<div class="panel__bd"><div class="srow"><span>Subtotal</span><b>' + U.money(o.subtotal) + '</b></div>' +

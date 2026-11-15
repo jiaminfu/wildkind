@@ -39,6 +39,14 @@
       if (isNaN(d)) return '';
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     },
+    /* 物流时间线用：同一天多条扫描记录，只给日期分不出先后，
+       但加上年份又太啰嗦（包裹一般几天内就到）。 */
+    fmtDateTime: function (iso) {
+      var d = new Date(iso);
+      if (isNaN(d)) return iso || '';
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' +
+        d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    },
     daysAgo: function (iso) {
       var d = new Date(iso);
       return Math.max(0, Math.round((Date.now() - d.getTime()) / 86400000));

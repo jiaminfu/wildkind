@@ -10,6 +10,7 @@ const uploads = require('../lib/uploads');
 const csv = require('../lib/csv');
 const notify = require('../lib/notify');
 const mailer = require('../lib/mailer');
+const trackingSync = require('../lib/tracking-sync');
 const { E, ApiError, ok, rateLimit, clientIp, CORS } = require('../lib/http');
 const { applyRefund } = require('./checkout');
 
@@ -566,8 +567,14 @@ function routes(router) {
     if (!o) throw E.notFound('Order not found.');
     const b = req.body || {};
     if (!b.tracking) throw E.badRequest('Tracking number is required.', [{ field: 'tracking', message: 'Required.' }]);
+    const prevNumber = String(o.tracking || '').trim();
     o.tracking = String(b.tracking).slice(0, 64);
     o.carrier = String(b.carrier || 'Other').slice(0, 32);
+    /* 换了单号就把旧轨迹清掉：轨迹是按单号查的，留着上一个单号的
+       时间线会让客户看到另一件包裹走到了哪，比空着更糟。 */
+    if (o.trackingState && prevNumber && prevNumber !== o.tracking) {
+      o.trackingState = {};
+    }
     if (o.status === 'paid' || o.status === 'fulfilling') {
       o.status = 'fulfilled';
       o.statusLabel = STATUS_LABEL.fulfilled;
@@ -578,6 +585,12 @@ function routes(router) {
     audit(me, 'order.tracking', o.number, { carrier: o.carrier, tracking: o.tracking });
     store.flush();
     if (mailIt) mailer.orderShipped(o);
+    /* 订阅到 17TRACK。出站订阅是网络请求，不阻塞响应——
+       后台点保存必须立刻看到结果，不能为了等第三方耗掉 15 秒超时。
+       失败会写在订单 trackingState.error 上，前台据此降级成「去官网查」，
+       后台也会出现「Retry tracking」按钮。 */
+    trackingSync.syncOrder(o).catch(e =>
+      console.warn('[tracking] 保存运单号后同步失败 order=%s %s', o.number, e.message));
     ok(res, { order: o });
   });
 

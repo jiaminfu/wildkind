@@ -1021,9 +1021,38 @@
         { tracking: no, carrier: (cSel && cSel.value) || 'Other' }, { auth: true });
       S.toast('Tracking saved', 'ok');
       render();
+      /* 订阅 + 首次查询在服务端是异步做的（不让第三方拖慢保存），
+         这里等它两三秒再刷一次，运营就不用自己再点一下 Refresh。 */
+      setTimeout(function () {
+        if ((location.hash || '').indexOf('/admin/order/') >= 0) render();
+      }, 2600);
     } catch (e) {
       S.toast(e.message, 'err');
       el.disabled = false;
+    }
+  });
+
+  /* 手动拉一次轨迹。客户催「怎么还没更新」时用；
+     查询不消耗 17TRACK 额度（只有首次订阅计费），可以随便点。 */
+  S.onClick('refresh-tracking', async function (el) {
+    var label = el.textContent;
+    el.disabled = true;
+    el.textContent = 'Checking…';
+    try {
+      var r = await API.post('/admin/orders/' + encodeURIComponent(el.dataset.num) + '/tracking/refresh',
+        {}, { auth: true });
+      var s = (r && r.data && r.data.sync) || {};
+      if (s.ok) {
+        S.toast(s.events ? 'Tracking updated — ' + (s.label || s.status)
+          : 'Subscribed. No carrier scan yet.', 'ok');
+      } else {
+        S.toast('Tracking: ' + (s.message || s.reason || 'unavailable'), 'err');
+      }
+      render();
+    } catch (e) {
+      S.toast(e.message, 'err');
+      el.disabled = false;
+      el.textContent = label;
     }
   });
 

@@ -596,10 +596,58 @@
       '<span class="pr">' + price + '</span></label>';
   }
 
+  /* ---------------- 物流时间线 ----------------
+     数据来自 17TRACK 的 webhook 推送（服务端验签后落在 order.trackingState）。
+
+     三种状态必须分开渲染，否则客户看到的信息会自相矛盾：
+     ① 有轨迹        → 时间线（最新的在上）
+     ② 已订阅没扫件  → 一句「等承运商首扫」，这是正常等待，不是错误
+     ③ 订阅被拒/没配 → 如实说自动追踪不可用，把承运商官网链接给足
+     第③种是真实会发生的：USPS 在试用额度下会被 17TRACK 策略挡住，
+     如果我们假装一切正常，客户就会对着一个永远空着的框刷新。 */
+  function trackPanel(o) {
+    if (!o || !o.tracking) return '';
+    var st = o.trackingState || {};
+    var carrier = o.carrier || '';
+    var href = U.carrierUrl(carrier, o.tracking);
+    var h = '<div class="trk">';
+
+    if (st.events && st.events.length) {
+      var shown = st.events.slice(0, 6);
+      h += '<div class="trk__hd">' +
+        '<span class="trk__st' + (st.status === 'Delivered' ? ' is-done' : '') + '">' +
+        esc(st.label || 'In transit') + '</span>' +
+        '<span class="trk__meta">' + esc(st.provider || carrier) +
+        (st.lastEventAt ? ' · updated ' + esc(U.fmtDateTime(st.lastEventAt)) : '') + '</span></div>' +
+        '<ol class="trk__list">' + shown.map(function (e, i) {
+          return '<li class="' + (i === 0 ? 'on' : '') + '">' +
+            '<time>' + esc(U.fmtDateTime(e.at)) + '</time>' +
+            '<p>' + esc(e.text) + '</p>' +
+            (e.place ? '<span>' + esc(e.place) + '</span>' : '') + '</li>';
+        }).join('') + '</ol>';
+      if (st.events.length > shown.length) {
+        h += '<p class="trk__more">' + (st.events.length - shown.length) + ' earlier scans · ' +
+          '<a class="link-u" target="_blank" rel="noopener noreferrer" href="' + esc(href) + '">' +
+          'see all on ' + esc(carrier || 'the carrier') + '</a></p>';
+      }
+    } else if (st.error) {
+      h += '<div class="trk__hd"><span class="trk__st">Tracking link</span></div>' +
+        '<p class="trk__note">Live updates aren\'t available for this shipment here. ' +
+        'The carrier has the current status: ' +
+        '<a class="link-u" target="_blank" rel="noopener noreferrer" href="' + esc(href) + '">' +
+        'track ' + esc(o.tracking) + '</a>.</p>';
+    } else {
+      h += '<div class="trk__hd"><span class="trk__st">Label created</span>' +
+        (carrier ? '<span class="trk__meta">' + esc(carrier) + '</span>' : '') + '</div>' +
+        '<p class="trk__note">Waiting for the carrier\'s first scan — usually the same day it\'s dropped off.</p>';
+    }
+    return h + '</div>';
+  }
+
   /* ---------------- 订单完成 ---------------- */
   function orderDone(o) {
     var rows = o.items.map(function (i) {
-      return '<div class="paysum__line"><div>' + esc(i.title) + (i.isGift ? ' <span class="gift-tag">Gift</span>' : '') +
+      return '<div class="paysum__line paysum__line--ni"><div>' + esc(i.title) + (i.isGift ? ' <span class="gift-tag">Gift</span>' : '') +
         '<span>' + esc(i.variant) + (i.size ? ' / ' + esc(i.size) : '') + ' · ×' + i.qty + '</span></div>' +
         '<div class="mono" style="font-size:11.5px">' + money(i.unitPrice * i.qty) + '</div></div>';
     }).join('');
@@ -614,6 +662,7 @@
         '<b><a class="link-u" target="_blank" rel="noopener noreferrer" href="' +
         esc(U.carrierUrl(o.carrier, o.tracking)) + '">' + esc(o.tracking) + '</a></b>' +
         (o.carrier ? ' <span class="small">· ' + esc(o.carrier) + '</span>' : '') + '</div>' : '') +
+      trackPanel(o) +
       '<div class="paysum" style="position:static;margin-top:22px"><h4>What you ordered</h4>' + rows +
       '<div class="sum" style="margin-top:12px">' +
       '<div class="sum__row"><span>Subtotal</span><span>' + money(o.subtotal) + '</span></div>' +
@@ -631,7 +680,7 @@
     var f = form || {};
     if (order) {
       var rows = order.items.map(function (i) {
-        return '<div class="paysum__line"><div>' + esc(i.title) +
+        return '<div class="paysum__line paysum__line--ni"><div>' + esc(i.title) +
           '<span>' + esc(i.variant) + (i.size ? ' / ' + esc(i.size) : '') + ' · ×' + i.qty + '</span></div>' +
           '<div class="mono" style="font-size:11.5px">' + money(i.unitPrice * i.qty) + '</div></div>';
       }).join('');
@@ -648,6 +697,7 @@
           '<a class="link-u" target="_blank" rel="noopener noreferrer" href="' +
           esc(U.carrierUrl(order.carrier, order.tracking)) + '"><b>' + esc(order.tracking) + '</b></a>' +
           (order.carrier ? ' · ' + esc(order.carrier) : '') + '</p>' : '') +
+        trackPanel(order) +
         '<div class="paysum"><h4>Items</h4>' + rows +
         '<div class="sum" style="margin-top:12px">' +
         '<div class="sum__row"><span>Subtotal</span><span>' + money(order.subtotal) + '</span></div>' +
