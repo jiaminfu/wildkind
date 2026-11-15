@@ -43,7 +43,12 @@ let cached = { token: '', exp: 0 };
 
 function call(method, path, body, token, extraHeaders) {
   return new Promise((resolve, reject) => {
-    const data = body == null ? '' : JSON.stringify(body);
+    /* 注意：OAuth 端点的 body 是表单串（grant_type=client_credentials），
+       不是 JSON。早先这里对所有 body 一律 JSON.stringify，会把表单串包成
+       带引号的 JSON 字符串发出去，PayPal 直接回 400 Grant Type is NULL。
+       这个坑只有真连上沙盒才会暴露 —— 现在按类型分流：
+       字符串原样发（表单），对象才序列化。 */
+    const data = body == null ? '' : (typeof body === 'string' ? body : JSON.stringify(body));
     const headers = Object.assign({
       'Content-Type': 'application/json',
       'Content-Length': Buffer.byteLength(data),
@@ -174,6 +179,12 @@ module.exports = {
         err.detail.details[0].issue) || '');
       if (name === 'ORDER_ALREADY_CAPTURED' || issue === 'ORDER_ALREADY_CAPTURED') {
         r = await call('GET', '/v2/checkout/orders/' + encodeURIComponent(orderId), null, t);
+      } else if (issue === 'ORDER_NOT_APPROVED' || name === 'ORDER_NOT_APPROVED' ||
+                 issue === 'PAYER_ACTION_REQUIRED') {
+        /* 买家在 PayPal 页面点了取消，或根本没点「同意」就关掉了。
+           这是正常业务分支，不是服务端故障 —— 返回 ok:false 让上层
+           显示「没有扣款、订单还留着可以重试」，而不是抛 502 吓人。 */
+        return { ok: false, status: 'NOT_APPROVED', reference: '', amount: null, currency: '', orderNumber: '' };
       } else {
         throw err;
       }

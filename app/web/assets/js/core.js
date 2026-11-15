@@ -264,12 +264,21 @@
     if (!h) h = '/';
     var qi = h.indexOf('?');
     var qs = {};
-    if (qi >= 0) {
-      h.slice(qi + 1).split('&').forEach(function (kv) {
+    function absorb(str) {
+      str.split('&').forEach(function (kv) {
         if (!kv) return;
         var p = kv.split('=');
-        qs[decodeURIComponent(p[0])] = decodeURIComponent(p[1] || '');
+        try { qs[decodeURIComponent(p[0])] = decodeURIComponent(p[1] || ''); } catch (e) { }
       });
+    }
+    /* 支付通道回跳时常把参数挂在 hash 之前：
+         https://site/?token=7AB123&PayerID=XYZ#/order/confirm
+       （PayPal 就是把 token / PayerID 追加到 return_url 的问号段）
+       只看 hash 的话回跳页读不到 token，会显示「Payment link incomplete」，
+       而钱其实已经扣了 —— 所以先铺 location.search，再用 hash 上的覆盖。 */
+    if (location.search) absorb(String(location.search).replace(/^\?/, ''));
+    if (qi >= 0) {
+      absorb(h.slice(qi + 1));
       h = h.slice(0, qi);
     }
     /* 每段都要解码一次。
