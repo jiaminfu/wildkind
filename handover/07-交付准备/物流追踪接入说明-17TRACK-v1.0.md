@@ -5,10 +5,10 @@
 | 文档编号 | LG-TRK-001 |
 | 版本 | v1.0 |
 | 日期 | 2026-11-15 |
-| 状态 | 已上线（沙盒/试用额度） |
+| 状态 | 已上线（17TRACK 试用额度：UPS / FedEx 正常，USPS 受政策限制） |
 | 平台 | 17TRACK Tracking API **v2.4** |
 | 回调地址 | `https://lastgrove.com/api/v1/webhooks/tracking` |
-| 相关提交 | `9a3f1c8`（本期） |
+| 相关提交 | `100630c`（feat(tracking) 接入 17TRACK） |
 
 ---
 
