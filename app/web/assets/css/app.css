@@ -240,8 +240,11 @@ ul{margin:0; padding:0; list-style:none}
 .ftr__brand svg{color:var(--cream); width:24px;height:24px}
 .ftr__brand p{max-width:26ch; margin-top:14px; line-height:1.8; color:rgba(250,246,239,.6)}
 .ftr__bot{border-top:1px solid rgba(250,246,239,.14); padding:16px 0 20px; display:flex; justify-content:space-between; align-items:center; gap:16px; font-size:10px; letter-spacing:.04em; flex-wrap:wrap}
-.ftr__pay{display:flex; gap:6px}
-.ftr__pay span{padding:3px 7px; border:1px solid rgba(250,246,239,.22); font-size:8px; letter-spacing:.08em}
+.ftr__pay{display:flex; gap:6px; align-items:center; flex-wrap:wrap}
+/* 品牌标识是 SVG 小卡片，尺寸统一在这里定；不要再给 span 加 padding/border，
+   否则会套在白色卡片外面再画一圈框。 */
+.paymark{display:inline-block; line-height:0}
+.paymark svg{display:block; width:42px; height:27px}
 
 /* ---------- 面包屑 ---------- */
 .crumbs{padding:16px 0; font-size:10.5px; color:var(--muted); letter-spacing:.05em}
@@ -738,17 +741,11 @@ body.menu-open .overlay{opacity:1; pointer-events:auto}
    账户体系 · 登录注册 / 用户中心
    ============================================================ */
 
-/* 页头登录态 */
-.hdr__signin{
-  font-size:11px; letter-spacing:.1em; text-transform:uppercase;
-  padding:8px 12px; border:1px solid var(--line-2); color:var(--ink);
-  transition:border-color .2s var(--ease), background .2s var(--ease);
-}
-.hdr__signin:hover{border-color:var(--sea); background:var(--sea); color:var(--cream)}
-.hdr__acct{display:none}
-.hdr__me{font-size:11.5px; color:var(--muted); padding:6px 4px; white-space:nowrap}
-.hdr__me b{color:var(--ink); font-weight:600}
-.hdr__me:hover b{color:var(--sea)}
+/* 页头账号入口：和搜索/收藏/购物袋一样只用图标。
+   这里曾经是「桌面文字 SIGN IN + 手机上才显示人形图标」两套并存，
+   .hdr__acct 被 display:none 藏掉，桌面只剩一行裸文字，比左右图标都重。
+   现在统一成人形图标，两端一致。 */
+.hdr__acct{display:grid}
 
 /* 登录 / 注册卡片 */
 .authcard{
@@ -981,9 +978,7 @@ body.menu-open .overlay{opacity:1; pointer-events:auto}
   .acct2__main h1{font-size:32px}
   .odgrid{grid-template-columns:1fr}
   .addrgrid{grid-template-columns:1fr}
-  /* 窄屏放不下文字，改用图标，否则手机上根本没有账户入口 */
-  .hdr__me,.hdr__signin{display:none}
-  .hdr__acct{display:grid}
+  /* 账号入口两端都是图标，不需要在窄屏切换显示方式了 */
   .acct2__out{margin-left:auto}
 }
 @media(max-width:620px){

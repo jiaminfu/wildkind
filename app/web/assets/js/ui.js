@@ -43,6 +43,29 @@
     return '<svg class="' + (cls || '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + (ICON[name] || '') + '</svg>';
   }
 
+  /* ---------------- 支付品牌标识 ----------------
+     页脚以前是六个纯文字 span（VISA / MC / AMEX / APPLE PAY / G PAY / PAYPAL）：
+       · 不是 logo，识别度全靠读者认缩写；
+       · APPLE PAY / G PAY 本站根本没接 —— PayPal 标准收银台里不含这两个钱包，
+         写上去属于虚假标识，收单机构审核会逐项核对网站展示与账户实际能力。
+     现在只画真实能用的四个：Visa / Mastercard / Amex（走 PayPal 收银台内的卡支付）
+     + PayPal 本人。配色用各家的品牌色，白底小卡片，深色页脚上也能看清。
+     纯几何 + <text>，不引外部图片，离线与 CF 缓存都不受影响。 */
+  var PAY_MARKS = {
+    visa: '<svg viewBox="0 0 46 30" role="img" aria-label="Visa"><rect width="46" height="30" rx="3" fill="#fff"/>' +
+      '<text x="23" y="20.6" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="13" font-weight="700" font-style="italic" fill="#1A1F71" letter-spacing=".2">VISA</text></svg>',
+    mastercard: '<svg viewBox="0 0 46 30" role="img" aria-label="Mastercard"><rect width="46" height="30" rx="3" fill="#fff"/>' +
+      '<circle cx="19" cy="15" r="7.6" fill="#EB001B"/><circle cx="27" cy="15" r="7.6" fill="#F79E1B" fill-opacity=".88"/></svg>',
+    amex: '<svg viewBox="0 0 46 30" role="img" aria-label="American Express"><rect width="46" height="30" rx="3" fill="#006FCF"/>' +
+      '<text x="23" y="19.8" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="10.5" font-weight="700" fill="#fff" letter-spacing=".7">AMEX</text></svg>',
+    paypal: '<svg viewBox="0 0 46 30" role="img" aria-label="PayPal"><rect width="46" height="30" rx="3" fill="#fff"/>' +
+      '<text x="23" y="20" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="11.6" font-weight="700" font-style="italic" letter-spacing="-.2">' +
+      '<tspan fill="#003087">Pay</tspan><tspan fill="#009CDE">Pal</tspan></text></svg>',
+  };
+  function payMark(name, cls) {
+    return '<span class="paymark' + (cls ? ' ' + cls : '') + '">' + (PAY_MARKS[name] || '') + '</span>';
+  }
+
   /* 品牌 mark：一枚几乎闭合的环（搭扣）+ 环内一棵小树（grove）。
      缺口在 12 点、跨约 16°，上方实心点是「扣上」的动作 —— 对应名字里
      clasp 的佩戴语义与 grove 的生长语义。纯几何 path，不依赖字体。 */
@@ -167,7 +190,13 @@
       '<a href="#/" class="brand" aria-label="LASTGROVE home"><span class="brand__mark" aria-hidden="true">' + MARK + '</span><span class="brand__word">LASTGROVE</span></a>' +
       '<div class="hdr__tools">' +
       '<button class="icon-btn" data-act="open-search" aria-label="Search">' + icon('search') + '</button>' +
-      '<a class="icon-btn hdr__acct" href="#/account" aria-label="Account">' + icon('user') + '</a>' +
+      /* 账号入口只留图标，和搜索/收藏/购物袋保持同一套语言。
+         之前这里是「文字 Sign in（桌面）+ 人形图标（手机）」两套并存：
+         同一个入口在断点两侧长得不一样，桌面上那枚 .hdr__acct 还被 CSS 藏掉了，
+         于是桌面只剩一行裸文字 SIGN IN，比左右图标都重，视觉上很突兀。 */
+      '<a class="icon-btn hdr__acct" href="#/account" id="acctBtn" aria-label="' +
+      (S.state.user ? 'Account — hello, ' + U.esc(S.state.user.first) : 'Sign in or create an account') +
+      '">' + icon('user') + '</a>' +
       /* 心形图标以前链到 #/account/wishlist，但那条路由根本没实现，
          点进去落在「订单查询」页——图标说 Wishlist、页面是查单。
          现在 /account/wishlist 有真实视图，收藏存本地，访客也能用。 */
@@ -175,13 +204,6 @@
       ' aria-label="Wishlist' + (S.wishCount() ? ', ' + S.wishCount() + ' saved' : '') + '">' +
       icon('heart') +
       '<span class="bag-count' + (S.wishCount() ? '' : ' is-zero') + '" id="wishCount">' + S.wishCount() + '</span></a>' +
-      (function () {
-        var u = S.state.user;
-        if (u) {
-          return '<a class="hdr__me" href="#/account">Hello, <b>' + U.esc(u.first) + '</b></a>';
-        }
-        return '<a class="hdr__signin" href="#/account/login">Sign in</a>';
-      })() +
       '<button class="icon-btn" data-act="open-cart" aria-label="Bag">' + icon('bag') + '<span class="bag-count' + (S.cartCount() ? '' : ' is-zero') + '" id="bagCount">' + S.cartCount() + '</span></button>' +
       '</div></div></div></header>';
   }
@@ -226,7 +248,7 @@
       /* 支付标识必须和真实开通的通道一致：
          原来写着 SHOP PAY，那是 Shopify 的产品，本站自研、从未接入，属于虚假标识；
          收单机构审核会逐项核对网站上的卡组织/钱包 logo 与账户实际能力。 */
-      '<div class="ftr__pay"><span>VISA</span><span>MC</span><span>AMEX</span><span>APPLE PAY</span><span>G PAY</span><span>PAYPAL</span></div>' +
+      '<div class="ftr__pay">' + payMark('visa') + payMark('mastercard') + payMark('amex') + payMark('paypal') + '</div>' +
       /* 底栏三个法务页原来是纯文本 <span>，点不进去。收单审核必须能一键打开隐私政策，
          所以改成真链接，并把 Shipping / Returns 也放进来（同样是审核必查项）。 */
       '<div class="ftr__legal">' +
@@ -462,6 +484,7 @@
 
   window.UI = {
     icon: icon, MARK: MARK, header: header, footer: footer, shell: shell,
+    payMark: payMark,
     productCard: productCard, cartDrawer: cartDrawer, searchLayer: searchLayer,
     adminShell: adminShell, navItems: navItems, etaText: etaText,
     mark: function () { return MARK; }

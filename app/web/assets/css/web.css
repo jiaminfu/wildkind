@@ -635,3 +635,30 @@ picture { display: contents; }
   color: #8A5A10;
   box-shadow: inset 0 0 0 1px rgba(192, 138, 46, .32);
 }
+
+/* ---------- 结算：支付选项 ----------
+   这一块以前是一张假卡号 +「Test mode」字样，切到 PayPal 后完全没有 PayPal 入口。
+   现在按后端返回的通道渲染，白底卡片是为了让 PayPal 品牌标识有足够的对比度。 */
+.payopt{
+  display:flex; align-items:center; gap:14px;
+  border:1px solid var(--line-2); background:#fff; padding:13px 15px;
+}
+.payopt__mark{flex:none; line-height:0}
+/* 品牌卡是 46×30 的 SVG，按 56 宽等比放大；图标那支（card/lock）走下面单独定尺寸 */
+.payopt__mark .paymark svg{width:56px; height:36.5px}
+.payopt__mark > svg{width:26px; height:26px; stroke:var(--muted)}
+.payopt__body{display:flex; flex-direction:column; gap:3px; min-width:0}
+.payopt__body b{font-size:12.5px; font-weight:500; color:var(--ink); letter-spacing:.02em}
+.payopt__body span{font-size:11.5px; color:var(--muted); line-height:1.55}
+.payopt__tick{margin-left:auto; color:var(--sea); flex:none; line-height:0}
+.payopt__tick svg{width:18px; height:18px}
+
+@media (max-width:640px){
+  .payopt{gap:11px; padding:12px}
+  .payopt__mark .paymark svg{width:48px; height:31px}
+  .payopt__body span{font-size:11px}
+}
+
+/* 结算页里的说明文字左对齐：这个类在购物袋抽屉里是居中用的，
+   搬进结算表单后还居中就跟左边的标签、输入框全错位了。 */
+.co__block .drawer__note{text-align:left; font-size:11px; line-height:1.6; margin-top:10px; max-width:62ch}

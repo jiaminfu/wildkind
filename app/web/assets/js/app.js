@@ -396,7 +396,13 @@
       var c = S.state.cart.filter(function (x) { return x.productId === l.productId && x.metal === l.metal; })[0];
       l.image = c ? c.image : '';
     });
-    return V.checkout(quote, Object.assign({ shipping: S.state.checkout.shipping || 'Standard' }, S.state.checkoutForm || {}), S.state.checkoutErr);
+    /* 支付方式问后端要，不猜。取不到就传 null，视图会退回中性文案，
+       绝不能在页面上断言「走的是某个具体通道」——写死过一次，切通道后就对不上了。 */
+    if (!S.state.payMethods) {
+      try { S.state.payMethods = (await API.get('/payments/methods')).data; }
+      catch (e) { S.state.payMethods = null; }
+    }
+    return V.checkout(quote, Object.assign({ shipping: S.state.checkout.shipping || 'Standard' }, S.state.checkoutForm || {}), S.state.checkoutErr, S.state.payMethods);
   }
 
   async function renderOrder(r) {

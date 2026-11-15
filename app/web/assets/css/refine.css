@@ -110,14 +110,7 @@ select:focus-visible, textarea:focus-visible, .card__media:focus-visible{
   letter-spacing:0;
 }
 .bag-count.is-zero{display:none}
-.hdr__signin{
-  font-size:var(--t2); letter-spacing:.06em; text-transform:uppercase;
-  color:var(--ink-2); border:0; border-bottom:1px solid var(--line-2);
-  padding:0 0 3px; background:none;
-}
-.hdr__signin:hover{color:var(--sea); border-bottom-color:var(--sea); background:none}
-.hdr__me{font-size:var(--t2); color:var(--muted); letter-spacing:.02em}
-.hdr__me b{color:var(--ink); font-weight:500}
+/* 账号入口已统一为人形图标（见 app.css .hdr__acct），文字版 Sign in / Hello 的样式已废弃 */
 .mob-menu-btn{order:0; flex:none}
 
 /* ---------- Hero ---------- */
@@ -189,7 +182,7 @@ select:focus-visible, textarea:focus-visible, .card__media:focus-visible{
 .ftr ul li{margin-bottom:var(--sp2)}
 .ftr ul a{font-size:var(--t2)}
 .ftr__bot{font-size:var(--t1); padding:var(--sp4) 0}
-.ftr__pay span{font-size:9px; padding:3px 6px}
+.ftr__pay .paymark svg{width:38px; height:25px}
 
 /* ---------- 结算 ---------- */
 .co{grid-template-columns:1.18fr .82fr; gap:var(--sp8); padding:var(--sp5) 0 var(--sp8)}
@@ -532,7 +525,6 @@ body.filter-open .fdrawer{transform:none}
   :root{--pad:20px}
   .hdr__inner{height:60px}
   .hdr__tools{gap:13px}
-  .hdr__me{display:none}
   .icon-btn{width:22px; height:22px}
   .hero h1{font-size:clamp(34px,8vw,44px)}
   .sec-head{padding:var(--sp7) 0 var(--sp4)}

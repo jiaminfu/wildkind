@@ -471,7 +471,59 @@
   }
 
   /* ---------------- 结算页 ---------------- */
-  function checkout(quote, form, err) {
+
+  /* 支付区内容必须由后端 /payments/methods 决定，不能写死。
+     这里原来是一张假卡（4242 4242 4242 4242）加一句
+     「Test mode — Stripe keys are not connected yet」：
+     切到 PayPal 之后，页面既没有 PayPal 入口，也没说会整页跳转，
+     买家点 Pay 直接被送到 sandbox.paypal.com，体感就是「支付没调起来」。
+     现在的原则是「页面上写的 = 点下去真的会发生」。 */
+  function payOption(pay, total) {
+    var p = pay || {};
+    var id = String(p.provider || '');
+    var warn = (p.configured === false)
+      ? '<p class="drawer__note" style="color:var(--clay)">Online payment is temporarily unavailable. ' +
+        'Please contact us and we will take your order manually.</p>'
+      : '';
+
+    if (id === 'paypal') {
+      return '<div class="payopt">' +
+        '<span class="payopt__mark">' + ui.payMark('paypal') + '</span>' +
+        '<div class="payopt__body"><b>PayPal</b>' +
+        '<span>PayPal balance or any card — handled on PayPal\'s secure page.</span></div>' +
+        '<span class="payopt__tick" aria-hidden="true">' + ui.icon('check') + '</span></div>' +
+        '<p class="drawer__note">You will be redirected to PayPal to approve the payment, then brought back here ' +
+        'to your order. Card details are entered on PayPal only — we never see or store them.</p>' + warn;
+    }
+
+    if (id === 'stripe') {
+      return '<div class="cardfield"><div class="cardfield__row">' +
+        '<input value="Card details are collected on the next step" readonly>' +
+        '<span class="cardbrand">' + ui.icon('lock') + '</span></div>' +
+        '<p class="small" style="color:var(--muted);margin:0">You will confirm the payment on Stripe\'s secure form.</p></div>' + warn;
+    }
+
+    if (id === 'mock' || !id) {
+      return '<div class="payopt"><span class="payopt__mark">' + ui.icon('card') + '</span>' +
+        '<div class="payopt__body"><b>Test gateway</b>' +
+        '<span>No real money moves. Orders are marked paid straight away.</span></div></div>' + warn;
+    }
+
+    return '<div class="payopt"><span class="payopt__mark">' + ui.icon('lock') + '</span>' +
+      '<div class="payopt__body"><b>' + esc(p.label || 'Secure payment') + '</b>' +
+      '<span>You will be taken to the payment provider to finish.</span></div></div>' + warn;
+  }
+
+  /* 按钮文字说清「下一步会发生什么」，别让「Pay」被误解成一键扣款 */
+  function payCta(pay, total) {
+    var id = String((pay || {}).provider || '');
+    if (id === 'paypal') return 'Continue to PayPal — ' + money(total);
+    if (id === 'stripe') return 'Continue to payment — ' + money(total);
+    if (id === 'mock' || !id) return 'Place order — ' + money(total);
+    return 'Pay ' + money(total);
+  }
+
+  function checkout(quote, form, err, pay) {
     form = form || {};
     var lines = (quote ? quote.lines : S.cartLines()).map(function (l) {
       return '<div class="paysum__line">' + U.pic(l.image || '', { alt: '', w: 900, h: 900, sizes: '56px' }) +
@@ -512,11 +564,9 @@
       shipOption('Standard', 'Tracked · duties included', form.shipping) +
       shipOption('Express', 'Priority handling · 3–5 days', form.shipping) + '</div>' +
 
-      '<div class="co__block"><h3>Payment</h3>' +
-      '<div class="cardfield"><div class="cardfield__row"><input value="4242 4242 4242 4242" readonly><span class="cardbrand">Test</span></div>' +
-      '<p class="small" style="color:var(--muted);margin:0">Test mode — Stripe keys are not connected yet, so nothing is charged. See the integration checklist.</p></div></div>' +
+      '<div class="co__block"><h3>Payment</h3>' + payOption(pay, quote ? quote.total : S.totals().total) + '</div>' +
       (err ? '<div class="falert">' + esc(err.message) + '</div>' : '') + detailList +
-      '<button class="btn btn--full" type="submit">Pay ' + money(quote ? quote.total : S.totals().total) + '</button>' +
+      '<button class="btn btn--full" type="submit">' + payCta(pay, quote ? quote.total : S.totals().total) + '</button>' +
       '<p class="drawer__note" style="margin-top:12px">Free returns within 30 days · Duties included</p>';
 
     var summary = '<div class="paysum"><h4>Order summary</h4>' + lines +
