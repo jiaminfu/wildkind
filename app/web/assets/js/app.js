@@ -254,7 +254,9 @@
           case 'search': body = await renderSearch(r); break;
           case 'cart': body = V.cart(); break;
           case 'checkout': body = await renderCheckout(r); break;
-          case 'order': body = await renderOrder(r); break;
+          case 'order':
+            body = seg[1] === 'confirm' ? await renderPayConfirm(r) : await renderOrder(r);
+            break;
           case 'account': body = await renderAccount(r); break;
           case 'pages': {
             var pg = Pages.page(seg[1]);
@@ -407,6 +409,52 @@
       } else return V.notFound();
     }
     return V.orderDone(o);
+  }
+
+  /* 支付通道回跳的落点：/#/order/confirm?token=<通道会话id>&PayerID=...
+     PayPal 会把 token 追加到 return_url 后面，所以这里拿到的是通道的订单号，
+     不是我们的单号。用它触发 capture（真正扣款），再换成我们的单号展示。
+     这段不能省：PayPal 的钱在买家点「同意」时还没动，必须服务端再 capture 一次。 */
+  async function renderPayConfirm(r) {
+    var token = String(r.query.token || '').trim();
+
+    function panel(title, msg, extra) {
+      return '<div class="wrap" style="padding:80px 0 90px;text-align:center">' +
+        '<h1 style="font-family:var(--serif);font-weight:400;font-size:38px">' + U.esc(title) + '</h1>' +
+        '<p style="color:var(--muted);margin:14px 0 26px;max-width:520px;margin-left:auto;margin-right:auto">' +
+        U.esc(msg) + '</p>' + (extra || '') + '</div>';
+    }
+
+    if (!token) {
+      return panel('Payment link incomplete',
+        'We did not receive a payment reference from the payment provider. ' +
+        'If you were charged, contact us and we will find your order.',
+        '<a class="btn" href="#/account/lookup">Track an order</a>');
+    }
+
+    try {
+      var res = await API.post('/payments/capture', { sessionId: token });
+      var o = res.data.order || null;
+
+      if (o && o.status === 'paid') {
+        S.state.lastOrder = o;
+        try { localStorage.setItem('lastgrove_last_order', JSON.stringify(o)); } catch (e) { }
+        S.go('/order/' + encodeURIComponent(o.number));
+        return panel('Confirming your payment',
+          'One moment — taking you to your order.');
+      }
+
+      /* 没付成：买家取消、卡被拒、余额不足都会到这里。
+         订单仍在，可以回去重试，所以给一个回结算页的入口而不是死胡同。 */
+      return panel('Payment not completed',
+        'Nothing has been charged. Your order is still reserved — you can go back and try again.',
+        '<a class="btn" href="#/cart">Back to bag</a>');
+    } catch (e) {
+      return panel('We could not confirm the payment',
+        'If you see a PayPal receipt, your payment went through and we will email you shortly. ' +
+        'Otherwise contact us and we will sort it out.',
+        '<a class="btn" href="#/account/lookup">Track an order</a>');
+    }
   }
 
   async function renderAccount(r) {

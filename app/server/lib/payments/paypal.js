@@ -155,15 +155,36 @@ module.exports = {
   },
 
   /* 买家在 PayPal 侧批准后，必须由服务端调用 capture 才真正扣款。
-     这一步不能交给前端「点完就算付了」。 */
+     这一步不能交给前端「点完就算付了」。
+
+     为什么要做幂等：同一个订单会有两条路径同时来 capture ——
+       ① 买家从 PayPal 回跳，前端调 /payments/capture；
+       ② PayPal 的 CHECKOUT.ORDER.APPROVED 回调，webhook 里补一次。
+     两条路径可能前后脚到达，第二次会拿到 ORDER_ALREADY_CAPTURED 的 422。
+     那其实说明「钱已经收到了」，属于成功，不能当失败处理，
+     否则订单会一直挂在 pending_payment，而钱早已进账。 */
   async capture(orderId) {
     const t = await token();
-    const r = await call('POST', '/v2/checkout/orders/' + encodeURIComponent(orderId) + '/capture', {}, t);
+    let r;
+    try {
+      r = await call('POST', '/v2/checkout/orders/' + encodeURIComponent(orderId) + '/capture', {}, t);
+    } catch (err) {
+      const name = String((err.detail && err.detail.name) || '');
+      const issue = String((err.detail && err.detail.details && err.detail.details[0] &&
+        err.detail.details[0].issue) || '');
+      if (name === 'ORDER_ALREADY_CAPTURED' || issue === 'ORDER_ALREADY_CAPTURED') {
+        r = await call('GET', '/v2/checkout/orders/' + encodeURIComponent(orderId), null, t);
+      } else {
+        throw err;
+      }
+    }
     const unit = (r.purchase_units || [])[0] || {};
     const cap = (unit.payments && unit.payments.captures && unit.payments.captures[0]) || {};
     return {
-      ok: String(r.status || '') === 'COMPLETED',
-      status: String(r.status || ''),
+      ok: String(r.status || '') === 'COMPLETED' || String(cap.status || '') === 'COMPLETED',
+      status: String(r.status || '').toUpperCase() === 'COMPLETED'
+        ? 'COMPLETED'
+        : String(cap.status || r.status || ''),
       reference: String(cap.id || r.id || ''),
       amount: cap.amount ? Number(cap.amount.value) : null,
       currency: cap.amount ? String(cap.amount.currency_code || '').toUpperCase() : '',
@@ -203,7 +224,11 @@ module.exports = {
       'PAYMENT.CAPTURE.COMPLETED': 'paid',
       'PAYMENT.CAPTURE.DENIED': 'failed',
       'PAYMENT.CAPTURE.REFUNDED': 'refunded',
-      'CHECKOUT.ORDER.APPROVED': null,   // 只是批准，还没扣款，不改状态
+      /* 批准 ≠ 付款。PayPal 的两段式流程里，这一步只是买家点了「同意」，
+         钱还没动，必须服务端再 capture 一次。这里给一个独立状态，
+         让 webhook 路由去补 capture —— 买家批准完直接关掉页面时，
+         回跳根本不会发生，只靠前端确认的话这单就永远收不到钱。 */
+      'CHECKOUT.ORDER.APPROVED': 'approved',
     };
 
     return {

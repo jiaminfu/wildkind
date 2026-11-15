@@ -62,6 +62,67 @@ function routes(router) {
     });
   });
 
+  /* 买家从支付通道回跳后由前端调用：把「已批准」变成「已扣款」。
+     没有这一步，PayPal 的钱永远停在「待捕获」，订单也永远停在 pending_payment。
+
+     为什么用 sessionId 而不是订单号：创建支付会话时本地订单还没落库
+     （先建会话再落单，见 checkout.js 的注释），所以回跳链接里带不了订单号，
+     只能带通道返回的会话 id。这里用它在本地反查订单。 */
+  router.post('/api/v1/payments/capture', async (req, res) => {
+    const provider = payments.getProvider();
+
+    if (typeof provider.capture !== 'function') {
+      throw E.unprocessable('CAPTURE_NOT_REQUIRED',
+        'This payment provider does not need a capture step.');
+    }
+
+    const sessionId = String((req.body || {}).sessionId || '').trim();
+    if (!sessionId) throw E.badRequest('sessionId is required.');
+
+    const db = store.get();
+    const order = db.orders.find(o => o.payment && o.payment.reference === sessionId);
+    if (!order) throw E.notFound('We could not find an order for this payment session.');
+
+    /* 已经付过了就直接返回。前端回跳和 webhook 会同时触发 capture，
+       两边都走到这里时，先到的那条已经把状态改好，后到的不能再改一次。 */
+    if (order.status === 'paid') {
+      return ok(res, { order, captured: true, already: true });
+    }
+    if (order.status !== 'pending_payment' && order.status !== 'cancelled') {
+      throw E.unprocessable('ORDER_NOT_PAYABLE',
+        'This order can no longer be paid (status: ' + order.status + ').');
+    }
+
+    const cap = await provider.capture(sessionId);
+    if (!cap || !cap.ok) {
+      /* 买家取消、卡被拒、余额不足都会走到这里。订单保持 pending_payment，
+         不标成 cancelled —— 客户可能换一张卡重试，取消了就再也付不了。 */
+      console.warn('[payments] capture 未完成 order=%s status=%s',
+        order.number, (cap && cap.status) || '-');
+      return ok(res, { order, captured: false, status: (cap && cap.status) || 'unknown' });
+    }
+
+    const updated = store.tx(d => {
+      const o = d.orders.find(x => x.number === order.number);
+      if (!o) return order;
+      if (o.status === 'pending_payment' || o.status === 'cancelled') {
+        o.status = 'paid';
+        o.statusLabel = 'Paid';
+        o.paidAt = new Date().toISOString();
+      }
+      o.payment = Object.assign({}, o.payment, {
+        /* 退refund 要用 capture id，不是 PayPal 的 order id —— 两者不通用。
+           reference 保留 order id（webhook 靠它反查），capture id 放 intent。 */
+        intent: cap.reference || (o.payment && o.payment.intent) || '',
+        capturedAt: new Date().toISOString(),
+      });
+      return o;
+    });
+
+    console.log('[payments] capture 成功 order=%s capture=%s', updated.number, cap.reference);
+    ok(res, { order: updated, captured: true });
+  });
+
   router.post('/api/v1/payments/webhook/:provider', async (req, res) => {
     const pid = String((req.params && req.params.provider) || '').toLowerCase();
     const provider = payments.getProvider(pid);
@@ -110,6 +171,36 @@ function routes(router) {
     const evKey = v.eventId || (v.event + ':' + (v.ref || v.orderNumber));
     if (db.webhookEvents && db.webhookEvents[evKey]) {
       return ok(res, { received: true, duplicate: true, order: order.number });
+    }
+
+    /* PayPal 是两段式：买家「批准」只代表他点了同意，钱还没动，
+       必须服务端再调一次 capture 才真正扣款。
+       放在这里而不是只靠前端回跳，是因为买家批准后直接关掉标签页时，
+       return_url 根本不会被访问 —— 只靠前端的话，这单会永远停在
+       pending_payment，库存还被占着，而客户以为已经买到了。
+       前端如果已经先 capture 过，provider 内部会识别「已捕获」并返回成功，
+       重复调用是安全的（见 paypal.js 的 capture 注释）。 */
+    if (v.status === 'approved') {
+      if (typeof provider.capture !== 'function') {
+        return ok(res, { received: true, ignored: true, event: v.event });
+      }
+      try {
+        const cap = await provider.capture(
+          v.reference || (order.payment && order.payment.reference) || '');
+        if (!cap || !cap.ok) {
+          console.warn('[payments] 批准后 capture 未完成 order=%s status=%s',
+            order.number, (cap && cap.status) || '-');
+          /* 不返回错误：PayPal 对同一事件的重复投递没有意义，
+             而且这时候钱大概率还没到，让订单保持 pending_payment 等人工核对，
+             比把它标成「已付」或「失败」都更安全。 */
+          return ok(res, { received: true, captured: false, order: order.number });
+        }
+        v.status = 'paid';
+        v.paymentIntent = cap.reference || v.paymentIntent;
+      } catch (err) {
+        console.error('[payments] 批准后 capture 异常 order=%s %s', order.number, err.message);
+        throw Object.assign(err, { status: 502 });
+      }
     }
 
     store.tx(d => {
