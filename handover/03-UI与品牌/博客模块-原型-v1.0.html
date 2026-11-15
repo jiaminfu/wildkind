@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>博客模块 · 交互原型 v1.0 — LASTGROVE</title>
+<style>
+  :root{
+    --sea:#1B3A34; --sea-d:#132B26; --sea-l:#2A5249;
+    --cream:#FAF6EF; --cream-d:#F2EBDF; --sand:#E7DAC8; --sand-d:#D8C7AF;
+    --brass:#B08A56; --brass-l:#C9A876;
+    --ink:#16130F; --ink-2:#2E2A25; --muted:#6E675E; --muted-2:#948C81;
+    --line:#E2DCD2; --line-2:#CFC5B8;
+    --clay:#B4472F; --olive:#4A6B4A;
+    --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+    --sans:"Figtree",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#E8E4DC;color:var(--ink-2);font-family:var(--sans);font-size:14px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  img{display:block;max-width:100%}
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+  h1,h2,h3,h4{margin:0;font-weight:400;font-family:var(--serif);letter-spacing:.02em;color:var(--ink)}
+  p{margin:0 0 12px}
+
+  /* ---------- 原型外壳（不属于站点 UI） ---------- */
+  .proto{position:sticky;top:0;z-index:50;background:var(--sea);color:#EFE9DE;
+    display:flex;align-items:center;gap:18px;padding:10px 20px;font-size:12px}
+  .proto b{font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:10.5px;color:var(--brass-l)}
+  .proto nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+  .proto nav button{padding:6px 13px;border-radius:99px;font-size:11.5px;color:#CFC6B8;
+    border:1px solid rgba(255,255,255,.16)}
+  .proto nav button.on{background:var(--brass);color:#1B1510;border-color:var(--brass);font-weight:600}
+  .note{background:#FFF9E9;border-left:3px solid var(--brass);padding:9px 14px;margin:0 0 18px;
+    font-size:12px;color:#6B5A36;border-radius:0 4px 4px 0}
+  .note b{color:#4A3D22}
+
+  .stage{padding:26px 20px 70px}
+  .frame{max-width:1280px;margin:0 auto;background:var(--cream);border:1px solid #CFC7BA;
+    border-radius:3px;overflow:hidden;box-shadow:0 16px 50px rgba(28,22,14,.13)}
+  .view{display:none}
+  .view.on{display:block}
+
+  /* ---------- 站点：通用 ---------- */
+  .wrap{max-width:1280px;margin:0 auto;padding:0 40px}
+  .eyebrow{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .btn{display:inline-block;padding:13px 26px;background:var(--sea);color:#F7F2E8;font-size:11.5px;
+    letter-spacing:.12em;text-transform:uppercase;border-radius:2px}
+  .btn--ghost{background:none;border:1px solid var(--line-2);color:var(--ink-2)}
+
+  /* 页头 */
+  .hdr{border-bottom:1px solid var(--line);background:var(--cream)}
+  .hdr__inner{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:64px;column-gap:28px}
+  .hdr__nav{display:flex;gap:11px;font-size:9.6px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+  .hdr__nav span{position:relative;padding-bottom:3px;white-space:nowrap}
+  .hdr__nav span.cur{color:var(--sea);font-weight:600}
+  .hdr__nav span.cur::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--brass)}
+  .brand{display:flex;align-items:center;gap:9px;justify-self:center}
+  .brand__word{font-family:var(--serif);font-size:17px;letter-spacing:.2em;color:var(--ink)}
+  .brand__mark{width:20px;height:20px;border:1px solid var(--sea);border-radius:50%;position:relative}
+  .brand__mark::after{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--sea)}
+  .hdr__tools{display:flex;gap:14px;justify-self:end;color:var(--sea)}
+
+  /* ---------- 列表页 ---------- */
+  .jhero{padding:56px 0 30px;text-align:center;border-bottom:1px solid var(--line)}
+  .jhero h1{font-size:52px;line-height:1.05}
+  .jhero p{max-width:520px;margin:14px auto 0;color:var(--muted);font-size:14.5px}
+  .chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:22px 0 26px}
+  .chip{padding:6px 15px;border:1px solid var(--line-2);border-radius:99px;font-size:11.5px;
+    letter-spacing:.06em;color:var(--muted);background:#fff}
+  .chip.on{background:var(--sea);border-color:var(--sea);color:#F3EDE2}
+
+  .jgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:34px 28px;padding-bottom:44px}
+  .jcard{display:flex;flex-direction:column;background:transparent}
+  .jcard__img{aspect-ratio:4/3;background:linear-gradient(150deg,#DDD2BF,#C4B8A2 55%,#B3A78F);
+    border:1px solid var(--line);position:relative;overflow:hidden}
+  .jcard__img::after{content:"";position:absolute;inset:0;
+    background:radial-gradient(120% 90% at 22% 18%,rgba(255,255,255,.55),transparent 58%)}
+  .jcard__img span{position:absolute;inset:0;display:grid;place-items:center;font-size:9.5px;
+    letter-spacing:.22em;text-transform:uppercase;color:#8C8271}
+  .jcard__body{padding-top:15px}
+  .jcard__title{font-size:22px;line-height:1.24;margin:5px 0 7px}
+  .jcard__ex{font-size:13.2px;color:var(--muted);margin:0 0 9px}
+  .jcard__date{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2)}
+  .jcard:hover .jcard__title{color:var(--sea-l)}
+
+  .jcard--ni{border-top:1px solid var(--line);padding-top:18px}
+  .jcard--ni .jcard__title{font-size:24px}
+
+  .pager{display:flex;justify-content:center;gap:6px;padding:8px 0 50px}
+  .pager a{min-width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--line-2);
+    font-size:12.5px;color:var(--muted);border-radius:2px;background:#fff}
+  .pager a.on{background:var(--sea);color:#F3EDE2;border-color:var(--sea)}
+
+  /* 390 预览 */
+  .mob{background:var(--cream-d);border-top:1px solid var(--line);padding:34px 0 42px}
+  .mob__inner{max-width:280px;margin:0 auto;background:var(--cream);border:1px solid var(--line-2);
+    border-radius:12px;padding:14px;box-shadow:0 10px 26px rgba(28,22,14,.1)}
+  .mob__bar{display:flex;justify-content:space-between;font-size:9px;color:var(--muted-2);margin-bottom:10px}
+  .mob h4{font-size:19px;margin:0 0 4px}
+  .mob .jcard__img{aspect-ratio:4/3;margin-bottom:8px}
+  .mob p{font-size:11.5px;color:var(--muted);margin:0}
+
+  /* ---------- 详情页 ---------- */
+  .post__head{max-width:720px;padding:46px 40px 22px;text-align:center;margin:0 auto}
+  .post__title{font-size:46px;line-height:1.08;margin:6px 0 14px}
+  .post__meta{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2)}
+  .post__cover{max-width:1000px;margin:8px auto 34px;padding:0 40px}
+  .post__cover .jcard__img{aspect-ratio:16/9}
+  .prose{max-width:660px;margin:0 auto;padding:0 40px;font-size:15.5px;line-height:1.78;color:var(--ink-2)}
+  .prose h2{font-size:27px;margin:34px 0 12px}
+  .prose h3{font-size:20px;margin:26px 0 10px}
+  .prose ul{margin:0 0 16px;padding-left:20px;list-style:disc}
+  .prose li{margin-bottom:5px}
+  .prose blockquote{margin:26px 0;padding:4px 0 4px 20px;border-left:2px solid var(--brass);
+    font-family:var(--serif);font-size:21px;line-height:1.5;color:var(--sea)}
+  .prose blockquote cite{display:block;margin-top:8px;font-family:var(--sans);font-size:11px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);font-style:normal}
+  .prose figure{margin:28px 0}
+  .prose figcaption{font-size:11.5px;color:var(--muted-2);margin-top:8px;text-align:center}
+  .prose hr{border:0;border-top:1px solid var(--line);margin:34px 0}
+  .prose a{color:var(--sea);border-bottom:1px solid var(--brass-l)}
+  .post__cta{max-width:660px;margin:40px auto 0;padding:26px 40px;text-align:center;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .post__cta p{font-size:12px;color:var(--muted);margin-bottom:14px}
+  .post__pager{max-width:1000px;margin:0 auto;padding:30px 40px 60px;display:grid;
+    grid-template-columns:1fr 1fr;gap:20px}
+  .pg{border:1px solid var(--line);padding:16px 18px;background:#fff}
+  .pg span{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2)}
+  .pg b{display:block;font-family:var(--serif);font-size:18px;font-weight:400;color:var(--ink);margin-top:4px}
+  .pg--next{text-align:right}
+
+  /* ---------- 后台 ---------- */
+  .adm{display:grid;grid-template-columns:210px 1fr;min-height:720px;background:#F7F4EE}
+  .adm__side{background:var(--sea);color:#DCD4C6;padding:18px 0;font-size:12.5px}
+  .adm__brand{padding:0 18px 18px;font-family:var(--serif);letter-spacing:.18em;font-size:13px;color:#F2EADC}
+  .adm__grp{padding:12px 18px 5px;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:#8A9A92}
+  .adm__item{padding:7px 18px;display:flex;gap:8px;color:#C9C1B2}
+  .adm__item.on{background:rgba(255,255,255,.1);color:#fff;box-shadow:inset 2px 0 0 var(--brass)}
+  .adm__item i{font-style:normal;opacity:.4;font-size:9px}
+  .adm__main{padding:22px 26px 40px;background:#F7F4EE}
+  .adm__hd{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .adm__hd h2{font-size:25px}
+  .adm__hd .sp{margin-left:auto;display:flex;gap:8px}
+  .abadge{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:2px;
+    background:#EFE7D6;color:#7A6A45}
+  .abadge--pub{background:#E4EDE4;color:#3F5C3F}
+  .adm__sub{font-size:11.5px;color:var(--muted);margin-bottom:18px}
+  .panel{background:#fff;border:1px solid var(--line);margin-bottom:16px}
+  .panel__hd{padding:11px 16px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px}
+  .panel__bd{padding:16px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .fld{margin-bottom:14px}
+  .fld label{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:5px}
+  .fld input,.fld select,.fld textarea{width:100%;padding:8px 10px;border:1px solid var(--line-2);
+    border-radius:2px;font-size:13px;background:#fff;color:var(--ink-2)}
+  .fld .hint{font-size:10.5px;color:var(--muted-2);margin-top:4px;text-align:right}
+  .slugrow{display:flex;align-items:center;gap:6px}
+  .slugrow em{font-size:12px;color:var(--muted);font-style:normal;white-space:nowrap}
+
+  .blk{border:1px solid var(--line);border-radius:3px;margin-bottom:10px;background:#fff}
+  .blk__hd{display:flex;align-items:center;gap:8px;padding:6px 9px;background:#FAF8F3;
+    border-bottom:1px solid var(--line);font-size:10.5px;color:var(--muted)}
+  .blk__hd b{font-weight:600;color:var(--ink-2);font-size:10px;letter-spacing:.08em}
+  .blk__hd .ops{margin-left:auto;display:flex;gap:3px}
+  .blk__hd .ops button{width:22px;height:22px;display:grid;place-items:center;border:1px solid var(--line-2);
+    border-radius:2px;font-size:10px;color:var(--muted);background:#fff}
+  .blk__b{padding:10px}
+  .blk__b textarea{width:100%;border:1px solid var(--line-2);border-radius:2px;padding:8px;
+    font-size:13px;line-height:1.6;resize:vertical;background:#fff}
+  .mbar{display:flex;gap:4px;margin-top:6px}
+  .mbar button{padding:2px 9px;border:1px solid var(--line-2);border-radius:2px;font-size:10.5px;
+    color:var(--muted);background:#fff}
+  .thumb{background:linear-gradient(150deg,#DDD2BF,#C4B8A2 55%,#B3A78F);border:1px solid var(--line);
+    border-radius:2px;position:relative;overflow:hidden}
+  .thumb::after{content:"";position:absolute;inset:0;
+    background:radial-gradient(120% 90% at 22% 18%,rgba(255,255,255,.5),transparent 58%)}
+  .blk--img .thumb{aspect-ratio:4/3;width:150px}
+  .addblk{display:flex;gap:6px;align-items:center;margin-top:12px}
+  .addblk select{width:auto;padding:6px 10px;border:1px solid var(--line-2);border-radius:2px;font-size:12px;background:#fff}
+  .addblk button{padding:6px 13px;background:var(--sea);color:#F3EDE2;border-radius:2px;font-size:11px}
+  .readout{font-size:11px;color:var(--muted-2);margin-left:auto}
+
+  .callout{background:#FFF9E9;border:1px solid #E8D9AE;padding:10px 14px;font-size:12px;color:#6B5A36;
+    border-radius:2px;margin-bottom:14px}
+  .callout b{color:#4A3D22}
+  @media(max-width:960px){
+    .jgrid{grid-template-columns:1fr 1fr}
+    .adm{grid-template-columns:1fr}
+    .adm__side{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="proto">
+  <b>原型 · 非线上页面</b>
+  <span style="opacity:.55">博客模块 v1.0 · Q-01 选 B（/journal 真路径）</span>
+  <nav>
+    <button data-v="list" class="on">① 列表页 /journal</button>
+    <button data-v="post">② 详情页 /journal/&lt;slug&gt;</button>
+    <button data-v="adm">③ 后台编辑器</button>
+  </nav>
+</div>
+
+<div class="stage">
+
+<!-- ============ ① 列表页 ============ -->
+<div class="view on" id="v-list">
+  <div class="note">
+    <b>这一屏要确认的：</b>① 顶栏 Journal 是否放在 Gifts 之后；② 卡片 3 列、间距 34/28 是否合适；
+    ③ 无封面文章用不图片的形态（第 7 张）能否接受；④ 筛选 chips 用「全部 / 材质 / 幕后 / 1% / 保养」四类是否够。
+  </div>
+  <div class="frame">
+    <div class="hdr"><div class="wrap"><div class="hdr__inner">
+      <div class="hdr__nav">
+        <span>Best sellers</span><span>Custom</span><span>Sale</span><span>New in</span>
+        <span>Necklaces</span><span>Rings</span><span>Bracelets</span><span>Gifts</span>
+        <span class="cur">Journal</span>
+      </div>
+      <div class="brand"><span class="brand__mark"></span><span class="brand__word">LASTGROVE</span></div>
+      <div class="hdr__tools">
+        <span>⌕</span><span>○</span><span>♡</span><span>▢ 2</span>
+      </div>
+    </div></div></div>
+
+    <div class="wrap">
+      <div class="jhero">
+        <div class="eyebrow">Field notes</div>
+        <h1>Journal</h1>
+        <p>Materials, workshops, and where the 1% goes. Written in the studio, usually after something went wrong.</p>
+      </div>
+      <div class="chips">
+        <a class="chip on">All</a><a class="chip">Materials</a><a class="chip">Studio</a>
+        <a class="chip">Giving</a><a class="chip">Care</a>
+      </div>
+
+      <div class="jgrid">
+        <a class="jcard">
+          <div class="jcard__img"><span>Cover 4:3</span></div>
+          <div class="jcard__body">
+            <div class="eyebrow">Materials</div>
+            <h2 class="jcard__title">Why PVD is not plating</h2>
+            <p class="jcard__ex">Plating sits on top of the metal and flakes off it. PVD bonds at the molecular level — which is why a $76 necklace survives salt water.</p>
+            <div class="jcard__date">2 November 2026 · 2 min</div>
+          </div>
+        </a>
+        <a class="jcard">
+          <div class="jcard__img"><span>Cover 4:3</span></div>
+          <div class="jcard__body">
+            <div class="eyebrow">Studio</div>
+            <h2 class="jcard__title">Reading a tide glass</h2>
+            <p class="jcard__ex">A tide glass is scratched on purpose. The mark records how far the water reached, so the next person knows what the shore is capable of.</p>
+            <div class="jcard__date">18 October 2026 · 3 min</div>
+          </div>
+        </a>
+        <a class="jcard">
+          <div class="jcard__img"><span>Cover 4:3</span></div>
+          <div class="jcard__body">
+            <div class="eyebrow">Giving</div>
+            <h2 class="jcard__title">Where the 1% went</h2>
+            <p class="jcard__ex">Two grants this quarter: a reef nursery in Hainan, and a native woodland planting scheme in Oregon. Receipts are linked, not rounded up.</p>
+            <div class="jcard__date">30 September 2026 · 2 min</div>
+          </div>
+        </a>
+        <a class="jcard">
+          <div class="jcard__img"><span>Cover 4:3</span></div>
+          <div class="jcard__body">
+            <div class="eyebrow">Care</div>
+            <h2 class="jcard__title">Salt water, chlorine, and the myth of taking it off</h2>
+            <p class="jcard__ex">You do not need to remove it before swimming. You do need to rinse it. Here is what actually happens to the surface.</p>
+            <div class="jcard__date">12 September 2026 · 4 min</div>
+          </div>
+        </a>
+        <a class="jcard">
+          <div class="jcard__img"><span>Cover 4:3</span></div>
+          <div class="jcard__body">
+            <div class="eyebrow">Materials</div>
+            <h2 class="jcard__title">316L, and why we do not call it "surgical steel"</h2>
+            <p class="jcard__ex">The phrase is marketing, not a standard. What the number actually guarantees, and where it stops mattering.</p>
+            <div class="jcard__date">28 August 2026 · 3 min</div>
+          </div>
+        </a>
+        <a class="jcard">
+          <div class="jcard__img"><span>Cover 4:3</span></div>
+          <div class="jcard__body">
+            <div class="eyebrow">Studio</div>
+            <h2 class="jcard__title">A short run is 60 pieces</h2>
+            <p class="jcard__ex">Why we stop at sixty, what happens to the ones that do not pass, and why the wait is usually two weeks.</p>
+            <div class="jcard__date">9 August 2026 · 2 min</div>
+          </div>
+        </a>
+        <a class="jcard jcard--ni">
+          <div class="jcard__body">
+            <div class="eyebrow">Giving</div>
+            <h2 class="jcard__title">The reef nursery, six months in</h2>
+            <p class="jcard__ex">What the grant paid for, what survived, and the number we were not expecting.</p>
+            <div class="jcard__date">21 July 2026 · 3 min</div>
+          </div>
+        </a>
+      </div>
+
+      <div class="pager"><a class="on">1</a><a>2</a><a>›</a></div>
+    </div>
+
+    <div class="mob">
+      <div class="wrap" style="padding:0">
+        <div class="eyebrow" style="text-align:center;margin-bottom:14px">390px · 单列</div>
+        <div class="mob__inner">
+          <div class="mob__bar"><span>☰</span><span>LASTGROVE</span><span>▢ 2</span></div>
+          <div class="jcard__img"><span>Cover 4:3</span></div>
+          <div class="eyebrow" style="margin-top:9px">Materials</div>
+          <h4>Why PVD is not plating</h4>
+          <p>Plating sits on top of the metal and flakes off it. PVD bonds at the molecular level.</p>
+          <div class="jcard__date">2 November 2026 · 2 min</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ② 详情页 ============ -->
+<div class="view" id="v-post">
+  <div class="note">
+    <b>这一屏要确认的：</b>① 标题居中 vs 左对齐（这里选了居中，和首页编辑调性一致）；
+    ② 正文列宽 660px 是否偏窄；③ 文末 CTA 用「一句话 + 一个按钮」是否够；④ 上下篇用两栏卡片。
+  </div>
+  <div class="frame">
+    <div class="hdr"><div class="wrap"><div class="hdr__inner">
+      <div class="hdr__nav">
+        <span>Best sellers</span><span>Custom</span><span>Sale</span><span>New in</span>
+        <span>Necklaces</span><span>Rings</span><span>Bracelets</span><span>Gifts</span>
+        <span class="cur">Journal</span>
+      </div>
+      <div class="brand"><span class="brand__mark"></span><span class="brand__word">LASTGROVE</span></div>
+      <div class="hdr__tools"><span>⌕</span><span>○</span><span>♡</span><span>▢ 2</span></div>
+    </div></div></div>
+
+    <div class="post__head">
+      <div class="eyebrow">Materials</div>
+      <h1 class="post__title">Why PVD is not plating</h1>
+      <div class="post__meta">2 November 2026 · 2 min read</div>
+    </div>
+
+    <div class="post__cover">
+      <div class="jcard__img"><span>Cover 16:9</span></div>
+    </div>
+
+    <div class="prose">
+      <p>Plating sits on top of the metal and <strong>flakes off it</strong>. Physical vapour deposition bonds at the molecular level, so the gold layer flexes with the steel underneath. That single difference is why a $76 necklace can survive a year of salt water.</p>
+
+      <h2>What is actually happening in the chamber</h2>
+      <p>The piece goes into a vacuum chamber. A target metal is vaporised, and the vapour condenses onto the surface as a layer roughly 0.3 microns thick — about <em>one three-hundredth</em> of a human hair. Because the layer is formed atom by atom rather than glued on, there is no boundary for water to get under.</p>
+
+      <blockquote>
+        The colour is not a coating. It is the surface.
+        <cite>Studio notes, March</cite>
+      </blockquote>
+
+      <h3>What this means day to day</h3>
+      <ul>
+        <li>Pool, sea, shower, gym — the layer does not care.</li>
+        <li>Rinse in fresh water afterwards and dry with a soft cloth.</li>
+        <li>Chlorine dulls the shine before it does anything to the colour.</li>
+      </ul>
+
+      <figure>
+        <div class="jcard__img" style="aspect-ratio:3/2"><span>Inline image 3:2</span></div>
+        <figcaption>Tide glass on basalt, Hainan. The scratch line marks the high-water mark from the previous spring.</figcaption>
+      </figure>
+
+      <h2>Where plating still wins</h2>
+      <p>Cost, and only cost. A plated piece can be made for a fifth of a PVD piece at the same shape — which is why the $12 earrings on a marketplace page exist. They will look identical in the photograph. They will not look identical in <a href="#">fourteen months</a>.</p>
+
+      <hr>
+
+      <p>If the colour does change, we replace the piece. Free, for life, no receipt needed — send a photo to hello@lastgrove.com. That is the entire warranty.</p>
+    </div>
+
+    <div class="post__cta">
+      <p>The piece this article is about — 18k gold PVD over 316L, $76.</p>
+      <a class="btn">Shop the tide necklace</a>
+    </div>
+
+    <div class="post__pager">
+      <a class="pg"><span>← Previous</span><b>Reading a tide glass</b></a>
+      <a class="pg pg--next"><span>Next →</span><b>Salt water and the myth of taking it off</b></a>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ③ 后台编辑器 ============ -->
+<div class="view" id="v-adm">
+  <div class="note">
+    <b>这一屏要确认的：</b>① 分块编辑器（不做富文本悬浮工具栏）能不能接受；
+    ② 格式按钮是「插入标记」而非所见即所得，运营是否需要学；③ 阅读时长/字数放在 Section 行右侧是否够醒目；
+    ④ SEO 折叠区（这里展开）默认收起还是展开。
+  </div>
+  <div class="frame">
+    <div class="adm">
+      <div class="adm__side">
+        <div class="adm__brand">LASTGROVE · ADMIN</div>
+        <div class="adm__grp">Commerce</div>
+        <div class="adm__item">Dashboard</div>
+        <div class="adm__item">Orders <i>98</i></div>
+        <div class="adm__item">Products <i>38</i></div>
+        <div class="adm__item">Collections</div>
+        <div class="adm__item">Inventory</div>
+        <div class="adm__item">Coupons</div>
+        <div class="adm__item">Reviews <i>60</i></div>
+        <div class="adm__item">Custom requests <i>3</i></div>
+        <div class="adm__item">Customers</div>
+        <div class="adm__grp">System</div>
+        <div class="adm__item">Content</div>
+        <div class="adm__item on">Articles <i>new</i></div>
+        <div class="adm__item">Stock ledger</div>
+        <div class="adm__item">Audit log</div>
+        <div class="adm__item">Settings</div>
+      </div>
+
+      <div class="adm__main">
+        <div class="adm__hd">
+          <h2>Why PVD is not plating</h2>
+          <span class="abadge abadge--pub">Published</span>
+          <div class="sp">
+            <button class="btn btn--ghost" style="padding:9px 16px">Preview</button>
+            <button class="btn btn--ghost" style="padding:9px 16px">Save draft</button>
+            <button class="btn" style="padding:9px 18px">Update</button>
+          </div>
+        </div>
+        <div class="adm__sub">Updated 2 Nov 2026, 09:14 · by owner@lastgrove.com · last published 2 Nov 2026</div>
+
+        <div class="panel">
+          <div class="panel__hd">Article</div>
+          <div class="panel__bd">
+            <div class="fld">
+              <label>Title</label>
+              <input value="Why PVD is not plating">
+            </div>
+            <div class="grid2">
+              <div class="fld">
+                <label>Slug</label>
+                <div class="slugrow"><em>/journal/</em><input value="why-pvd-is-not-plating"></div>
+                <div class="hint">Changing this breaks existing links</div>
+              </div>
+              <div class="fld">
+                <label>Section</label>
+                <select><option>Materials</option><option>Studio</option><option>Giving</option><option>Care</option></select>
+                <div class="hint" style="text-align:left">412 words · 2 min read</div>
+              </div>
+            </div>
+            <div class="fld">
+              <label>Excerpt <span style="text-transform:none;letter-spacing:0">— shown on the list page and as the default meta description</span></label>
+              <textarea rows="2">Plating sits on top of the metal and flakes off it. PVD bonds at the molecular level — which is why a $76 necklace survives salt water.</textarea>
+              <div class="hint">128 / 200</div>
+            </div>
+            <div class="grid2">
+              <div class="fld">
+                <label>Cover image</label>
+                <div class="thumb" style="width:100%;height:152px"></div>
+                <div class="hint" style="text-align:left"><button style="color:var(--sea);border-bottom:1px solid var(--brass-l);font-size:11px">Choose image</button> · 1600×1200 recommended</div>
+              </div>
+              <div class="fld">
+                <label>Cover alt text</label>
+                <input value="Gold necklace on wet basalt">
+                <div class="hint">Required for accessibility</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel__hd">Body <span class="readout">7 blocks</span></div>
+          <div class="panel__bd">
+
+            <div class="blk">
+              <div class="blk__hd"><b>1</b> Paragraph
+                <div class="ops"><button>↑</button><button>↓</button><button>✕</button></div>
+              </div>
+              <div class="blk__b">
+                <textarea rows="3">Plating sits on top of the metal and **flakes off it**. Physical vapour deposition bonds at the molecular level, so the gold layer flexes with the steel underneath.</textarea>
+                <div class="mbar"><button>** B</button><button>* I</button><button>[ Link ]</button></div>
+              </div>
+            </div>
+
+            <div class="blk">
+              <div class="blk__hd"><b>2</b> Heading 2
+                <div class="ops"><button>↑</button><button>↓</button><button>✕</button></div>
+              </div>
+              <div class="blk__b"><textarea rows="1">What is actually happening in the chamber</textarea></div>
+            </div>
+
+            <div class="blk">
+              <div class="blk__hd"><b>3</b> Paragraph
+                <div class="ops"><button>↑</button><button>↓</button><button>✕</button></div>
+              </div>
+              <div class="blk__b">
+                <textarea rows="2">The piece goes into a vacuum chamber. A target metal is vaporised, and the vapour condenses onto the surface as a layer roughly 0.3 microns thick.</textarea>
+                <div class="mbar"><button>** B</button><button>* I</button><button>[ Link ]</button></div>
+              </div>
+            </div>
+
+            <div class="blk">
+              <div class="blk__hd"><b>4</b> Quote
+                <div class="ops"><button>↑</button><button>↓</button><button>✕</button></div>
+              </div>
+              <div class="blk__b">
+                <textarea rows="2">The colour is not a coating. It is the surface.</textarea>
+                <div class="mbar"><input style="border:1px solid var(--line-2);border-radius:2px;padding:2px 8px;font-size:10.5px;width:170px" value="Studio notes, March" placeholder="Cite (optional)"></div>
+              </div>
+            </div>
+
+            <div class="blk blk--img">
+              <div class="blk__hd"><b>5</b> Image
+                <div class="ops"><button>↑</button><button>↓</button><button>✕</button></div>
+              </div>
+              <div class="blk__b" style="display:flex;gap:14px">
+                <div class="thumb"></div>
+                <div style="flex:1">
+                  <div class="fld" style="margin-bottom:8px"><label>Alt</label><input value="Tide glass on basalt"></div>
+                  <div class="fld" style="margin-bottom:0"><label>Caption</label><input value="Hainan. The scratch marks the high-water line."></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="blk">
+              <div class="blk__hd"><b>6</b> List
+                <div class="ops"><button>↑</button><button>↓</button><button>✕</button></div>
+              </div>
+              <div class="blk__b">
+                <textarea rows="3">Pool, sea, shower, gym — the layer does not care.
+Rinse in fresh water afterwards and dry with a soft cloth.
+Chlorine dulls the shine before it does anything to the colour.</textarea>
+                <div class="hint" style="text-align:left">One item per line</div>
+              </div>
+            </div>
+
+            <div class="blk">
+              <div class="blk__hd"><b>7</b> Divider
+                <div class="ops"><button>↑</button><button>↓</button><button>✕</button></div>
+              </div>
+              <div class="blk__b"><div style="border-top:1px solid var(--line);margin:6px 0"></div></div>
+            </div>
+
+            <div class="addblk">
+              <select><option>Paragraph</option><option>Heading 2</option><option>Heading 3</option>
+                <option>Quote</option><option>List</option><option>Image</option><option>Divider</option></select>
+              <button>+ Insert block</button>
+              <span class="readout">Reading time is recalculated on save</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel__hd">SEO &amp; CTA</div>
+          <div class="panel__bd">
+            <div class="callout">Both fields fall back to Title / Excerpt when left empty. The search preview below is what Google will show.</div>
+            <div class="grid2">
+              <div>
+                <div class="fld"><label>SEO title</label><input placeholder="Why PVD is not plating — LASTGROVE"><div class="hint">0 / 60</div></div>
+                <div class="fld"><label>SEO description</label><textarea rows="3" placeholder="Falls back to the excerpt (158 chars max)"></textarea><div class="hint">0 / 158</div></div>
+              </div>
+              <div>
+                <div class="fld"><label>CTA button label</label><input value="Shop the tide necklace"></div>
+                <div class="fld"><label>CTA link</label><input value="/#/products/tide-necklace"></div>
+                <div class="fld"><label>Related product</label><select><option>Tide necklace</option><option>—</option></select></div>
+              </div>
+            </div>
+            <div style="border:1px solid var(--line);padding:12px 14px;border-radius:2px;background:#FCFAF6">
+              <div style="font-size:11px;color:#3C6E3C">lastgrove.com › journal › why-pvd-is-not-plating</div>
+              <div style="font-size:16px;color:#1a0dab;font-family:var(--sans);margin:1px 0 2px">Why PVD is not plating — LASTGROVE</div>
+              <div style="font-size:12px;color:var(--muted)">Plating sits on top of the metal and flakes off it. PVD bonds at the molecular level — which is why a $76 necklace survives salt water.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+  var btns = document.querySelectorAll('.proto nav button');
+  function show(v) {
+    btns.forEach(function (x) { x.classList.toggle('on', x.dataset.v === v); });
+    document.querySelectorAll('.view').forEach(function (x) { x.classList.remove('on'); });
+    var el = document.getElementById('v-' + v);
+    if (el) el.classList.add('on');
+  }
+  btns.forEach(function (b) {
+    b.addEventListener('click', function () {
+      show(b.dataset.v);
+      // 允许用 #list / #post / #adm 直接分享某一屏
+      history.replaceState(null, '', '#' + b.dataset.v);
+      window.scrollTo({ top: 0 });
+    });
+  });
+  show((location.hash || '').replace('#', '') || 'list');
+</script>
+</body>
+</html>
