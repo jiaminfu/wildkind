@@ -6,6 +6,7 @@
    ============================================================ */
 'use strict';
 const { E } = require('./http');
+const { normalizeState } = require('./us-states');
 
 const round2 = n => Math.round((Number(n) || 0) * 100) / 100;
 
@@ -166,7 +167,27 @@ function giftFor(db, afterDiscount) {
   };
 }
 
-/* 完整定价。options.shippingMethod 缺省 Standard。 */
+/* 销售税。
+   美国销售税是 destination-based：按**收货州**的税率代收。
+   跨州卖家只有在某州达到经济门槛（nexus，各州 $100k~$500k 不等）后才有代收义务，
+   所以这里不是"全州都收"，而是"rates 里配了税率的州才收"。
+   没配的州一律 0 —— 宁可少收（可以事后补申报），不可错收（错收要退款，退比收难十倍）。
+
+   税率由后台维护，因为州+地方的合并税率每年都变，写死在代码里等于半年后全是错的。
+   没有按 ZIP 精确到地方税（那需要第三方税务服务），所以后台填的应当是
+   该州的**加权平均合并税率**，并在申报时以实际税率为准。 */
+function taxFor(db, taxableBase, state) {
+  const t = (db.settings && db.settings.tax) || {};
+  const base = round2(taxableBase || 0);
+  if (!t.enabled) return { amount: 0, rate: 0, state: '', base };
+  const code = normalizeState(state);
+  if (!code) return { amount: 0, rate: 0, state: '', base };
+  const rate = Number((t.rates || {})[code]) || 0;
+  if (rate <= 0) return { amount: 0, rate: 0, state: code, base };
+  return { amount: round2(base * rate), rate, state: code, base };
+}
+
+/* 完整定价。options.shippingMethod 缺省 Standard；options.state 是收货州。 */
 function quote(db, items, options) {
   const opts = options || {};
   const lines = normalizeItems(db, items);
@@ -179,7 +200,13 @@ function quote(db, items, options) {
   const method = opts.shippingMethod === 'Express' ? 'Express' : 'Standard';
   const shipping = shippingFor(db, method, afterDiscount);
   const gift = giftFor(db, afterDiscount);
-  const total = round2(afterDiscount + shipping);
+
+  /* 运费是否计税各州不同（有的州计、有的不计），后台可切。
+     缺省计税（多数州如此），漏收的风险大于多收 —— 多收的部分退给客户即可。 */
+  const taxShip = !((db.settings.tax || {}).shipTaxable === false);
+  const tax = taxFor(db, round2(afterDiscount + (taxShip ? shipping : 0)), opts.state);
+
+  const total = round2(afterDiscount + shipping + tax.amount);
 
   return {
     lines,
@@ -190,6 +217,10 @@ function quote(db, items, options) {
     afterDiscount,
     shippingMethod: method,
     shipping,
+    tax: tax.amount,
+    taxRate: tax.rate,
+    taxState: tax.state,
+    taxableBase: tax.base,
     total,
     giftGap: Math.max(0, round2(db.giftRule.threshold - afterDiscount)),
     freeShipGap: Math.max(0, round2(db.settings.freeShip - afterDiscount)),
@@ -201,5 +232,5 @@ function quote(db, items, options) {
 
 module.exports = {
   round2, findProduct, findVariant, unitPrice, totalStock,
-  normalizeItems, assertStock, resolveCoupon, discountFor, shippingFor, giftFor, quote,
+  normalizeItems, assertStock, resolveCoupon, discountFor, shippingFor, giftFor, taxFor, quote,
 };

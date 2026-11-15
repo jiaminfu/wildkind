@@ -192,11 +192,41 @@ function writeFile(req, res, file, st, opts) {
    设短了又等于每次回访都重新下载 230 KB。
    服务端在返回 HTML 时把 assets/xxx?v=<mtime> 补上，
    JS/CSS 就能放心用一年的 immutable 缓存。 */
-let htmlCache = { mtime: 0, html: '', gz: null };
+let htmlCache = { mtime: 0, stamp: 0, html: '', gz: null };
+
+/* assets 目录的最新修改时间。
+   为什么需要它：下面这段 ?v=<mtime> 的版本号是从**文件自身**的 mtime 算出来的，
+   但整段 HTML 只在 index.html 变了才重建。于是只改 JS/CSS 时，
+   HTML 里那份 ?v= 还是旧的，浏览器按 immutable 缓存直接吃老的 ——
+   表现是"改了代码刷新没变化"，很容易误判成逻辑没生效。
+   线上部署因为 index.html 每次都会重写（mtime 变）所以碰巧没事，
+   本地热改就不行。这里把 assets 的指纹也纳入缓存键。
+   目录很小（10 来个文件），并且结果缓存 1 秒，不会成为热点。 */
+let stampCache = { at: 0, value: 0 };
+function assetsStamp() {
+  const now = Date.now();
+  if (now - stampCache.at < 1000) return stampCache.value;
+  let max = 0;
+  ['js', 'css'].forEach(d => {
+    const dir = path.join(WEB_DIR, 'assets', d);
+    let files = [];
+    try { files = fs.readdirSync(dir); } catch (e) { return; }
+    for (const f of files) {
+      try {
+        const st = fs.statSync(path.join(dir, f));
+        if (st.isFile() && st.mtimeMs > max) max = st.mtimeMs;
+      } catch (e) { }
+    }
+  });
+  stampCache = { at: now, value: max };
+  return max;
+}
+
 function renderIndex(req, res) {
   const file = path.join(WEB_DIR, 'index.html');
   const st = fs.statSync(file);
-  if (htmlCache.mtime !== st.mtimeMs) {
+  const stamp = assetsStamp();
+  if (htmlCache.mtime !== st.mtimeMs || htmlCache.stamp !== stamp) {
     let html = fs.readFileSync(file, 'utf8');
     html = html.replace(/(src|href)="assets\/([^"]+)"/g, (m, attr, rel) => {
       try {
@@ -205,7 +235,7 @@ function renderIndex(req, res) {
         return attr + '="assets/' + rel + (rel.indexOf('?') >= 0 ? '&' : '?') + 'v=' + Math.floor(ms).toString(36) + '"';
       } catch (e) { return m; }
     });
-    htmlCache = { mtime: st.mtimeMs, html, gz: zlib.gzipSync(html, { level: 6 }) };
+    htmlCache = { mtime: st.mtimeMs, stamp, html, gz: zlib.gzipSync(html, { level: 6 }) };
   }
   const body = acceptsGzip(req) ? htmlCache.gz : Buffer.from(htmlCache.html);
   const headers = {

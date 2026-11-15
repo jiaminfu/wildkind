@@ -84,6 +84,13 @@ function buildOrder(d, ctx) {
     subtotal: fresh.subtotal,
     shipping: fresh.shipping,
     discount: fresh.discount,
+    /* 销售税单独落三个字段，不要只把税混进 total。
+       申报时要按州汇总，只有 total 的话以后一笔也算不出来。
+       taxRate 存成交时的税率，不要读当前配置——税率改了之后，
+       历史订单的税额必须还能对得上。 */
+    tax: fresh.tax,
+    taxRate: fresh.taxRate,
+    taxState: fresh.taxState,
     total: fresh.total,
     address: customer.address,
     shippingMethod: fresh.shippingMethod,
@@ -199,6 +206,9 @@ function routes(router) {
     const q = pricing.quote(db, b.items, {
       couponCode: b.couponCode || '',
       shippingMethod: b.shippingMethod || 'Standard',
+      /* 收货州决定销售税。结算页在州填完后会带上来重新报价；
+         没带就是 0 税（境外地址、或还没填），此时订单也不收税，两者一致。 */
+      state: b.state || '',
     });
     const quote = {
       id: 'Q' + crypto.randomBytes(9).toString('hex'),
@@ -214,6 +224,9 @@ function routes(router) {
       subtotal: q.subtotal,
       discount: q.discount,
       shipping: q.shipping,
+      tax: q.tax,
+      taxRate: q.taxRate,
+      taxState: q.taxState,
       total: q.total,
     };
     db.quotes.push(quote);
@@ -229,6 +242,9 @@ function routes(router) {
       subtotal: quote.subtotal,
       discount: quote.discount,
       shipping: quote.shipping,
+      tax: quote.tax,
+      taxRate: quote.taxRate,
+      taxState: quote.taxState,
       total: quote.total,
       shippingMethod: quote.shippingMethod,
       couponCode: quote.couponCode,
@@ -262,15 +278,30 @@ function routes(router) {
     }
 
     /* 重新校验库存与优惠券：报价是 15 分钟前的快照，这期间可能已被别人买走。
-       不一致就要求重新报价，不静默改金额。 */
+       不一致就要求重新报价，不静默改金额。
+
+       税也在这里重算，而且**用订单上的收货州**，不信报价里那个：
+       报价时的州是前端传的，可以被改；下单时的州来自地址表单，是要落库的那份。
+       两者不一致（客户改过地址）就会触发下面的 PRICE_CHANGED，
+       让他再确认一次金额 —— 这正是我们要的行为。 */
     const fresh = pricing.quote(db, quote.lines.map(l => ({
       productId: l.productId, metal: l.metal, size: l.size, qty: l.qty,
-    })), { couponCode: quote.couponCode, shippingMethod: quote.shippingMethod });
+    })), {
+      couponCode: quote.couponCode,
+      shippingMethod: quote.shippingMethod,
+      state: (customer.address || {}).state || '',
+    });
 
     if (Math.abs(fresh.total - quote.total) > 0.005) {
       throw E.unprocessable('PRICE_CHANGED',
         'Your total changed since you last reviewed it. Please confirm the new total.',
-        { quoted: quote.total, current: fresh.total, quoteId: quote.id });
+        /* 把差额拆开告诉前端：是商品价变了、运费变了，还是刚加上税。
+           只说「价格变了」，客户会以为涨价；明说是税，他知道这是按州代收。 */
+        {
+          quoted: quote.total, current: fresh.total, quoteId: quote.id,
+          quotedTax: quote.tax || 0, currentTax: fresh.tax || 0,
+          taxState: fresh.taxState || '',
+        });
     }
 
     /* 支付会话。mock 通道同步返回「已付」；真实通道返回 clientSecret / 跳转链接，

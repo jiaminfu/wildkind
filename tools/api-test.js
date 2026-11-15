@@ -7,6 +7,11 @@
 'use strict';
 const BASE = process.argv[2] || 'http://localhost:4600';
 
+/* 幂等键必须每次运行都不同。写死 'test-key-1' 的话，第二遍运行会命中上一轮
+   那张已经退款的订单：重放拿回旧单、状态流转 409、退款 409 —— 一连串假红，
+   查半天才发现是测试自己踩了自己。 */
+const IDEM = 'apitest-' + Date.now();
+
 let pass = 0, fail = 0;
 const failures = [];
 function chk(name, cond, extra) {
@@ -46,7 +51,11 @@ async function call(method, path, body, headers) {
   section('1 健康检查与目录');
   const health = await call('GET', '/api/v1/health');
   chk('健康检查 200', health.status === 200, 'status=' + health.status);
-  chk('返回商品总数', health.body && health.body.data.products === 36, health.body && health.body.data.products);
+  /* 商品总数不写死：调价、上新、下架都会让它变。
+     写死数字的结果是「数据一变回归就红」，红的还不是代码问题，
+     久了我自己也不看这份报告了。改为与商品接口的口径互相印证。 */
+  const TOTAL_PRODUCTS = health.body && health.body.data.products;
+  chk('返回商品总数', typeof TOTAL_PRODUCTS === 'number' && TOTAL_PRODUCTS > 0, TOTAL_PRODUCTS);
 
   const boot = await call('GET', '/api/v1/bootstrap');
   chk('bootstrap 200', boot.status === 200);
@@ -77,6 +86,17 @@ async function call(method, path, body, headers) {
 
   /* ---------- 2. 报价 ---------- */
   section('2 报价与定价规则');
+  /* 单价不写死。调一次价、上下架一款，写死的断言就变红，红的还不是代码问题。
+     这里从商品接口现取，测试跟着数据走；断言的是「算式对不对」而不是「数据长什么样」。 */
+  const catalog = (await call('GET', '/api/v1/products?limit=48')).body.data;
+  const unitOf = id => (catalog.find(p => p.id === id) || {}).price;
+  const P101 = unitOf('LG-101');
+  const P102 = unitOf('LG-102');
+  chk('能取到两款测试商品的价格', typeof P101 === 'number' && typeof P102 === 'number',
+    'LG-101=$' + P101 + ' LG-102=$' + P102);
+  const EXP_SUB = Math.round((P101 + P102) * 100) / 100;   // 小计
+  const EXP_DISC = Math.round(EXP_SUB * 10) / 100;         // LASTGROVE10 打 10%
+
   const items = [
     { productId: 'LG-101', metal: 'Gold', qty: 1 },
     { productId: 'LG-102', metal: 'Silver', qty: 1 },
@@ -84,10 +104,14 @@ async function call(method, path, body, headers) {
   const q1 = await call('POST', '/api/v1/checkout/quote', { items });
   chk('报价 200', q1.status === 200, q1.body.error && q1.body.error.message);
   chk('返回 quoteId', /^Q[a-f0-9]{18}$/.test(q1.body.data.quoteId), q1.body.data.quoteId);
-  chk('小计 = 82 + 76', q1.body.data.subtotal === 158, q1.body.data.subtotal);
+  chk('小计 = ' + P101 + ' + ' + P102, q1.body.data.subtotal === EXP_SUB, q1.body.data.subtotal);
   chk('满 $95 免标准运费', q1.body.data.shipping === 0, q1.body.data.shipping);
   chk('满 $120 带赠品', !!q1.body.data.gift, q1.body.data.gift && q1.body.data.gift.title);
-  chk('合计 = 小计', q1.body.data.total === 158, q1.body.data.total);
+  /* 不带州 → 不收税，所以合计必然等于小计。断言「合计=小计+税」这个恒等式，
+     而不是断言一个具体数字：加了税、改了免税门槛，这条仍然有意义。 */
+  chk('合计 = 小计 + 税', q1.body.data.total === Math.round((q1.body.data.subtotal +
+    (q1.body.data.tax || 0)) * 100) / 100, q1.body.data.total + ' (tax=' + (q1.body.data.tax || 0) + ')');
+  chk('未指定州不收税', !q1.body.data.tax, '$' + (q1.body.data.tax || 0));
 
   const qx = await call('POST', '/api/v1/checkout/quote', { items, shippingMethod: 'Express' });
   chk('Express 运费 $18', qx.body.data.shipping === 18, qx.body.data.shipping);
@@ -95,7 +119,7 @@ async function call(method, path, body, headers) {
   const bogusPrice = await call('POST', '/api/v1/checkout/quote', {
     items: [{ productId: 'LG-101', metal: 'Gold', qty: 1, unitPrice: 1, lineTotal: 1 }],
   });
-  chk('前端伪造价格被忽略', bogusPrice.body.data.subtotal === 82, bogusPrice.body.data.subtotal);
+  chk('前端伪造价格被忽略', bogusPrice.body.data.subtotal === P101, bogusPrice.body.data.subtotal);
 
   const oos = await call('POST', '/api/v1/checkout/quote', {
     items: [{ productId: 'LG-101', metal: 'Gold', qty: 99 }],
@@ -105,7 +129,7 @@ async function call(method, path, body, headers) {
 
   const couponOk = await call('POST', '/api/v1/coupons/validate', { code: 'LASTGROVE10', items });
   chk('优惠码校验 200', couponOk.status === 200);
-  chk('10% 折扣 = 15.8', couponOk.body.data.discount === 15.8, couponOk.body.data.discount);
+  chk('10% 折扣 = ' + EXP_DISC, couponOk.body.data.discount === EXP_DISC, couponOk.body.data.discount);
 
   const couponMin = await call('POST', '/api/v1/coupons/validate', {
     code: 'WELCOME15', items: [{ productId: 'LG-101', metal: 'Gold', qty: 1 }],
@@ -133,6 +157,9 @@ async function call(method, path, body, headers) {
   const q2 = await call('POST', '/api/v1/checkout/quote', {
     items: [{ productId: 'LG-101', metal: 'Gold', qty: 2 }],
     couponCode: 'LASTGROVE10',
+    /* 必须带收货州：销售税按州算。报价不带州、下单地址带州时，
+       服务端会判「金额变了」并拒单。真实前端也是这么传的（app.js → quoteNow）。 */
+    state: 'TX',
   });
   const quoteId = q2.body.data.quoteId;
 
@@ -157,7 +184,7 @@ async function call(method, path, body, headers) {
     address: { line1: '1 Main St', city: 'Austin', state: 'TX', zip: '78701', country: 'United States' },
     payment: { last4: '4242' },
   };
-  const created = await call('POST', '/api/v1/orders', payload, { 'Idempotency-Key': 'test-key-1' });
+  const created = await call('POST', '/api/v1/orders', payload, { 'Idempotency-Key': IDEM });
   chk('下单 201', created.status === 201, created.body.error && created.body.error.message);
   const order = created.body.data.order;
   chk('单号格式 #TGxxxx', /^#TG\d+$/.test(order.number), order.number);
@@ -171,11 +198,11 @@ async function call(method, path, body, headers) {
     .body.data.product.variants.find(v => v.metal === 'Gold').stock;
   chk('库存按数量扣减', afterStock === beforeStock - 2, beforeStock + ' → ' + afterStock);
 
-  const replay = await call('POST', '/api/v1/orders', payload, { 'Idempotency-Key': 'test-key-1' });
+  const replay = await call('POST', '/api/v1/orders', payload, { 'Idempotency-Key': IDEM });
   chk('同幂等键重放不再建单', replay.status === 200 && replay.body.data.replayed === true &&
     replay.body.data.order.number === order.number, replay.body.data.order.number);
 
-  const reuseQuote = await call('POST', '/api/v1/orders', payload, { 'Idempotency-Key': 'test-key-2' });
+  const reuseQuote = await call('POST', '/api/v1/orders', payload, { 'Idempotency-Key': IDEM + '-2' });
   chk('报价用后失效', reuseQuote.status === 422 && reuseQuote.body.error.code === 'QUOTE_REQUIRED');
 
   /* ---------- 4. 查单 ---------- */
@@ -287,7 +314,8 @@ async function call(method, path, body, headers) {
   /* ---------- 8. 商品与库存 ---------- */
   section('8 商品编辑与补货');
   const prods = await call('GET', '/api/v1/admin/products', undefined, AUTH);
-  chk('后台商品列表 200', prods.status === 200 && prods.body.data.length === 36);
+  chk('后台商品列表 200', prods.status === 200 && prods.body.data.length === TOTAL_PRODUCTS,
+    prods.body.data.length + ' / 目录 ' + TOTAL_PRODUCTS);
   const p0 = prods.body.data[0];
 
   const badPrice = await call('PATCH', '/api/v1/admin/products/' + p0.id, { price: -5 }, AUTH);
@@ -416,6 +444,67 @@ async function call(method, path, body, headers) {
   chk('状态流转 new → quoted', q.status === 200 && q.body.data.request.status === 'quoted');
   const back = await call('PATCH', '/api/v1/admin/custom-requests/' + reqId, { status: 'new' }, AUTH);
   chk('状态不可回退 409', back.status === 409 && back.body.error.code === 'BAD_TRANSITION', back.status);
+
+  /* ---------- 9e. 销售税 ----------
+     这块的核心风险不是"算错"，而是"错收"：多收一笔税，退款比收钱难十倍，
+     还要给州里做修正申报。所以断言重点在两处：
+       1) 只对已注册的州收税，别的州一分不能收；
+       2) 报价用的州和下单地址的州不一致时必须拒单，而不是将错就错。 */
+  section('9e 销售税');
+  const taxOn = await call('PATCH', '/api/v1/admin/settings',
+    { tax: { enabled: true, rates: { California: '7.25' } } }, AUTH);
+  chk('配置加州 7.25%（填百分数）', taxOn.status === 200 &&
+    taxOn.body.data.settings.tax.rates.CA === 0.0725,
+    JSON.stringify(taxOn.body.data.settings.tax && taxOn.body.data.settings.tax.rates));
+
+  const oneItem = [{ productId: 'LG-101', metal: 'Gold', qty: 1 }];
+  const qBase = await call('POST', '/api/v1/checkout/quote', { items: oneItem, state: 'CA' });
+  /* 应税基数由服务端算（含运费与否取决于 shipTaxable），测试这边按
+     "小计 - 折扣 + 运费" 独立推一遍，两边对上才算真的对。 */
+  const caBase = Math.round((qBase.body.data.subtotal - (qBase.body.data.discount || 0) +
+    qBase.body.data.shipping) * 100) / 100;
+  const expCaTax = Math.round(caBase * 0.0725 * 100) / 100;
+  chk('加州税率回传 0.0725', qBase.body.data.taxRate === 0.0725 && qBase.body.data.taxState === 'CA',
+    qBase.body.data.taxState + ' @ ' + qBase.body.data.taxRate);
+  chk('加州税额 = 应税基数 × 7.25%', qBase.body.data.tax === expCaTax,
+    '$' + qBase.body.data.tax + '（应为 $' + expCaTax + '，基数 $' + caBase + '）');
+  chk('合计 = 小计 - 折扣 + 运费 + 税',
+    qBase.body.data.total === Math.round((qBase.body.data.subtotal - (qBase.body.data.discount || 0) +
+      qBase.body.data.shipping + qBase.body.data.tax) * 100) / 100, qBase.body.data.total);
+
+  const qName = await call('POST', '/api/v1/checkout/quote', { items: oneItem, state: 'California' });
+  chk('州名 California 归一到 CA', qName.body.data.taxState === 'CA' && qName.body.data.tax === expCaTax,
+    qName.body.data.taxState + ' / $' + qName.body.data.tax);
+  const qOr = await call('POST', '/api/v1/checkout/quote', { items: oneItem, state: 'Oregon' });
+  chk('未注册州（OR）不收税', !qOr.body.data.tax && qOr.body.data.taxState === 'OR',
+    '$' + (qOr.body.data.tax || 0));
+
+  const qNowhere = await call('POST', '/api/v1/checkout/quote', { items: oneItem, state: 'Atlantis' });
+  chk('看不懂的州名既不收税也不报错', !qNowhere.body.data.tax && qNowhere.body.data.taxState === '',
+    qNowhere.status + ' / "' + qNowhere.body.data.taxState + '"');
+
+  /* 报价按 CA、地址按 NY：税额会变，必须拒单让前端重报，
+     而不是按报价那笔收钱、按 NY 记账。 */
+  const mismatched = await call('POST', '/api/v1/orders', {
+    quoteId: qBase.body.data.quoteId,
+    email: 'apitest@example.com', firstName: 'Tax', lastName: 'Mismatch',
+    address: { line1: '1 Broadway', city: 'New York', state: 'NY', zip: '10001', country: 'United States' },
+  }, { 'Idempotency-Key': IDEM + '-tax' });
+  chk('报价州与收货州不一致被拒', mismatched.status === 422 &&
+    mismatched.body.error.code === 'PRICE_CHANGED',
+    mismatched.status + ' / ' + (mismatched.body.error && mismatched.body.error.code));
+
+  const taxReport = await call('GET', '/api/v1/admin/tax/report', undefined, AUTH);
+  chk('申报报表 200 且按州汇总', taxReport.status === 200 &&
+    Array.isArray(taxReport.body.data.byState) && Array.isArray(taxReport.body.data.byMonth));
+  const taxCsv = await call('GET', '/api/v1/admin/export/tax.csv', undefined, AUTH);
+  chk('申报 CSV 可导出', taxCsv.status === 200);
+
+  /* 恢复：测试跑完把税关掉，否则后面的订单会莫名其妙多出一笔税 */
+  const taxOff = await call('PATCH', '/api/v1/admin/settings',
+    { tax: { enabled: false, rates: {} } }, AUTH);
+  chk('测试后恢复为关闭', taxOff.status === 200 && taxOff.body.data.settings.tax.enabled === false &&
+    Object.keys(taxOff.body.data.settings.tax.rates).length === 0);
 
   /* ---------- 10. 错误与安全 ---------- */
   section('10 错误处理与安全');

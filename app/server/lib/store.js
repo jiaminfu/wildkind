@@ -25,6 +25,17 @@ function normalize(d) {
   }
   if (!Array.isArray(d.customRequests)) d.customRequests = [];
   if (!d.sequences) d.sequences = {};
+
+  /* 销售税配置。默认关闭：没配税率之前一分钱税都不收，
+     这是有意的 —— 错收税的代价（退款 + 客户投诉 + 各州申报口径不一）
+     远大于晚收几天。后台打开开关并填好税率后才生效。 */
+  if (!d.settings.tax || typeof d.settings.tax !== 'object') {
+    d.settings.tax = { enabled: false, rates: {}, shipTaxable: true, note: '' };
+  }
+  if (!d.settings.tax.rates || typeof d.settings.tax.rates !== 'object') d.settings.tax.rates = {};
+  if (typeof d.settings.tax.enabled !== 'boolean') d.settings.tax.enabled = false;
+  if (typeof d.settings.tax.shipTaxable !== 'boolean') d.settings.tax.shipTaxable = true;
+
   return d;
 }
 

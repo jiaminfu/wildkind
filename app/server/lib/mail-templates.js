@@ -117,6 +117,9 @@ function itemsTable(order) {
     line('Subtotal', money(order.subtotal)) +
     (order.discount ? line('Discount' + (order.couponCode ? ' · ' + order.couponCode : ''), '−' + money(order.discount)) : '') +
     line('Shipping' + (order.shippingMethod ? ' · ' + order.shippingMethod : ''), order.shipping ? money(order.shipping) : 'Free') +
+    /* 税额必须单列。少了这一行，客户看到 Subtotal 和 Total 对不上，
+       第一反应是"被多收了钱"，然后发邮件来问 —— 一封本可以避免的客服信。 */
+    (order.tax ? line('Tax' + (order.taxState ? ' · ' + order.taxState : ''), money(order.tax)) : '') +
     line('Total paid', money(order.total), true) +
     '</table>';
 }
@@ -175,6 +178,7 @@ function confirmed(order, opts) {
       'Subtotal ' + money(order.subtotal),
       (order.discount ? 'Discount −' + money(order.discount) : null),
       'Shipping ' + (order.shipping ? money(order.shipping) : 'Free'),
+      (order.tax ? 'Tax' + (order.taxState ? ' (' + order.taxState + ')' : '') + ' ' + money(order.tax) : null),
       'Total paid ' + money(order.total),
       '',
       'Shipping to:',

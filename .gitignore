@@ -53,3 +53,6 @@ tmp_qa/
 # ---------- 回归截图与本地诊断产物 ----------
 tmp_pp/
 tmp_e2e/
+app/server/data/db.bak-*
+app/server/data/db.pre-test.json
+app/server/data/*.tmp

@@ -555,7 +555,7 @@
       '<div class="co__block"><h3>Delivery address</h3>' +
       field('firstName', 'First name', 'required') + field('lastName', 'Last name', 'required') +
       field('line1', 'Address', 'required placeholder="Street and number"') +
-      field('city', 'City', 'required') + field('state', 'State / Province', 'required') +
+      field('city', 'City', 'required') + field('state', 'State / Province', 'required data-act="co-state" list="usStates"') +
       field('zip', 'ZIP / Postcode', 'required') +
       '<div class="fld"><label>Country</label><select name="country">' +
       ['United States', 'Canada', 'United Kingdom'].map(function (c) {
@@ -568,7 +568,12 @@
 
       '<div class="co__block"><h3>Payment</h3>' + payOption(pay, quote ? quote.total : S.totals().total) + '</div>' +
       (err ? '<div class="falert">' + esc(err.message) + '</div>' : '') + detailList +
-      '<button class="btn btn--full" type="submit">' + payCta(pay, quote ? quote.total : S.totals().total) + '</button>' +
+      /* 按钮上的金额必须跟摘要里的 Total 一致。
+         客户改州之后 Total 会变（加了税），按钮如果还写着旧金额，
+         他会以为「实际只扣这个数」，到扣款时才发现多了 —— 这是最伤信任的一种不一致。 */
+      '<button class="btn btn--full" type="submit" id="payCta" data-provider="' +
+        esc((pay || {}).provider || '') + '">' +
+        payCta(pay, quote ? quote.total : S.totals().total) + '</button>' +
       '<p class="drawer__note" style="margin-top:12px">Free returns within 30 days · Duties included</p>';
 
     var summary = '<div class="paysum"><h4>Order summary</h4>' + lines +
@@ -576,7 +581,13 @@
       '<div class="sum__row"><span>Subtotal</span><span>' + money(quote ? quote.subtotal : S.totals().subtotal) + '</span></div>' +
       (quote && quote.discount ? '<div class="sum__row disc"><span>Discount</span><span>−' + money(quote.discount) + '</span></div>' : '') +
       '<div class="sum__row"><span>Shipping</span><span>' + (quote && quote.shipping ? money(quote.shipping) : 'Free') + '</span></div>' +
-      '<div class="sum__row tot"><span>Total</span><span>' + money(quote ? quote.total : S.totals().total) + '</span></div>' +
+      /* 税行永远在 DOM 里，只是没税时隐藏。
+         这样客户在州字段里改地址时，前端只需就地改这两个 <span> 的文本，
+         不用重渲染整页 —— 重渲染会把已填的姓名地址全清掉。 */
+      '<div class="sum__row" id="sumTaxRow"' + (quote && quote.tax ? '' : ' hidden') + '>' +
+        '<span id="sumTaxLabel">Tax' + (quote && quote.taxState ? ' (' + esc(quote.taxState) + ')' : '') + '</span>' +
+        '<span id="sumTax">' + (quote && quote.tax ? money(quote.tax) : '') + '</span></div>' +
+      '<div class="sum__row tot"><span>Total</span><span id="sumTotal">' + money(quote ? quote.total : S.totals().total) + '</span></div>' +
       '</div>' +
       (S.state.coupon
         ? '<div class="coupon-applied"><span>Code <b>' + esc(S.state.coupon.code) + '</b> applied</span><button data-act="rm-coupon">Remove</button></div>'
@@ -584,8 +595,19 @@
       '</div>';
 
     return '<div class="wrap"><div class="collhead"><h1>Checkout</h1></div>' +
+      '<datalist id="usStates">' +
+        US_STATE_CODES.map(function (c) { return '<option value="' + c + '">'; }).join('') +
+      '</datalist>' +
       '<form class="co" data-act="place"><div>' + left + '</div>' + summary + '</form></div>';
   }
+
+  /* 结算页州字段的候选值。用 datalist 而不是 <select>：
+     本站也发加拿大和英国，硬做成美国州下拉会让那部分客户填不进去。
+     datalist 既能补全又不挡手输，服务端再统一归一化成两位州码。 */
+  var US_STATE_CODES = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'DC', 'FL',
+    'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN',
+    'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR',
+    'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'];
 
   function shipOption(name, sub, current) {
     var sel = (current || 'Standard') === name;
@@ -668,6 +690,7 @@
       '<div class="sum__row"><span>Subtotal</span><span>' + money(o.subtotal) + '</span></div>' +
       (o.discount ? '<div class="sum__row disc"><span>Discount</span><span>−' + money(o.discount) + '</span></div>' : '') +
       '<div class="sum__row"><span>Shipping</span><span>' + (o.shipping ? money(o.shipping) : 'Free') + '</span></div>' +
+      (o.tax ? '<div class="sum__row"><span>Tax' + (o.taxState ? ' (' + esc(o.taxState) + ')' : '') + '</span><span>' + money(o.tax) + '</span></div>' : '') +
       '<div class="sum__row tot"><span>Total paid</span><span>' + money(o.total) + '</span></div></div></div>' +
       '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:22px">' +
       '<a class="btn" href="#/account/lookup?number=' + encodeURIComponent(o.number) + '&email=' + encodeURIComponent(o.email) + '">Track this order</a>' +
@@ -701,7 +724,11 @@
         '<div class="paysum"><h4>Items</h4>' + rows +
         '<div class="sum" style="margin-top:12px">' +
         '<div class="sum__row"><span>Subtotal</span><span>' + money(order.subtotal) + '</span></div>' +
+        /* 折扣行以前在查单页是漏的：客户看到 Subtotal 加 Shipping 对不上 Total，
+           会以为多收了钱。金额行必须一行不差地跟下单页一致。 */
+        (order.discount ? '<div class="sum__row disc"><span>Discount</span><span>−' + money(order.discount) + '</span></div>' : '') +
         '<div class="sum__row"><span>Shipping</span><span>' + (order.shipping ? money(order.shipping) : 'Free') + '</span></div>' +
+        (order.tax ? '<div class="sum__row"><span>Tax' + (order.taxState ? ' (' + esc(order.taxState) + ')' : '') + '</span><span>' + money(order.tax) + '</span></div>' : '') +
         '<div class="sum__row tot"><span>Total</span><span>' + money(order.total) + '</span></div></div></div>' +
         '<a class="link-u" href="#/account/lookup" style="display:inline-block;margin-top:20px">Look up another order</a></div>';
     }
@@ -726,5 +753,6 @@
     checkout: checkout, orderDone: orderDone, lookup: lookup, notFound: notFound,
     search: search, wishlist: wishlist,
     METALS: METALS, PRICES: PRICES, SORTS: SORTS,
+    payCta: payCta,
   };
 })();

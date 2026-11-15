@@ -13,7 +13,7 @@
     { g: 'Overview', items: [['', 'Dashboard'], ['orders', 'Orders']] },
     { g: 'Catalog', items: [['products', 'Products'], ['collections', 'Collections'], ['inventory', 'Inventory']] },
     { g: 'Growth', items: [['coupons', 'Coupons'], ['reviews', 'Reviews'], ['custom', 'Custom requests'], ['customers', 'Customers']] },
-    { g: 'System', items: [['content', 'Content'], ['ledger', 'Stock ledger'], ['audit', 'Audit log'], ['settings', 'Settings']] },
+    { g: 'System', items: [['content', 'Content'], ['ledger', 'Stock ledger'], ['tax', 'Sales tax'], ['audit', 'Audit log'], ['settings', 'Settings']] },
   ];
 
   function shell(body, active, title, staff) {
@@ -461,7 +461,121 @@
       '<label class="afld" style="flex-direction:row;align-items:center;gap:10px">' +
       '<input type="checkbox" name="storeOpen"' + (s.storeOpen ? ' checked' : '') + ' style="width:auto"> <span>Store is accepting orders</span></label>' +
       '<button class="btn" type="submit">Save settings</button>' +
+      '</form></div></div>' +
+      taxPanel(s.tax || {} );
+  }
+
+  /* ---------------- 销售税配置 ----------------
+     税率用 textarea 一行一州，而不是动态增删行：
+     ① 运营可以直接从别处粘一列进来；② 少一套 DOM 增删逻辑就少一类 bug；
+     ③ 哪一行写错，报错能指到具体那一行。 */
+  function taxPanel(t) {
+    var rates = t.rates || {};
+    var lines = Object.keys(rates).sort().map(function (k) {
+      return k + ' ' + (Math.round(rates[k] * 1000000) / 10000);
+    }).join('\n');
+
+    return '<div class="panel"><div class="panel__hd"><h2>Sales tax</h2>' +
+      '<span class="sub">Collected by shipping state — only the states listed below</span></div>' +
+      '<div class="panel__bd">' +
+      '<div class="acallout">' +
+      '<b>Only list states where you are registered.</b> US sales tax is collected by destination state, ' +
+      'and you only have to collect once you pass that state\u2019s economic nexus threshold. ' +
+      'Collecting in a state where you are not registered means you owe the money to nobody and refund it to the customer — ' +
+      'which is worse than collecting nothing.' +
+      '</div>' +
+      '<form data-act="savetax" class="cform cform--2">' +
+      '<label class="afld" style="flex-direction:row;align-items:center;gap:10px">' +
+      '<input type="checkbox" name="enabled"' + (t.enabled ? ' checked' : '') + ' style="width:auto"> ' +
+      '<span>Collect sales tax at checkout</span></label>' +
+      '<label class="afld" style="flex-direction:row;align-items:center;gap:10px">' +
+      '<input type="checkbox" name="shipTaxable"' + (t.shipTaxable !== false ? ' checked' : '') + ' style="width:auto"> ' +
+      '<span>Shipping is taxable in these states</span></label>' +
+      '<label class="afld afld--full"><span>Rates — one state per line</span>' +
+      '<textarea name="rates" rows="7" spellcheck="false" placeholder="CA 7.25&#10;NY 8.00&#10;TX 8.25">' + U.esc(lines) + '</textarea></label>' +
+      '<p class="hint hint--full">Two-letter code, then the rate in percent. ' +
+      'Use the combined state + local average rate for that state — we do not calculate county or city tax separately.</p>' +
+      '<label class="afld afld--full"><span>Internal note</span><input name="note" value="' + U.esc(t.note || '') + '"></label>' +
+      '<button class="btn afld--full" type="submit" style="justify-self:start">Save tax settings</button>' +
       '</form></div></div>';
+  }
+
+  /* ---------------- 销售税申报 ----------------
+     这一页的目标很具体：把报税这件事从「翻订单」变成「打开一页、点导出」。 */
+  function tax(d) {
+    var t = d.totals || {};
+    var cfg = d.config || {};
+    var on = !!cfg.enabled;
+
+    function row(r) {
+      return '<tr><td><b>' + U.esc(r.state) + '</b></td>' +
+        '<td class="num">' + r.orders + '</td>' +
+        '<td class="num">' + U.money(r.sales) + '</td>' +
+        '<td class="num"><b>' + U.money(r.tax) + '</b></td></tr>';
+    }
+
+    var stateRows = (d.byState || []).map(row).join('');
+    var monthRows = (d.byMonth || []).map(function (r) {
+      return '<tr><td>' + U.esc(r.period) + '</td><td><b>' + U.esc(r.state) + '</b></td>' +
+        '<td class="num">' + r.orders + '</td>' +
+        '<td class="num">' + U.money(r.sales) + '</td>' +
+        '<td class="num">' + U.money(r.tax) + '</td></tr>';
+    }).join('');
+
+    var empty = !(d.byState || []).length;
+    var qs = 'from=' + encodeURIComponent(d.from) + '&to=' + encodeURIComponent(d.to);
+
+    return (on ? '' :
+      '<div class="panel"><div class="panel__bd"><div class="acallout acallout--warn">' +
+      '<b>Tax collection is off.</b> Nothing is being added at checkout, so this report is empty by design. ' +
+      'Turn it on in <a href="#/admin/settings">Settings → Sales tax</a> once you are registered in at least one state.' +
+      '</div></div></div>') +
+
+      '<div class="kpis" style="grid-template-columns:repeat(3,1fr)">' +
+      '<div class="kpi"><span>Orders in period</span><b>' + (t.orders || 0) + '</b>' +
+        '<em>' + (t.untaxed || 0) + ' with no tax</em></div>' +
+      '<div class="kpi"><span>Taxable sales</span><b>' + U.money(t.sales || 0) + '</b></div>' +
+      '<div class="kpi"><span>Tax collected</span><b>' + U.money(t.tax || 0) + '</b></div></div>' +
+
+      '<div class="panel"><div class="panel__hd"><h2>Filing period</h2>' +
+      '<span class="sub">' + U.esc(d.from) + ' → ' + U.esc(d.to) + '</span></div>' +
+      '<div class="panel__bd"><form data-act="taxrange" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">' +
+      '<label class="afld" style="margin:0"><span>From</span><input name="from" type="date" value="' + U.esc(d.from) + '"></label>' +
+      '<label class="afld" style="margin:0"><span>To</span><input name="to" type="date" value="' + U.esc(d.to) + '"></label>' +
+      '<button class="btn" type="submit">Apply</button>' +
+      '<button class="abtn" type="button" data-act="export" data-what="tax" data-qs="' + U.esc(qs) + '">Export CSV</button>' +
+      '</form></div></div>' +
+
+      '<div class="panel"><div class="panel__hd"><h2>By state</h2>' +
+      '<span class="sub">Declare these numbers on each state\u2019s return</span></div>' +
+      '<div class="panel__bd flush"><table class="atable">' +
+      /* 四列的表按内容自动分宽会把 STATE 撑满、把数字挤到两端。
+         报税看的是「州 → 数字」，所以州列窄、数字列右对齐且够宽。 */
+      '<colgroup><col style="width:22%"><col style="width:16%"><col style="width:31%"><col style="width:31%"></colgroup>' +
+      '<thead><tr>' +
+      '<th>State</th><th class="num">Orders</th><th class="num">Taxable sales</th><th class="num">Tax</th>' +
+      '</tr></thead><tbody>' +
+      (empty ? '<tr><td colspan="4">No taxed orders in this period.' +
+        (on ? '' : ' Tax collection is currently off.') + '</td></tr>' : stateRows) +
+      '</tbody></table></div></div>' +
+
+      (empty ? '' :
+        '<div class="panel"><div class="panel__hd"><h2>By month × state</h2>' +
+        '<span class="sub">Most states file monthly or quarterly — pick the rows for your period</span></div>' +
+        '<div class="panel__bd flush"><table class="atable">' +
+        '<colgroup><col style="width:16%"><col style="width:14%"><col style="width:14%"><col style="width:28%"><col style="width:28%"></colgroup>' +
+        '<thead><tr>' +
+        '<th>Period</th><th>State</th><th class="num">Orders</th><th class="num">Taxable sales</th><th class="num">Tax</th>' +
+        '</tr></thead><tbody>' + monthRows + '</tbody></table></div></div>') +
+
+      '<div class="panel"><div class="panel__hd"><h2>What this report does not do</h2></div>' +
+      '<div class="panel__bd"><ul class="abullets">' +
+      '<li><b>No county / city tax.</b> The rate you enter is one number per state. If you need per-ZIP accuracy, ' +
+      'that requires a tax engine (TaxJar, Avalara) — this report then becomes the cross-check.</li>' +
+      '<li><b>No automatic refund netting.</b> Partially refunded orders stay at their original amount here. ' +
+      'Deduct the refunded tax manually using the order list in <a href="#/admin/orders">Orders</a>.</li>' +
+      '<li><b>No filing.</b> This only tells you what to file. Filing itself happens on the state\u2019s portal.</li>' +
+      '</ul></div></div>';
   }
 
   /* ---------------- 优惠券 / 营销 ---------------- */
@@ -801,7 +915,7 @@
 
   window.AdminViews = {
     shell: shell, login: login, dash: dash, orders: orders, orderDetail: orderDetail,
-    products: products, inventory: inventory, settings: settings,
+    products: products, inventory: inventory, settings: settings, tax: tax,
     coupons: coupons, reviews: reviews, customers: customers, ledger: ledger, audit: audit,
     collections: collections, collectionEdit: collectionEdit,
     custom: custom, customDetail: customDetail, content: content,

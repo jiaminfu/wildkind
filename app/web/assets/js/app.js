@@ -383,10 +383,47 @@
       items: cartPayload(),
       couponCode: S.state.coupon ? S.state.coupon.code : '',
       shippingMethod: S.state.checkout.shipping || 'Standard',
+      /* 州决定销售税。结算页还没填州时传空，服务端按 0 税报价；
+         客户填完州会再报一次（见 co-state 的 change 处理）。 */
+      state: S.state.checkoutState || '',
     });
     S.state.quote = res.data;
     return res.data;
   }
+
+  /* 州填完/改完之后重新报价，只更新摘要里的三行，不重渲染整页。
+     重渲染会把客户已经填好的姓名、地址、邮箱全清空 —— 这是结算页最不能犯的错。
+     报价变了还要更新 S.state.quote，否则提交时用的是旧金额，服务端会判 PRICE_CHANGED。 */
+  S.onChange('co-state', async function (el) {
+    var v = String(el.value || '').trim();
+    if (v === (S.state.checkoutState || '')) return;
+    S.state.checkoutState = v;
+    if (!S.state.cart.length) return;
+    try {
+      var q = await quoteNow();
+      var row = document.getElementById('sumTaxRow');
+      var taxEl = document.getElementById('sumTax');
+      var label = document.getElementById('sumTaxLabel');
+      var totEl = document.getElementById('sumTotal');
+      if (row && taxEl && totEl) {
+        if (q.tax) {
+          row.hidden = false;
+          taxEl.textContent = S.U.money(q.tax);
+          if (label) label.textContent = 'Tax' + (q.taxState ? ' (' + q.taxState + ')' : '');
+        } else {
+          row.hidden = true;
+          taxEl.textContent = '';
+        }
+        totEl.textContent = S.U.money(q.total);
+      }
+      /* 按钮金额也要跟着改。只更新 Total 不更新按钮，等于告诉客户两个不同的价格。 */
+      var cta = document.getElementById('payCta');
+      if (cta) cta.textContent = V.payCta({ provider: cta.getAttribute('data-provider') }, q.total);
+    } catch (e) {
+      /* 报价失败（库存被买走、券失效）不该在这里弹错，
+         客户可能只是改了个州。保持原金额，提交时会拿到明确错误。 */
+    }
+  });
 
   async function renderCheckout(r) {
     if (!S.state.cart.length) { S.go('/cart'); return '<div></div>'; }
@@ -577,6 +614,13 @@
       if (sec === 'settings') {
         var st2 = await API.get('/admin/settings', { auth: true });
         return A.shell(A.settings(st2.data), 'settings', 'Settings', staff);
+      }
+      if (sec === 'tax') {
+        var qsT = new URLSearchParams();
+        if (r.query.from) qsT.set('from', r.query.from);
+        if (r.query.to) qsT.set('to', r.query.to);
+        var tx = await API.get('/admin/tax/report?' + qsT.toString(), { auth: true });
+        return A.shell(A.tax(tx.data), 'tax', 'Sales tax', staff);
       }
       return A.shell('<div class="panel"><div class="panel__bd">Unknown section.</div></div>', sec, 'Admin', staff);
     } catch (e) {
@@ -862,6 +906,11 @@
       shipping: (form.querySelector('input[name=shipping]:checked') || {}).value || 'Standard',
     };
     try {
+      /* 用表单里此刻的州去报价，而不是上次 change 事件留下的缓存。
+         浏览器自动填充、粘贴地址、回填草稿这几种情况下 change 事件可能没触发，
+         缓存就会落后于表单，报价与服务端重算对不上，下单被 PRICE_CHANGED 拦下 ——
+         客户看到的是"价格变了"，其实是他刚填的州没被算进去。 */
+      S.state.checkoutState = String(S.state.checkoutForm.state || '').trim();
       var quote = await quoteNow();
       var body = Object.assign({}, S.state.checkoutForm, {
         quoteId: quote.quoteId,
@@ -954,7 +1003,11 @@
      文件名从 Content-Disposition 里读，服务端已经按日期命名好了。 */
   S.onClick('export', async function (el) {
     var what = el.dataset.what || 'orders';
-    var qs = (what === 'orders' && el.dataset.status) ? '?status=' + encodeURIComponent(el.dataset.status) : '';
+    /* data-qs 用于带上页面当前的选择（申报区间这类）。
+       没有它就只能导出"默认区间"，而会计要的往往是某个季度。 */
+    var qs = el.dataset.qs ? '?' + el.dataset.qs
+      : (what === 'orders' && el.dataset.status) ? '?status=' + encodeURIComponent(el.dataset.status)
+        : '';
     var label = el.textContent;
     el.disabled = true;
     el.textContent = 'Exporting…';
@@ -1704,6 +1757,46 @@
     } catch (e) { S.toast(e.message, 'err'); }
   });
 
+  /* 销售税设置。税率用「一行一州」的文本输入，所以这里要负责解析。
+     解析规则和界面上写的一致：两位州码 + 空格 + 百分数。
+     容忍逗号/分号/竖线分隔（从 Excel 粘过来常常是这些），
+     但看不懂的行不静默丢弃 —— 丢掉一行就等于少收一个州的税，
+     而界面上看不出少了什么。 */
+  S.onSubmit('savetax', async function (form) {
+    var lines = String(form.rates.value || '').split(/\r?\n/);
+    var rates = {};
+    var bad = [];
+    lines.forEach(function (ln) {
+      var s = String(ln).trim();
+      if (!s || s.charAt(0) === '#') return;
+      var parts = s.split(/[\s,;|\t]+/).filter(Boolean);
+      if (parts.length < 2) { bad.push(s); return; }
+      rates[parts[0]] = parts[1];
+    });
+    if (bad.length) {
+      S.toast('Cannot read: ' + bad.slice(0, 3).join(' / ') + ' — use "CA 7.25"', 'err');
+      return;
+    }
+    try {
+      await API.patch('/admin/settings', {
+        tax: {
+          enabled: form.enabled.checked,
+          shipTaxable: form.shipTaxable.checked,
+          note: form.note.value,
+          rates: rates,
+        },
+      }, { auth: true });
+      S.toast('Tax settings saved', 'ok');
+      render();
+    } catch (e) { S.toast(e.message, 'err'); }
+  });
+
+  /* 申报区间切换：走真路由 query，不留在内存里 ——
+     这样刷新页面、或者把链接发给会计，看到的还是同一个区间。 */
+  S.onSubmit('taxrange', function (form) {
+    S.go('/admin/tax?from=' + encodeURIComponent(form.from.value) +
+      '&to=' + encodeURIComponent(form.to.value));
+  });
   /* 搜索层：输入回车跳独立搜索页。
      以前跳的是 #/collections/best-sellers?q=，只在 best-sellers 那几件里过滤，
      全站 3 件戒指搜出来是「0 pieces」——接口一直是好的，是前端把搜索当成了集合筛选。 */

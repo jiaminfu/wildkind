@@ -11,6 +11,7 @@ const csv = require('../lib/csv');
 const notify = require('../lib/notify');
 const mailer = require('../lib/mailer');
 const trackingSync = require('../lib/tracking-sync');
+const { normalizeState, CODES } = require('../lib/us-states');
 const { E, ApiError, ok, rateLimit, clientIp, CORS } = require('../lib/http');
 const { applyRefund } = require('./checkout');
 
@@ -19,6 +20,66 @@ const STATUS_LABEL = {
   paid: 'Paid', fulfilling: 'Preparing', fulfilled: 'Shipped',
   completed: 'Delivered', refunded: 'Refunded', cancelled: 'Cancelled',
 };
+
+/* 销售税申报汇总。
+   为什么后台要有这个：收了税就必须申报，申报要按州按月报「应税销售额 + 税额」。
+   如果只把税混在 total 里，到时候只能拿 Excel 一笔笔扒订单，几百单就废了。
+
+   口径（写死在这里，免得以后各人算各人的）：
+   - 排除 pending_payment（钱没到）、cancelled（已取消）、refunded（整单退了，税也退了）
+   - 应税销售额 taxable = total - tax（total 含运费与税）
+   - 部分退款的订单按原额计入，由报税时按退款明细手工冲减 ——
+     各州对退税额归属哪个申报期的规则不同，自动算反而会算错 */
+function taxSummary(db, fromArg, toArg) {
+  const year = new Date().getUTCFullYear();
+  const from = String(fromArg || (year + '-01-01')).slice(0, 10);
+  const to = String(toArg || (year + '-12-31')).slice(0, 10);
+  const fromMs = new Date(from + 'T00:00:00Z').getTime();
+  const toMs = new Date(to + 'T23:59:59Z').getTime();
+
+  const byState = {};
+  const byMonth = {};
+  let totalTax = 0, totalSales = 0, counted = 0, untaxed = 0;
+
+  (db.orders || []).forEach(o => {
+    const at = new Date(o.createdAt).getTime();
+    if (!(at >= fromMs && at <= toMs)) return;
+    if (o.status === 'pending_payment' || o.status === 'cancelled' || o.status === 'refunded') return;
+
+    const tax = Number(o.tax) || 0;
+    const sales = pricing.round2((Number(o.total) || 0) - tax);
+    counted++;
+    /* 没税的订单不进申报表，但要计数：
+       如果「计入 100 单、无税 100 单」，说明税率根本没配上，界面上要看得出来。 */
+    if (!tax) { untaxed++; return; }
+
+    const st = o.taxState || '(none)';
+    const month = String(o.createdAt).slice(0, 7);
+
+    if (!byState[st]) byState[st] = { state: st, orders: 0, sales: 0, tax: 0 };
+    byState[st].orders++;
+    byState[st].sales = pricing.round2(byState[st].sales + sales);
+    byState[st].tax = pricing.round2(byState[st].tax + tax);
+
+    const mk = st + '|' + month;
+    if (!byMonth[mk]) byMonth[mk] = { state: st, period: month, orders: 0, sales: 0, tax: 0 };
+    byMonth[mk].orders++;
+    byMonth[mk].sales = pricing.round2(byMonth[mk].sales + sales);
+    byMonth[mk].tax = pricing.round2(byMonth[mk].tax + tax);
+
+    totalTax = pricing.round2(totalTax + tax);
+    totalSales = pricing.round2(totalSales + sales);
+  });
+
+  return {
+    from, to,
+    config: db.settings.tax || { enabled: false, rates: {} },
+    totals: { orders: counted, untaxed, tax: totalTax, sales: totalSales },
+    byState: Object.keys(byState).map(k => byState[k]).sort((a, b) => b.tax - a.tax),
+    byMonth: Object.keys(byMonth).map(k => byMonth[k])
+      .sort((a, b) => (a.period + a.state).localeCompare(b.period + b.state)),
+  };
+}
 
 function audit(me, action, target, meta) {
   const db = store.get();
@@ -1103,7 +1164,7 @@ function routes(router) {
     const rows = [[
       'Order / 订单号', 'Date / 下单时间', 'Status / 状态', 'Customer / 客户',
       'Email / 邮箱', 'Items / 件数', 'Subtotal / 小计', 'Discount / 优惠',
-      'Shipping / 运费', 'Total / 合计', 'Currency / 币种',
+      'Shipping / 运费', 'Tax / 税额', 'Tax state / 税州', 'Total / 合计', 'Currency / 币种',
       'Shipping method / 配送方式', 'Tracking / 运单号', 'Carrier / 承运商',
     ]];
     for (const o of list) {
@@ -1114,13 +1175,27 @@ function routes(router) {
         o.name || '',
         o.email || '',
         (o.items || []).reduce((a, i) => a + (i.qty || 0), 0),
-        o.subtotal, o.discount || 0, o.shipping || 0, o.total,
+        o.subtotal, o.discount || 0, o.shipping || 0, o.tax || 0, o.taxState || '', o.total,
         (db.settings.currency || 'USD'),
         o.shippingMethod || '',
         o.tracking || '', o.carrier || '',
       ]);
     }
     sendCsv(res, 'lastgrove-orders-' + new Date().toISOString().slice(0, 10) + '.csv', rows);
+  });
+
+  /* 申报用的税额表。按「月 × 州」出，因为各州申报表就是按月填的。 */
+  router.get('/api/v1/admin/export/tax.csv', (req, res) => {
+    const me = auth.requireAuth(req);
+    auth.requirePerm(me, 'settings:write');
+    const s = taxSummary(store.get(), req.query.from, req.query.to);
+    const rows = [[
+      'Period / 申报期', 'State / 州', 'Orders / 订单数',
+      'Taxable sales / 应税销售额', 'Tax collected / 已收税额',
+    ]];
+    s.byMonth.forEach(r => rows.push([r.period, r.state, r.orders, r.sales.toFixed(2), r.tax.toFixed(2)]));
+    rows.push(['TOTAL', '', s.totals.orders - s.totals.untaxed, s.totals.sales.toFixed(2), s.totals.tax.toFixed(2)]);
+    sendCsv(res, 'lastgrove-tax-' + s.from + '_' + s.to + '.csv', rows);
   });
 
   router.get('/api/v1/admin/export/products.csv', (req, res) => {
@@ -1280,6 +1355,7 @@ function routes(router) {
       giftThreshold: db.giftRule ? db.giftRule.threshold : null,
       lowStockThreshold: s.lowStockThreshold, returnWindowDays: s.returnWindowDays,
       storeOpen: s.storeOpen !== false,
+      tax: s.tax || { enabled: false, rates: {}, shipTaxable: true, note: '' },
       content: s.content || {},
     });
   });
@@ -1302,6 +1378,43 @@ function routes(router) {
       }
     });
     if (b.storeOpen != null) db.settings.storeOpen = !!b.storeOpen;
+
+    /* 销售税配置。两件事必须做对，否则会静默算错钱：
+       ① 州名归一化：后台填 "California" 也要存成 CA；
+       ② 百分数 vs 小数：人习惯填 7.25，代码要 0.0725。
+          大于 1 的一律当百分数处理，并在响应里回写实际存的数，
+          让后台界面上看到的就是生效的那个值。 */
+    if (b.tax && typeof b.tax === 'object') {
+      const cur = db.settings.tax || { enabled: false, rates: {}, shipTaxable: true, note: '' };
+      const next = {
+        enabled: b.tax.enabled != null ? !!b.tax.enabled : cur.enabled,
+        shipTaxable: b.tax.shipTaxable != null ? !!b.tax.shipTaxable : (cur.shipTaxable !== false),
+        note: b.tax.note != null ? String(b.tax.note).slice(0, 300) : (cur.note || ''),
+        rates: Object.assign({}, cur.rates || {}),
+      };
+      if (b.tax.rates && typeof b.tax.rates === 'object') {
+        next.rates = {};
+        Object.keys(b.tax.rates).forEach(k => {
+          const code = normalizeState(k);
+          if (!CODES[code]) {
+            throw E.badRequest('Unknown US state: "' + k + '". Use a two-letter code like CA or NY.',
+              [{ field: 'tax.rates.' + k, message: 'Not a US state code.' }]);
+          }
+          const rawVal = b.tax.rates[k];
+          if (rawVal === '' || rawVal == null) return;   // 空值 = 删掉这一州
+          let r = Number(rawVal);
+          if (!Number.isFinite(r) || r < 0) {
+            throw E.badRequest('Tax rate for ' + code + ' must be a number.');
+          }
+          if (r > 1) r = r / 100;                        // 填 7.25 表示 7.25%
+          if (r > 0.2) {
+            throw E.badRequest('Tax rate for ' + code + ' looks wrong (' + rawVal + '). Max is 0.2 (20%).');
+          }
+          next.rates[code] = Math.round(r * 1000000) / 1000000;
+        });
+      }
+      db.settings.tax = next;
+    }
     if (b.giftThreshold != null && db.giftRule) {
       db.giftRule.threshold = pricing.round2(Number(b.giftThreshold));
       db.settings.giftThreshold = db.giftRule.threshold;
@@ -1312,6 +1425,25 @@ function routes(router) {
     audit(me, 'settings.update', 'store', { before, after: b });
     store.flush();
     ok(res, { settings: db.settings, giftRule: db.giftRule });
+  });
+
+  /* 销售税申报汇总。
+     为什么后台要有这个：收了税就必须申报，申报要按州按月报"应税销售额 + 税额"。
+     如果只把税混在 total 里，到时候只能拿 Excel 一笔笔扒订单，几百单就废了。
+
+     口径（写死在这里，免得以后各人算各人的）：
+     - 排除 pending_payment（钱没到）与 cancelled（已取消）
+     - 排除 refunded 的整单（钱退了，税也退了，不进申报）
+     - 应税销售额 taxable = total - tax（total 含运费与税）
+     - 部分退款的订单按原额计入，由报税时按退款明细手工冲减（本期不做自动冲减，
+       因为各州对退税额的申报期归属规则不同，自动算反而会算错） */
+  router.get('/api/v1/admin/tax/report', (req, res) => {
+    const me = auth.requireAuth(req);
+    auth.requirePerm(me, 'settings:write');
+    const db = store.get();
+    const q = req.query || {};
+    const r = taxSummary(db, q.from, q.to);
+    ok(res, r);
   });
 
   router.get('/api/v1/admin/audit-log', (req, res) => {
