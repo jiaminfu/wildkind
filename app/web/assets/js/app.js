@@ -1048,11 +1048,43 @@
   });
 
   S.onClick('refund', async function (el) {
-    if (!confirm('Refund this order and return the items to stock?')) return;
+    if (!confirm('Refund the whole order and return every item to stock?')) return;
     try {
-      await API.post('/admin/orders/' + encodeURIComponent(el.dataset.num) + '/refund',
+      var whole = await API.post('/admin/orders/' + encodeURIComponent(el.dataset.num) + '/refund',
         { restock: true }, { auth: true });
-      S.toast('Refunded · stock returned', 'ok');
+      var d = (whole && whole.data) || {};
+      S.toast('Refunded ' + U.money(d.refunded) + ' · stock returned', 'ok');
+      render();
+    } catch (e) { S.toast(e.message, 'err'); }
+  });
+
+  /* 部分退款：读各行「Refund」列的件数，只退填了的那几件。
+     金额不由前端算——折扣与税按行分摊的规则只在服务端有一份，
+     前端再算一遍迟早会算出两个数，而客户只认少的那一个。 */
+  S.onClick('refund-partial', async function (el) {
+    var num = el.dataset.num;
+    var inputs = document.querySelectorAll('.rfq');
+    var items = [];
+    var totalQty = 0;
+    for (var i = 0; i < inputs.length; i++) {
+      var q = parseInt(inputs[i].value, 10) || 0;
+      if (q <= 0) continue;
+      var row = { qty: q };
+      if (inputs[i].dataset.sku) row.sku = inputs[i].dataset.sku;
+      else { row.productId = inputs[i].dataset.pid; row.variant = inputs[i].dataset.var; }
+      items.push(row);
+      totalQty += q;
+    }
+    if (!items.length) {
+      S.toast('Set a quantity in the Refund column first', 'err');
+      return;
+    }
+    if (!confirm('Refund ' + totalQty + ' item(s) and return them to stock?')) return;
+    try {
+      var res = await API.post('/admin/orders/' + encodeURIComponent(num) + '/refund',
+        { restock: true, items: items }, { auth: true });
+      var d2 = (res && res.data) || {};
+      S.toast('Refunded ' + U.money(d2.refunded) + (d2.fullyRefunded ? ' · order closed' : ' · partial'), 'ok');
       render();
     } catch (e) { S.toast(e.message, 'err'); }
   });

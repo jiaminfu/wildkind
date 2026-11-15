@@ -11,7 +11,7 @@
 | 自动化覆盖 | `tools/api-test.js` 134 例、`tools/unit-core.js` 38 例、`tools/tax-ui-check.js` 15 例全通过（见《测试报告 v1.6》） |
 | 机器可读版 | 同目录 `openapi.json`（OpenAPI 3.0.3，**v1.2 快照，尚未包含 v1.3 的支付与物流端点、v1.4 的税务端点**） |
 
-> **v1.4 变更**：补齐**美国销售税**这一层 —— `POST /checkout/quote` 新增 `state` 入参与 `tax / taxRate / taxState` 三个出参；`POST /orders` 改为**按订单收货地址的州重算税**（与报价州不一致时抛 `PRICE_CHANGED`，不再"按报价那笔收钱、按新地址记账"）；新增 `GET /admin/tax/report`、`GET /admin/export/tax.csv`、`PATCH /admin/settings` 的 `tax` 字段（含州名归一化与百分数自动换算）；`GET /admin/export/orders.csv` 增加 `Tax` / `Tax state` 两列。新增 §5.15 销售税专节。
+> **v1.4 变更**：补齐**美国销售税**与**按行部分退款**两件事 —— 退款详见 §5.7 的 `POST /admin/orders/:number/refund`。销售税方面 —— `POST /checkout/quote` 新增 `state` 入参与 `tax / taxRate / taxState` 三个出参；`POST /orders` 改为**按订单收货地址的州重算税**（与报价州不一致时抛 `PRICE_CHANGED`，不再"按报价那笔收钱、按新地址记账"）；新增 `GET /admin/tax/report`、`GET /admin/export/tax.csv`、`PATCH /admin/settings` 的 `tax` 字段（含州名归一化与百分数自动换算）；`GET /admin/export/orders.csv` 增加 `Tax` / `Tax state` 两列。新增 §5.15 销售税专节。
 >
 > **v1.3 变更**：补齐**支付通道**与**物流追踪**两层接口 —— 新增 `GET /payments/methods`、`POST /payments/capture`、`POST /payments/webhook/:provider`、`POST /webhooks/tracking`、`POST /admin/orders/:n/tracking/refresh`、`GET /admin/tracking/quota`、`GET /admin/tracking/health`，共 7 个操作；`POST /admin/orders/:n/tracking` 行为扩展（保存即订阅 17TRACK + 发发货信 + 承运商白名单）；新增 §5.14 Webhook 专节，把「原始字节验签 / 400 停止重投 / 幂等」三条硬规则写在接口层。同时补记当时的一处能力缺失：`POST /checkout/quote` 无税额字段——该缺口已在 v1.4 关闭。
 >
@@ -774,21 +774,54 @@ refunded / cancelled    → 终态
 
 #### 🔑 `POST /admin/orders/:number/refund`
 
-```json
-{ "restock": true, "amount": 147.6 }
-```
-
-`restock` 默认 `true`（退货入库）；用户在收到货前退款可选 `false`（货还在路上，不回补）。`amount` 省略表示全额。
+**两种退法：整单退、按行退。** 不传 `items` 就是整单退；传了 `items` 就只退那几件。
 
 ```json
-{ "data": { "order": { "…": "…" }, "refunded": 147.6, "restocked": true } }
+// 整单退
+{ "restock": true }
+
+// 按行退（v1.4 新增）
+{
+  "restock": true,
+  "reason": "Too small",
+  "items": [
+    { "sku": "LG-101-GO", "qty": 1 },
+    { "sku": "LG-102-SI", "qty": 1 }
+  ]
+}
 ```
 
-一次退款完成四件事：改状态 → 回补库存并写 `refund` 流水 → 释放券 → 冲减客户累计消费与等级。
+`restock` 默认 `true`（退货入库）；用户在收到货前退款可选 `false`（货还在路上，不回补）。整单退时 `amount` 省略表示退剩余全额。
+
+```json
+// 响应
+{ "data": {
+    "order": { "…": "…" },
+    "refunded": 79.2,          // 这一次退了多少钱
+    "refundedTotal": 79.2,     // 这张单累计退了多少钱
+    "fullyRefunded": false,    // 是否已退完（决定订单状态）
+    "restocked": true
+} }
+```
+
+**按行退的金额口径**（写死在服务端，前端不重算 —— 两边各算一遍迟早算出两个数，客户只认少的那个）：
+
+| 组成 | 规则 |
+| --- | --- |
+| 商品 | 该行单价 × 退的件数，再扣掉这一行按金额占比分摊的优惠 |
+| 税 | 该行按净额占比分摊的税额。**退了货不退税收，等于替州里多吃一笔** |
+| 运费 | 只有**最后一件付费商品**退完时才退。部分退不退运费 |
+
+分摊用「累计目标法」：按累计退掉的数量算出这一行"一共该退多少"，减去已退的部分。所以同一行分三次退也不会攒出四舍五入的偏差。全部以内部分计算，最后一行吃余数。
+
+`fullyRefunded=true` 时走完整回滚：状态改 `refunded`、释放券、客户单数 −1、库存补齐（含赠品）。**`false` 时订单状态不变**，只冲减客户累计消费额并打上 `partiallyRefunded` —— 不能把"下过单"这件事也抹掉，否则复购次数与 VIP 分层会凭空掉一级。
+
+退款记录写在 `order.refunds[]`，每条含 `{ id, at, amount, restock, reason, items[{sku, qty, amount, tax}] }`。`order.refundedTotal` / `order.refundedTax` 是累计值。
 
 | 失败 code | 说明 |
 | --- | --- |
-| `CONFLICT` | 已退款 / 已取消的订单不能退 |
+| `CONFLICT` | 已退款 / 已取消的订单不能退；`pending_payment` 也不能退（钱没收到，退的是空气） |
+| `BAD_REQUEST` | `items` 里找不到这一行，或 `qty` 超过剩余可退件数 |
 | `FORBIDDEN` | 缺 `orders:refund` 权限位 |
 
 #### 🔑 `POST /admin/orders/:number/tracking`
@@ -1499,7 +1532,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 | v1.2 | 2026-11-14 | 补 9 个操作（48 路径 / 56 操作）：`POST /admin/products`（新建，默认草稿）、`GET /admin/products/:id`、`POST /admin/products/:id/duplicate`、`DELETE /admin/products/:id`、`POST /admin/uploads`、CSV 导入三件套（preview / import / template）、公开的 `GET /uploads/:file`。`PATCH` 字段面从 8 个扩到 16 个（新增 `cat`/`motif`/`set`/`sizes`/`images`/`variants`/`details`/`handle`）。**权限收紧**：`cost` 从此只对 `role=owner` 返回，ops 的列表、详情、写返回、报错文案四处都做了脱敏。起因：后台 `Products` 页只有 `Price` 和 `Unlist` 两个按钮，100 款 SKU 无法录入 |
 
 | v1.3 | 2026-11-15 | 补 7 个操作（58 路径 / 67 操作）：`GET /payments/methods`、`POST /payments/capture`、`POST /payments/webhook/:provider`、`POST /webhooks/tracking`、`POST /admin/orders/:n/tracking/refresh`、`GET /admin/tracking/quota`、`GET /admin/tracking/health`。新增 §5.14 Webhook 专节；`POST /admin/orders/:n/tracking` 扩展为「保存即订阅 + 发发货信 + 承运商白名单」；Order 数据字典补 `trackingState` 与 `mail` 两个字段。同时补记 `quote` 无税额字段这一能力缺失。起因：文档写着 Stripe、写着「物流未接承运商 API」，而实际跑的是 PayPal + 17TRACK |
-| v1.4 | 2026-11-16 | 补 4 个操作（60 路径 / 71 操作）：`GET /admin/tax/report`、`GET /admin/export/tax.csv`，以及 `POST /checkout/quote` 的 `state` 入参、`PATCH /admin/settings` 的 `tax` 字段。新增 §5.15 销售税专节。**行为变更**：`POST /orders` 不再沿用报价里的税额，改为按订单收货地址的州重算，不一致即 `PRICE_CHANGED` —— 宁可让用户重看一眼金额，也不"按报价收钱、按新地址记账"。`orders.csv` 增 `Tax` / `Tax state` 两列。起因：FRD §13 P-01 是唯一一项「不解决就不能开门收钱」的代码缺口，而它同时是**收错了要退款、要修正申报**的那类错误，所以宁可少收也不多收（未配置的州一律不收） |
+| v1.4 | 2026-11-16 | 补 4 个操作（60 路径 / 71 操作）：`GET /admin/tax/report`、`GET /admin/export/tax.csv`，以及 `POST /checkout/quote` 的 `state` 入参、`PATCH /admin/settings` 的 `tax` 字段；新增 §5.15 销售税专节。**退款接口支持按行部分退款**：`items[]` 指定退哪几件，折扣与税按行分摊，退最后一件时补退运费，响应增加 `refundedTotal` / `fullyRefunded`；订单行补 `sku` 字段。**行为变更**：`POST /orders` 不再沿用报价里的税额，改为按订单收货地址的州重算，不一致即 `PRICE_CHANGED` —— 宁可让用户重看一眼金额，也不"按报价收钱、按新地址记账"。`orders.csv` 增 `Tax` / `Tax state` 两列。起因：FRD §13 P-01 是唯一一项「不解决就不能开门收钱」的代码缺口，而它同时是**收错了要退款、要修正申报**的那类错误，所以宁可少收也不多收（未配置的州一律不收）；P-06 部分退款则是"多件订单退一件会把整单的钱退回去"，直接亏钱 |
 
 ---
 

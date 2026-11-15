@@ -311,6 +311,87 @@ async function call(method, path, body, headers) {
   chk('流水含 sale 与 refund', ledger.body.data.some(l => l.reason === 'sale') &&
     ledger.body.data.some(l => l.reason === 'refund'));
 
+  /* ---------- 7b. 部分退款 ----------
+     以前只能整单退：多件订单退一件，系统会把整单的钱退回去。
+     这不是体验问题，是直接亏钱。这里盯三件事：
+       ① 退一件只退一件的钱（含该行分摊的折扣）
+       ② 税跟着行分摊退（退了货不退税收，等于替州里多吃一笔）
+       ③ 退到最后一件时，运费与尾差要一起退掉，总额必须与整单退完全一致 */
+  section('7b 部分退款');
+  const qPart = await call('POST', '/api/v1/checkout/quote', {
+    items: [
+      { productId: 'LG-101', metal: 'Gold', qty: 2 },
+      { productId: 'LG-102', metal: 'Silver', qty: 1 },
+    ],
+    couponCode: 'LASTGROVE10',
+  });
+  const oPart = await call('POST', '/api/v1/orders', {
+    quoteId: qPart.body.data.quoteId,
+    email: 'apitest@example.com', firstName: 'Api', lastName: 'Partial',
+    address: { line1: '1 Main St', city: 'Austin', state: 'TX', zip: '78701', country: 'United States' },
+  }, { 'Idempotency-Key': IDEM + '-partial' });
+  chk('建一张多件订单', oPart.status === 201, oPart.body.error && oPart.body.error.message);
+  const po = oPart.body.data.order;
+  const pEnc = encodeURIComponent(po.number);
+  const sku101 = po.items.find(i => i.productId === 'LG-101').sku;
+  const sku102 = po.items.find(i => i.productId === 'LG-102').sku;
+
+  /* 期望值：退款按「这一行已退累计数量」算，折扣按金额占比分摊。
+     单件退 = 单价 - 单价分摊的折扣。测试这边独立推一遍，不拿服务端结果反算。 */
+  const subC = Math.round(qPart.body.data.subtotal * 100);
+  const discC = Math.round((qPart.body.data.discount || 0) * 100);
+  const unit101 = po.items.find(i => i.productId === 'LG-101').unitPrice;
+  const gross101 = Math.round(unit101 * 2 * 100);
+  const discShare101 = Math.round(discC * gross101 / subC);
+  const EXP_ONE_101 = Math.round((gross101 / 2 - discShare101 / 2)) / 100;
+
+  const pStock0 = (await call('GET', '/api/v1/products/foxtrot-pendant-necklace'))
+    .body.data.product.variants.find(v => v.metal === 'Gold').stock;
+  const r1 = await call('POST', '/api/v1/admin/orders/' + pEnc + '/refund',
+    { items: [{ sku: sku101, qty: 1 }] }, AUTH);
+  chk('退一件 200', r1.status === 200, r1.body.error && r1.body.error.message);
+  chk('退一件 = 单价 − 该件分摊的折扣', r1.body.data.refunded === EXP_ONE_101,
+    '$' + r1.body.data.refunded + '（应为 $' + EXP_ONE_101 + '）');
+  chk('订单没被标成整单退款', r1.body.data.fullyRefunded === false &&
+    r1.body.data.order.status !== 'refunded', r1.body.data.order.status);
+  chk('部分退款留痕', (r1.body.data.order.refunds || []).length === 1 &&
+    r1.body.data.order.partiallyRefunded === true);
+
+  const pStock1 = (await call('GET', '/api/v1/products/foxtrot-pendant-necklace'))
+    .body.data.product.variants.find(v => v.metal === 'Gold').stock;
+  chk('按件回补库存（不是整行）', pStock1 === pStock0 + 1, pStock0 + ' → ' + pStock1);
+
+  const over = await call('POST', '/api/v1/admin/orders/' + pEnc + '/refund',
+    { items: [{ sku: sku101, qty: 5 }] }, AUTH);
+  chk('超量退款被拒 400', over.status === 400, over.status);
+
+  const r2 = await call('POST', '/api/v1/admin/orders/' + pEnc + '/refund',
+    { items: [{ sku: sku101, qty: 1 }, { sku: sku102, qty: 1 }] }, AUTH);
+  chk('一次退多行 200', r2.status === 200, r2.body.error && r2.body.error.message);
+  chk('累计退款 = 整单金额', r2.body.data.refundedTotal === po.total,
+    '$' + r2.body.data.refundedTotal + ' / 订单 $' + po.total);
+  chk('退完自动转 refunded', r2.body.data.fullyRefunded === true &&
+    r2.body.data.order.status === 'refunded', r2.body.data.order.status);
+  chk('退款流水累计 2 条', (r2.body.data.order.refunds || []).length === 2,
+    (r2.body.data.order.refunds || []).length + ' 条');
+
+  /* 退最后一件时运费要一起退：否则客户只买一件、退货后自己承担了运费 */
+  const qShip = await call('POST', '/api/v1/checkout/quote', {
+    items: [{ productId: 'LG-102', metal: 'Silver', qty: 1 }],
+  });
+  chk('小额订单确实收了运费', qShip.body.data.shipping > 0, '$' + qShip.body.data.shipping);
+  const oShip = await call('POST', '/api/v1/orders', {
+    quoteId: qShip.body.data.quoteId,
+    email: 'apitest@example.com', firstName: 'Api', lastName: 'Ship',
+    address: { line1: '1 Main St', city: 'Austin', state: 'TX', zip: '78701', country: 'United States' },
+  }, { 'Idempotency-Key': IDEM + '-ship' });
+  const so = oShip.body.data.order;
+  const refundShip = await call('POST', '/api/v1/admin/orders/' +
+    encodeURIComponent(so.number) + '/refund',
+    { items: [{ sku: so.items[0].sku, qty: 1 }] }, AUTH);
+  chk('退最后一件把运费一并退掉', refundShip.body.data.refunded === so.total,
+    '$' + refundShip.body.data.refunded + ' / 订单 $' + so.total);
+
   /* ---------- 8. 商品与库存 ---------- */
   section('8 商品编辑与补货');
   const prods = await call('GET', '/api/v1/admin/products', undefined, AUTH);

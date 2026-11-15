@@ -61,13 +61,15 @@ function buildOrder(d, ctx) {
     if (cp) cp.used = (cp.used || 0) + 1;
   }
 
+  /* 订单行必须带 sku：退款要按行退、库存流水要按 sku 记、仓库要按 sku 拣货。
+     以前只存 productId + variant，退款时找不到具体是哪一件。 */
   const items = fresh.lines.map(l => ({
-    productId: l.productId, title: l.title, variant: l.metal, size: l.size,
+    productId: l.productId, sku: l.sku, title: l.title, variant: l.metal, size: l.size,
     unitPrice: l.unitPrice, qty: l.qty,
   }));
   if (fresh.gift) {
     items.push({
-      productId: fresh.gift.productId, title: fresh.gift.title,
+      productId: fresh.gift.productId, sku: fresh.gift.sku, title: fresh.gift.title,
       variant: fresh.gift.metal, size: '', unitPrice: 0, qty: fresh.gift.qty, isGift: true,
     });
   }
@@ -455,19 +457,248 @@ function applyCancel(o) {
   });
 }
 
-function applyRefund(o, opts) {
+/* ---------------- 部分退款 ----------------
+   以前只能整单退。多件订单退一件，系统会把整单的钱退回去——这不是"体验差一点"，
+   是直接亏钱，而且第一笔真实部分退货必然踩到。
+
+   金额口径写死在这里，各处不许自己算：
+     · 商品退款 = 该行成交金额（unitPrice × 退的数量，再扣掉这一行分摊的折扣）
+     · 税退款   = 该行分摊的税额。退了货却不退税，等于替州里多吃了一笔
+     · 运费     = 只有整单退完才退。部分退不退运费（这也是行业常规）
+
+   分摊用「累计目标法」而不是「每次算增量」：
+   按累计退掉的数量算出这一行"总共该退多少"，减去已经退过的，得到本次金额。
+   同一行分三次退、每次 1 件，也不会有四舍五入攒出来的偏差。
+   分摊永远用整数分算，最后一行吃余数——分毫不丢，也不多退一分。
+*/
+const toC = n => Math.round(Number(n || 0) * 100);
+const toD = c => Math.round(c) / 100;
+
+/* 把 totalC 按 weights 占比分到各行；余数给最后一个非零行 */
+function splitByWeight(weights, totalC, weightSum) {
+  const out = weights.map(() => 0);
+  if (!totalC || !weightSum) return out;
+  let lastIdx = -1;
+  weights.forEach((w, i) => { if (w) lastIdx = i; });
+  let acc = 0;
+  weights.forEach((w, i) => {
+    if (!w) return;
+    if (i === lastIdx) { out[i] = totalC - acc; return; }
+    out[i] = Math.round(totalC * w / weightSum);
+    acc += out[i];
+  });
+  return out;
+}
+
+/* 每行的成交金额 / 折扣分摊 / 税分摊（全部以"分"为单位） */
+function lineShares(o) {
+  const items = o.items || [];
+  const gross = items.map(it => toC(Number(it.unitPrice || 0) * Number(it.qty || 0)));
+  const grossSum = gross.reduce((a, b) => a + b, 0);
+  const discShare = splitByWeight(gross, toC(o.discount), grossSum);
+  const net = gross.map((g, i) => g - discShare[i]);
+  const netSum = net.reduce((a, b) => a + b, 0);
+  const taxShare = splitByWeight(net, toC(o.tax), netSum);
+  return { gross, discShare, taxShare };
+}
+
+function findLine(items, want) {
+  if (want.sku) {
+    const i = items.findIndex(it => String(it.sku) === String(want.sku));
+    if (i >= 0) return i;
+  }
+  if (want.productId) {
+    const i = items.findIndex(it => String(it.productId) === String(want.productId) &&
+      (!want.variant || String(it.variant) === String(want.variant)));
+    if (i >= 0) return i;
+  }
+  return -1;
+}
+
+/* 只回补指定数量。整单退用的是 restockOrder，这里按件退，两者不能混用：
+   混用的后果是同一件货被回补两次，库存凭空多出来。 */
+function restockLine(db, o, it, qty, reason) {
+  const p = pricing.findProduct(db, it.productId);
+  if (!p) return;
+  const v = (p.variants || []).find(x => x.metal === it.variant);
+  if (v) {
+    v.stock += qty;
+    ledger(db, {
+      sku: v.sku, productId: p.id, delta: qty, reason: reason,
+      refType: 'order', refId: o.number, balanceAfter: v.stock,
+    });
+    p.stock = (p.variants || []).reduce((a, x) => a + x.stock, 0);
+  }
+  if (!it.isGift && p.sold30) p.sold30 = Math.max(0, p.sold30 - qty);
+}
+
+function applyPartialRefund(o, opts) {
+  const reqItems = (opts && opts.items) || [];
+  if (!reqItems.length) throw E.badRequest('items[] is required for a partial refund.');
+  const reason = String((opts && opts.reason) || '').slice(0, 200);
+  const restock = !opts || opts.restock !== false;
+
   return store.tx(db => {
-    const restock = !opts || opts.restock !== false;
-    if (restock) restockOrder(db, o, 'refund');
-    releaseCoupon(db, o);
-    adjustCustomer(db, o, -1);
-    o.status = 'refunded';
-    o.statusLabel = 'Refunded';
-    o.refundedAt = new Date().toISOString();
-    o.refundAmount = opts && opts.amount != null ? opts.amount : o.total;
-    o.restockDecision = restock ? 'returned' : 'written-off';
-    return o;
+    const items = o.items || [];
+    const shares = lineShares(o);
+    o.refunds = Array.isArray(o.refunds) ? o.refunds : [];
+
+    const picked = [];
+    let amountC = 0, taxC = 0;
+
+    reqItems.forEach(want => {
+      const idx = findLine(items, want || {});
+      if (idx < 0) {
+        throw E.badRequest('Line not found: ' + ((want && (want.sku || want.productId)) || '?'),
+          [{ field: 'items', message: 'No such line in this order.' }]);
+      }
+      const it = items[idx];
+      const lineQty = Number(it.qty) || 0;
+      const already = Number(it.refundedQty) || 0;
+      const qty = Math.floor(Number(want.qty) || 0);
+      if (qty <= 0) throw E.badRequest('qty must be a positive integer.');
+      if (already + qty > lineQty) {
+        throw E.badRequest('Only ' + (lineQty - already) + ' left to refund on "' +
+          (it.title || it.sku) + '".',
+          [{ field: 'items', message: 'qty exceeds remaining' }]);
+      }
+
+      /* 累计目标：这一行"一共该退多少" - "已经退过多少" = 本次 */
+      const at = q => {
+        if (!lineQty) return { net: 0, tax: 0 };
+        const g = Math.round(shares.gross[idx] * q / lineQty);
+        const d = Math.round(shares.discShare[idx] * q / lineQty);
+        const t = Math.round(shares.taxShare[idx] * q / lineQty);
+        return { net: g - d, tax: t };
+      };
+      const before = at(already);
+      const after = at(already + qty);
+      const thisNet = after.net - before.net;
+      const thisTax = after.tax - before.tax;
+
+      if (restock && !it.isGift) restockLine(db, o, it, qty, 'refund');
+      it.refundedQty = already + qty;
+
+      amountC += thisNet + thisTax;
+      taxC += thisTax;
+      picked.push({
+        sku: it.sku, productId: it.productId, title: it.title,
+        qty: qty, amount: toD(thisNet + thisTax), tax: toD(thisTax),
+      });
+    });
+
+    /* 整单退完时把运费与尾差一起退掉：各行分摊之和 = 小计 - 折扣 + 税，
+       差额正好是运费。这样"退最后一件"得到的总额与整单退完全一致。
+       注意赠品行不参与判断——赠品是 0 元行，客户不会"退赠品"，
+       把它算进来会导致货全退光了订单还挂在 paid 上。 */
+    const paidLines = items.filter(it => !it.isGift);
+    const allDone = paidLines.length > 0 &&
+      paidLines.every(it => (Number(it.refundedQty) || 0) >= (Number(it.qty) || 0));
+    if (allDone) {
+      const remainderC = toC(o.total) - toC(o.refundedTotal) - amountC;
+      if (remainderC > 0) amountC += remainderC;
+    }
+
+    const amount = toD(amountC);
+    o.refundedTotal = toD(toC(o.refundedTotal) + amountC);
+    o.refundedTax = toD(toC(o.refundedTax) + taxC);
+
+    const refund = {
+      id: 'R' + crypto.randomBytes(4).toString('hex'),
+      at: new Date().toISOString(),
+      amount: amount,
+      restock: restock,
+      reason: reason,
+      items: picked,
+    };
+
+    if (allDone) {
+      /* 整单退完：走完整回滚（释放券、客户单数 -1、状态改 refunded），
+         与旧的整单退款行为保持一致，否则同一件事会有两种结果。 */
+      o.refunds.push(refund);
+      restockOrderLeftovers(db, o, 'refund');
+      releaseCoupon(db, o);
+      adjustCustomer(db, o, -1);
+      o.status = 'refunded';
+      o.statusLabel = 'Refunded';
+      o.refundedAt = new Date().toISOString();
+      o.refundAmount = toD(o.refundedTotal);
+      o.restockDecision = restock ? 'returned' : 'written-off';
+      o.partiallyRefunded = false;
+    } else {
+      /* 部分退：订单状态不动（货还在客户手里、单还没结束），只冲减消费额。
+         注意不能 adjustCustomer(db,o,-1)——那会把"下过单"这件事也抹掉，
+         客户的复购次数、VIP 分层会凭空掉一级。 */
+      o.refunds.push(refund);
+      adjustCustomerSpent(db, o, -amount);
+      o.partiallyRefunded = true;
+    }
+
+    return {
+      order: o,
+      refunded: amount,
+      refundedTotal: o.refundedTotal,
+      fullyRefunded: allDone,
+      restocked: restock,
+    };
   });
 }
 
-module.exports = { routes, applyCancel, applyRefund, restockOrder, releaseCoupon };
+/* 整单退完时，把还没回补的剩余件数补上（可能之前已经退过一部分）。
+   赠品也一起补：下单时赠品是扣了库存的，整单退回来货也回来了，
+   不补就会出现「库存少一件、账上找不到原因」。 */
+function restockOrderLeftovers(db, o, reason) {
+  (o.items || []).forEach(it => {
+    const left = (Number(it.qty) || 0) - (Number(it.refundedQty) || 0);
+    if (left > 0) {
+      restockLine(db, o, it, left, reason);
+      it.refundedQty = Number(it.qty) || 0;
+    }
+    it.restocked = true;
+  });
+}
+
+function adjustCustomerSpent(db, o, delta) {
+  const c = db.customers.find(x => String(x.email).toLowerCase() === String(o.email).toLowerCase());
+  if (!c) return;
+  c.spent = Math.max(0, pricing.round2((c.spent || 0) + delta));
+}
+
+function applyRefund(o, opts) {
+  const b = opts || {};
+  if (Array.isArray(b.items) && b.items.length) return applyPartialRefund(o, b);
+
+  return store.tx(db => {
+    const restock = b.restock !== false;
+    if (restock) restockOrder(db, o, 'refund');
+    releaseCoupon(db, o);
+    adjustCustomer(db, o, -1);
+    const amount = b.amount != null ? b.amount : toD(toC(o.total) - toC(o.refundedTotal));
+    o.status = 'refunded';
+    o.statusLabel = 'Refunded';
+    o.refundedAt = new Date().toISOString();
+    o.refundAmount = amount;
+    o.refundedTotal = toD(toC(o.refundedTotal) + toC(amount));
+    o.restockDecision = restock ? 'returned' : 'written-off';
+    o.partiallyRefunded = false;
+    o.refunds = Array.isArray(o.refunds) ? o.refunds : [];
+    o.refunds.push({
+      id: 'R' + crypto.randomBytes(4).toString('hex'),
+      at: o.refundedAt,
+      amount: amount,
+      restock: restock,
+      reason: String(b.reason || '').slice(0, 200),
+      items: (o.items || []).map(it => ({
+        sku: it.sku, productId: it.productId, title: it.title,
+        qty: Number(it.qty) || 0, amount: 0, tax: 0,
+      })),
+      full: true,
+    });
+    return {
+      order: o, refunded: amount, refundedTotal: o.refundedTotal,
+      fullyRefunded: true, restocked: restock,
+    };
+  });
+}
+
+module.exports = { routes, applyCancel, applyRefund, restockOrder, releaseCoupon, lineShares };

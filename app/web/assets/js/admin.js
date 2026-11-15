@@ -230,10 +230,17 @@
 
   function orderDetail(o, transitions) {
     var rows = o.items.map(function (i) {
+      var left = Math.max(0, i.qty - (i.refundedQty || 0));
       return '<tr><td>' + U.esc(i.title) + (i.isGift ? ' <span class="tag">Gift</span>' : '') + '</td>' +
         '<td>' + U.esc(i.variant) + '</td><td>' + U.esc(i.size || '—') + '</td>' +
         '<td class="num">' + i.qty + '</td><td class="num">' + U.money(i.unitPrice) + '</td>' +
-        '<td class="num">' + U.money(i.unitPrice * i.qty) + '</td></tr>';
+        '<td class="num">' + U.money(i.unitPrice * i.qty) + '</td>' +
+        '<td class="num">' + (left > 0 && !i.isGift
+          ? '<input class="rfq" type="number" min="0" max="' + left + '" value="0" ' +
+            'data-sku="' + U.esc(i.sku || '') + '" data-pid="' + U.esc(i.productId || '') + '" ' +
+            'data-var="' + U.esc(i.variant || '') + '" style="width:58px;text-align:right" ' +
+            'aria-label="Quantity to refund">'
+          : '<span class="sub">' + (i.isGift ? 'gift' : '—') + '</span>') + '</td></tr>';
     }).join('');
 
     var acts = transitions.map(function (t) {
@@ -246,8 +253,7 @@
       '<a class="abtn sm" href="#/admin/orders">← All orders</a></div>' +
       '<div class="panel__bd" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
       '<span class="pill ' + o.status + '">' + U.esc(o.statusLabel) + '</span>' + acts +
-      (transitions.indexOf('refunded') >= 0
-        ? '<button class="abtn danger" data-act="refund" data-num="' + U.esc(o.number) + '">Refund</button>' : '') +
+      (o.partiallyRefunded ? '<span class="pill refunded">Partially refunded</span>' : '') +
       '</div>' +
       '<div class="panel__bd">' +
       '<div class="shiprow" data-num="' + U.esc(o.number) + '" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">' +
@@ -264,18 +270,60 @@
       'Nothing is generated automatically — the customer sees exactly the number you paste here.</p>' +
       '</div>' +
       trackBox(o) +
-      '<div class="panel__bd flush"><table class="atable"><thead><tr><th>Item</th><th>Finish</th><th>Size</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Line</th></tr></thead>' +
+      '<div class="panel__bd flush"><table class="atable"><thead><tr><th>Item</th><th>Finish</th><th>Size</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Line</th><th class="num">Refund</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>' +
       '<div class="panel__bd"><div class="srow"><span>Subtotal</span><b>' + U.money(o.subtotal) + '</b></div>' +
       (o.discount ? '<div class="srow"><span>Discount ' + U.esc(o.couponCode || '') + '</span><b>−' + U.money(o.discount) + '</b></div>' : '') +
       '<div class="srow"><span>Shipping · ' + U.esc(o.shippingMethod) + '</span><b>' + U.money(o.shipping) + '</b></div>' +
+      (o.tax ? '<div class="srow"><span>Tax' + (o.taxState ? ' · ' + U.esc(o.taxState) : '') +
+        '</span><b>' + U.money(o.tax) + '</b></div>' : '') +
       '<div class="srow srow--total"><span>Total</span><b>' + U.money(o.total) + '</b></div>' +
+      (o.refundedTotal ? '<div class="srow"><span>Refunded so far</span><b>−' + U.money(o.refundedTotal) + '</b></div>' : '') +
       '<p class="sub" style="margin-top:14px">' + U.esc(o.name) + ' · ' + U.esc(o.email) +
       (addrText(o.address) ? '<br>' + U.esc(addrText(o.address)) : '') +
       (o.tracking ? '<br>Tracking ' + U.esc(o.tracking) + (o.carrier ? ' · ' + U.esc(o.carrier) : '') : '') +
       (o.refundedAt ? '<br>Refunded ' + U.fmtDate(o.refundedAt) + ' · stock ' + U.esc(o.restockDecision || '—') : '') +
       (o.payment ? '<br>Payment ' + U.esc(o.payment.provider) + ' · ' + U.esc(o.payment.mode) + ' · •••• ' + U.esc(o.payment.last4 || '') : '') +
-      '</p></div></div>';
+      '</p></div>' + refundBox(o) + '</div>';
+  }
+
+  /* 退款面板。整单退是"一把清"，但真实退货九成是退一件——
+     只给一个 Refund 按钮，结果是多件订单退一件时把整单的钱退回去。 */
+  function refundBox(o) {
+    var hist = refundHistory(o);
+    if (o.status === 'refunded') {
+      return '<div class="panel__bd"><h3 style="margin:0 0 6px;font-size:13px">Refunded</h3>' +
+        '<p class="sub" style="margin:0">Fully refunded ' + U.fmtDate(o.refundedAt) + ' · ' +
+        U.money(o.refundedTotal || o.total) + ' · stock ' + U.esc(o.restockDecision || '—') + '</p>' + hist + '</div>';
+    }
+    if (o.status === 'cancelled') return hist ? '<div class="panel__bd">' + hist + '</div>' : '';
+    if (o.status === 'pending_payment') return '';
+
+    return '<div class="panel__bd">' +
+      '<h3 style="margin:0 0 6px;font-size:13px">Refund</h3>' +
+      '<p class="sub" style="margin:0 0 10px">Put a quantity in the <b>Refund</b> column for the lines coming back, ' +
+      'then press <b>Refund selected</b>. The amount is line price − that line&rsquo;s share of the coupon ' +
+      '+ its share of the tax. Shipping comes back only with the last paid item.</p>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
+      '<button class="abtn" data-act="refund-partial" data-num="' + U.esc(o.number) + '">Refund selected</button>' +
+      '<button class="abtn danger" data-act="refund" data-num="' + U.esc(o.number) + '">Refund whole order</button>' +
+      (o.refundedTotal ? '<span class="sub">Already refunded ' + U.money(o.refundedTotal) + ' of ' +
+        U.money(o.total) + '</span>' : '') +
+      '</div>' + hist + '</div>';
+  }
+
+  function refundHistory(o) {
+    var list = o.refunds || [];
+    if (!list.length) return '';
+    return '<table class="atable" style="margin-top:12px"><thead><tr><th>When</th><th>What</th>' +
+      '<th class="num">Amount</th></tr></thead><tbody>' +
+      list.map(function (r) {
+        var what = (r.items || []).filter(function (x) { return x.qty; })
+          .map(function (x) { return x.qty + '× ' + (x.title || x.sku); }).join(', ');
+        return '<tr><td>' + U.fmtDate(r.at) + '</td>' +
+          '<td>' + U.esc(what || 'whole order') + (r.reason ? ' <span class="sub">· ' + U.esc(r.reason) + '</span>' : '') + '</td>' +
+          '<td class="num">' + U.money(r.amount) + '</td></tr>';
+      }).join('') + '</tbody></table>';
   }
 
   function products(list, q) {

@@ -611,13 +611,38 @@ function routes(router) {
     if (!o) throw E.notFound('Order not found.');
     if (o.status === 'refunded') throw E.conflict('Already refunded.');
     if (o.status === 'cancelled') throw E.conflict('Cancelled orders cannot be refunded.');
+    /* 没收到钱就退款是空操作，但会让人以为钱退回去了。宁可拒绝。 */
+    if (o.status === 'pending_payment') {
+      throw E.conflict('Payment was never captured. Cancel the order instead of refunding it.');
+    }
+
     const b = req.body || {};
-    const out = applyRefund(o, { restock: b.restock !== false, amount: b.amount });
-    const mailIt = notify.claim(out, 'refundedAt');
-    audit(me, 'order.refund', o.number, { restock: b.restock !== false, amount: out.refundAmount });
+    const result = applyRefund(o, {
+      restock: b.restock !== false,
+      amount: b.amount,
+      items: b.items,          // 传了 items 就是部分退款
+      reason: b.reason,
+    });
+    const out = result.order;
+
+    audit(me, result.fullyRefunded ? 'order.refund' : 'order.refund.partial', o.number, {
+      restock: result.restocked, amount: result.refunded, total: result.refundedTotal,
+      items: (b.items || []).length ? b.items : undefined,
+    });
     store.flush();
-    if (mailIt) mailer.refundIssued(out, out.refundAmount);
-    ok(res, { order: out, refunded: out.refundAmount, restocked: out.restockDecision === 'returned' });
+
+    /* 部分退款每次都发信：客户退了两次就该收到两封，不能因为"退过款了"就静默。
+       mailer 的幂等键里带了金额，同一笔重复调用不会重复发。 */
+    notify.claim(out, 'refundedAt');
+    mailer.refundIssued(out, result.refunded);
+
+    ok(res, {
+      order: out,
+      refunded: result.refunded,
+      refundedTotal: result.refundedTotal,
+      fullyRefunded: result.fullyRefunded,
+      restocked: result.restocked,
+    });
   });
 
   router.post('/api/v1/admin/orders/:number/tracking', (req, res) => {

@@ -64,6 +64,7 @@ function normalizeItems(db, items) {
     }
     out.push({
       productId: p.id,
+      sku: v.sku,
       handle: p.handle,
       title: p.title,
       metal: v.metal,
