@@ -34,10 +34,15 @@ const getJSON = p => new Promise((res, rej) => {
 });
 
 (async () => {
-  const child = spawn(EDGE, ['--headless=new', '--disable-gpu', '--no-sandbox',
+  /* 本机测试必须绕开系统代理（否则连 localhost 都被代理吃掉）；
+     打线上时反而要走代理，直连会被墙。所以按目标地址决定。 */
+  const isLocal = /localhost|127\.0\.0\.1/.test(BASE);
+  const args = ['--headless=new', '--disable-gpu', '--no-sandbox',
     '--remote-debugging-port=' + PORT, '--user-data-dir=' + PROF,
-    '--window-size=1440,900', '--force-device-scale-factor=2',
-    '--no-proxy-server', '--proxy-bypass-list=*', 'about:blank'], { stdio: 'ignore' });
+    '--window-size=1440,900', '--force-device-scale-factor=2'];
+  if (isLocal) args.push('--no-proxy-server', '--proxy-bypass-list=*');
+  args.push('about:blank');
+  const child = spawn(EDGE, args, { stdio: 'ignore' });
 
   let t = null;
   for (let i = 0; i < 60; i++) { try { t = await getJSON('/json'); if (t && t.length) break; } catch (e) { } await sleep(400); }
