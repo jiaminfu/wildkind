@@ -482,4 +482,8 @@ server.listen(PORT, () => {
     active.id,
     active.isAsync ? '异步确认 · webhook 落账' : '同步 · 仅用于开发与回归',
     active.isConfigured() ? '已配置' : '未配置');
+  /* 邮件自检：dry-run 时一封也发不出去。不喊出来，就会出现
+     「以为客户收到确认信了，其实日志里躺了一堆未发送」。 */
+  const mailer = require('./lib/mailer');
+  console.log('  事务邮件：%s', mailer.statusLine());
 });

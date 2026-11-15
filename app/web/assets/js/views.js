@@ -489,8 +489,10 @@
     if (id === 'paypal') {
       return '<div class="payopt">' +
         '<span class="payopt__mark">' + ui.payMark('paypal') + '</span>' +
+        /* 描述不要再以 PayPal 开头：左边的品牌卡和标题已经各写了一次 PayPal，
+           第三句再写一次，整块看起来像没填完的占位符。 */
         '<div class="payopt__body"><b>PayPal</b>' +
-        '<span>PayPal balance or any card — handled on PayPal\'s secure page.</span></div>' +
+        '<span>Pay from your balance, bank, or any card.</span></div>' +
         '<span class="payopt__tick" aria-hidden="true">' + ui.icon('check') + '</span></div>' +
         '<p class="drawer__note">You will be redirected to PayPal to approve the payment, then brought back here ' +
         'to your order. Card details are entered on PayPal only — we never see or store them.</p>' + warn;

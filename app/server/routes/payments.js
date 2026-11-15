@@ -16,6 +16,8 @@ const crypto = require('crypto');
 const store = require('../lib/store');
 const pricing = require('../lib/pricing');
 const payments = require('../lib/payments');
+const notify = require('../lib/notify');
+const mailer = require('../lib/mailer');
 const { ApiError, E, ok } = require('../lib/http');
 
 /* 支付失败时把订单占用的库存还回去。
@@ -119,6 +121,10 @@ function routes(router) {
       return o;
     });
 
+    /* 确认信只在这里发一次。PayPal 同时还会投 webhook，走的是下面那段，
+       两边都调 orderConfirmed，靠 notify 的标记去重。 */
+    notify.orderConfirmed(updated);
+
     console.log('[payments] capture 成功 order=%s capture=%s', updated.number, cap.reference);
     ok(res, { order: updated, captured: true });
   });
@@ -209,6 +215,11 @@ function routes(router) {
       }
     }
 
+    /* 事务里只做「标记 + 收下要发信的订单」，真正的网络请求放到事务外。
+       在事务里发 HTTP 会把写锁占住几秒，期间所有下单请求排队。 */
+    let mailPaid = null;
+    let mailRefunded = null;
+
     store.tx(d => {
       d.webhookEvents = d.webhookEvents || {};
       d.webhookEvents[evKey] = {
@@ -232,6 +243,8 @@ function routes(router) {
           reference: (o.payment && o.payment.reference) || v.reference || '',
           intent: v.paymentIntent || (o.payment && o.payment.intent) || '',
         });
+        /* 同步回跳那条路可能已经发过确认信，这里 claim 会告诉我们要不要再发 */
+        if (notify.claim(o, 'confirmedAt')) mailPaid = o;
 
       } else if (v.status === 'failed') {
         if (o.status === 'pending_payment') {
@@ -245,14 +258,17 @@ function routes(router) {
         o.status = 'refunded';
         o.statusLabel = 'Refunded';
         o.refundedAt = new Date().toISOString();
+        if (notify.claim(o, 'refundedAt')) mailRefunded = o;
       }
     });
 
     console.log('[payments] webhook %s provider=%s order=%s → %s',
       v.event, pid, order.number, v.status);
 
+    if (mailPaid) mailer.orderConfirmed(mailPaid);
+    if (mailRefunded) mailer.refundIssued(mailRefunded, mailRefunded.refundAmount || mailRefunded.total);
+
     ok(res, { received: true, order: order.number, status: v.status });
   });
 }
-
 module.exports = { routes, releaseStock };

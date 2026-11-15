@@ -8,6 +8,8 @@ const auth = require('../lib/auth');
 const pricing = require('../lib/pricing');
 const uploads = require('../lib/uploads');
 const csv = require('../lib/csv');
+const notify = require('../lib/notify');
+const mailer = require('../lib/mailer');
 const { E, ApiError, ok, rateLimit, clientIp, CORS } = require('../lib/http');
 const { applyRefund } = require('./checkout');
 
@@ -549,8 +551,10 @@ function routes(router) {
     if (o.status === 'cancelled') throw E.conflict('Cancelled orders cannot be refunded.');
     const b = req.body || {};
     const out = applyRefund(o, { restock: b.restock !== false, amount: b.amount });
+    const mailIt = notify.claim(out, 'refundedAt');
     audit(me, 'order.refund', o.number, { restock: b.restock !== false, amount: out.refundAmount });
     store.flush();
+    if (mailIt) mailer.refundIssued(out, out.refundAmount);
     ok(res, { order: out, refunded: out.refundAmount, restocked: out.restockDecision === 'returned' });
   });
 
@@ -563,13 +567,17 @@ function routes(router) {
     const b = req.body || {};
     if (!b.tracking) throw E.badRequest('Tracking number is required.', [{ field: 'tracking', message: 'Required.' }]);
     o.tracking = String(b.tracking).slice(0, 64);
-    o.carrier = String(b.carrier || 'USPS').slice(0, 32);
+    o.carrier = String(b.carrier || 'Other').slice(0, 32);
     if (o.status === 'paid' || o.status === 'fulfilling') {
       o.status = 'fulfilled';
       o.statusLabel = STATUS_LABEL.fulfilled;
     }
+    /* 标记与 flush 在同一段同步代码里，标记会跟着订单一起落库。
+       客户收到「已发货」的前提是真的有单号——notify 里也拦了空单号。 */
+    const mailIt = notify.claim(o, 'shippedAt');
     audit(me, 'order.tracking', o.number, { carrier: o.carrier, tracking: o.tracking });
     store.flush();
+    if (mailIt) mailer.orderShipped(o);
     ok(res, { order: o });
   });
 

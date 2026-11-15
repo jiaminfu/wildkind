@@ -11,6 +11,7 @@ const store = require('../lib/store');
 const pricing = require('../lib/pricing');
 const { E, ok, rateLimit, clientIp } = require('../lib/http');
 const payments = require('../lib/payments');
+const notify = require('../lib/notify');
 
 const QUOTE_TTL_MS = 15 * 60 * 1000;
 const SUPPORTED_COUNTRIES = ['United States', 'Canada', 'United Kingdom'];
@@ -324,6 +325,11 @@ function routes(router) {
       status: 'paid', statusLabel: 'Paid',
       payment: session.payment,
     }));
+
+    /* 同步通道下单即到账，确认信在这里发。
+       异步通道（PayPal 等）不走这里 —— 它的确认信在 capture 成功时才发，
+       给「还没付钱」的客户发「付款成功」是比不发更糟的事。 */
+    notify.orderConfirmed(order);
 
     ok(res, { order }, 201);
   });
