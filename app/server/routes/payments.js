@@ -16,7 +16,7 @@ const crypto = require('crypto');
 const store = require('../lib/store');
 const pricing = require('../lib/pricing');
 const payments = require('../lib/payments');
-const { E, ok } = require('../lib/http');
+const { ApiError, E, ok } = require('../lib/http');
 
 /* 支付失败时把订单占用的库存还回去。
    下单那一刻就扣库存是「预留」，防的是两人同时下单超卖；
@@ -141,9 +141,12 @@ function routes(router) {
       v = await provider.verifyWebhook(raw, req.headers);
     } catch (err) {
       /* 验签过程中的网络错误（PayPal 需要回调其接口验签）不能当成验签失败，
-         但也不能放行，所以 502 让通道稍后重试。 */
+         但也不能放行，所以 502 让通道稍后重试。
+         注意必须包成 ApiError：http.js 的 fail() 只认 ApiError，
+         光给普通 Error 挂 status 属性，出去还是 500 INTERNAL。 */
       console.error('[payments] webhook 验签异常 provider=%s %s', pid, err.message);
-      throw Object.assign(err, { status: 502 });
+      throw new ApiError(502, 'WEBHOOK_VERIFY_UNAVAILABLE',
+        'We could not verify this webhook right now. Please retry.');
     }
 
     if (!v.ok) {
@@ -199,7 +202,10 @@ function routes(router) {
         v.paymentIntent = cap.reference || v.paymentIntent;
       } catch (err) {
         console.error('[payments] 批准后 capture 异常 order=%s %s', order.number, err.message);
-        throw Object.assign(err, { status: 502 });
+        /* 同上面的验签异常：必须抛 ApiError，普通 Error 挂 status 属性出去还是 500。
+           这里返回 502 是让 PayPal 稍后重投 —— 钱可能已经在扣，不能默默吞掉。 */
+        throw new ApiError(502, 'CAPTURE_UNAVAILABLE',
+          'We could not complete the capture right now. Please retry.');
       }
     }
 

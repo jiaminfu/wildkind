@@ -215,15 +215,27 @@ module.exports = {
     catch (e) { return { ok: false, reason: 'Body is not valid JSON.' }; }
 
     const t = await token();
-    const v = await call('POST', '/v1/notifications/verify-webhook-signature', {
-      auth_algo: h['paypal-auth-algo'] || '',
-      cert_url: h['paypal-cert-url'] || '',
-      transmission_id: h['paypal-transmission-id'] || '',
-      transmission_sig: h['paypal-transmission-sig'] || '',
-      transmission_time: h['paypal-transmission-time'] || '',
-      webhook_id: id,
-      webhook_event: event,
-    }, t);
+    let v;
+    try {
+      v = await call('POST', '/v1/notifications/verify-webhook-signature', {
+        auth_algo: h['paypal-auth-algo'] || '',
+        cert_url: h['paypal-cert-url'] || '',
+        transmission_id: h['paypal-transmission-id'] || '',
+        transmission_sig: h['paypal-transmission-sig'] || '',
+        transmission_time: h['paypal-transmission-time'] || '',
+        webhook_id: id,
+        webhook_event: event,
+      }, t);
+    } catch (err) {
+      /* 缺头/头被改过时 PayPal 回 INVALID_REQUEST（400），这不是「PayPal 挂了」，
+         而是「这条请求不是 PayPal 发的」—— 按验签失败处理，返回 400 让对方别再重投。
+         真正的网络异常（超时、5xx）继续往上抛，由路由转成 502 让 PayPal 稍后重试。 */
+      const n = String((err.detail && err.detail.name) || '');
+      if (n === 'INVALID_REQUEST' || n === 'VALIDATION_ERROR') {
+        return { ok: false, reason: 'Signature headers are missing or malformed.' };
+      }
+      throw err;
+    }
 
     if (String(v.verification_status || '') !== 'SUCCESS') {
       return { ok: false, reason: 'PayPal rejected the signature.' };
