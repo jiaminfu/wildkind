@@ -238,9 +238,14 @@ async function call(method, path, body, headers) {
   chk('令牌有效期 12h', login.body.data.expiresIn === 43200);
   const AUTH = { Authorization: 'Bearer ' + token };
 
+  /* 不写死项数：权限位会增加（v1.5 就加了 staff:read / staff:write），
+     写死 10 的话每加一条权限就红一次，而红的原因跟代码对不对无关。
+     owner 的定义是「全部权限」，所以只断言关键位在、且不比历史少。 */
   const me = await call('GET', '/api/v1/admin/me', undefined, AUTH);
-  chk('me 返回权限位', me.status === 200 && me.body.data.staff.permissions.length === 10,
-    me.body.data.staff.permissions.length + ' 项');
+  const mePerms = (me.body.data && me.body.data.staff && me.body.data.staff.permissions) || [];
+  chk('me 返回权限位', me.status === 200 && mePerms.length >= 10 &&
+    mePerms.indexOf('settings:write') >= 0 && mePerms.indexOf('staff:write') >= 0,
+    mePerms.length + ' 项');
 
   const opsLogin = await call('POST', '/api/v1/admin/login', {
     email: 'ops@lastgrove.com', password: 'lastgrove-ops',

@@ -7,11 +7,13 @@
 | 编写日期 | 2026-11-16 |
 | 对应实现 | `app/server`（Node 原生，零第三方依赖） |
 | 对应需求 | FRD v2.9、SDD v2.6 第 16~19 节、《商品管理补全-需求与设计说明 v1.1》 |
-| 端点数量 | **71 个操作，分布在 60 条路径**（v1.4 实测 `grep` 统计。v1.3 记 67/58，差额为本轮新增的 3 个税务操作与 1 处统计口径修正） |
-| 自动化覆盖 | `tools/api-test.js` 134 例、`tools/unit-core.js` 38 例、`tools/tax-ui-check.js` 15 例全通过（见《测试报告 v1.6》） |
-| 机器可读版 | 同目录 `openapi.json`（OpenAPI 3.0.3，**v1.2 快照，尚未包含 v1.3 的支付与物流端点、v1.4 的税务端点**） |
+| 端点数量 | **73 个操作，分布在 62 条路径**（v1.4 实测 `grep "router\.(get\|post\|patch\|put\|delete)"` 统计。v1.3 记 67/58 —— 当时的统计漏了 2 个操作，本轮一并纠正，不是本轮新增） |
+| 自动化覆盖 | 接口 147 例（`api-test.js`）+ 员工账号 53 例（`api-test-staff.js`）；单元 38 + 11 例；浏览器 17 + 17 + 27 例。全绿（见《测试报告 v1.6》） |
+| 机器可读版 | 同目录 `openapi.json`（OpenAPI 3.0.3，**v1.2 快照，尚未包含 v1.3 的支付与物流端点、v1.4 的税务与员工端点**） |
 
 > **v1.4 变更**：补齐**美国销售税**与**按行部分退款**两件事 —— 退款详见 §5.7 的 `POST /admin/orders/:number/refund`。销售税方面 —— `POST /checkout/quote` 新增 `state` 入参与 `tax / taxRate / taxState` 三个出参；`POST /orders` 改为**按订单收货地址的州重算税**（与报价州不一致时抛 `PRICE_CHANGED`，不再"按报价那笔收钱、按新地址记账"）；新增 `GET /admin/tax/report`、`GET /admin/export/tax.csv`、`PATCH /admin/settings` 的 `tax` 字段（含州名归一化与百分数自动换算）；`GET /admin/export/orders.csv` 增加 `Tax` / `Tax state` 两列。新增 §5.15 销售税专节。
+>
+> 同一版补上**员工账号管理**：`GET /admin/staff`、`POST /admin/staff`、`PATCH /admin/staff/:id`、`DELETE /admin/staff/:id`，新增 `staff:read` / `staff:write` 两个权限位（只有 owner 默认拥有），见 §5.16。三条护栏写在接口层而不是只写在界面里：不能动自己、不能动最后一个 owner、非 owner 不能造 owner。**owner 角色恒为全权限**，不读库里那份可能漏位的数组 —— 否则每次新增权限位都会静默地把老 owner 锁在门外。
 >
 > **v1.3 变更**：补齐**支付通道**与**物流追踪**两层接口 —— 新增 `GET /payments/methods`、`POST /payments/capture`、`POST /payments/webhook/:provider`、`POST /webhooks/tracking`、`POST /admin/orders/:n/tracking/refresh`、`GET /admin/tracking/quota`、`GET /admin/tracking/health`，共 7 个操作；`POST /admin/orders/:n/tracking` 行为扩展（保存即订阅 17TRACK + 发发货信 + 承运商白名单）；新增 §5.14 Webhook 专节，把「原始字节验签 / 400 停止重投 / 幂等」三条硬规则写在接口层。同时补记当时的一处能力缺失：`POST /checkout/quote` 无税额字段——该缺口已在 v1.4 关闭。
 >
@@ -688,6 +690,8 @@ curl 'http://localhost:4600/api/v1/orders/lookup?number=%23TG1131&email=sarah@ex
 #### 🔐 `POST /admin/login` / `POST /admin/logout` / `GET /admin/me`
 
 `/admin/me` 返回当前登录者与权限位，**后台首屏用它决定显示哪些菜单**——没权限的入口直接不渲染，而不是点了才报 403。
+
+`role` 是 `owner` 时，`permissions` **恒为全部权限位**（见 §5.16 末尾「owner 恒为全权限」）；其他角色以库里的数组为准。
 
 ```json
 { "data": { "staff": { "id": "S001", "email": "…", "name": "Owner",
@@ -1400,6 +1404,83 @@ sign = SHA256( rawBody + "/" + TRACK17_KEY )      // 注意中间那个斜杠
 
 ---
 
+### 5.16 后台 · 员工账号（v1.4 新增）
+
+权限位 `staff:read` / `staff:write`，**只有 owner 默认拥有**，ops 与 support 两档都不含。
+在 v1.4 之前，后台加一个人只能改 `db.json`，而且在库里删错一行就等于把自己锁在门外。
+
+#### 🔑 `GET /admin/staff`
+
+```json
+{ "data": {
+  "staff": [
+    { "id": "S001", "email": "owner@lastgrove.com", "name": "Store owner",
+      "role": "owner", "status": "active",
+      "permissions": ["metrics:read", "…"],
+      "createdAt": "2026-11-13T03:50:51.266Z",
+      "lastLoginAt": "2026-11-16T01:12:40.551Z" }
+  ],
+  "me": "S001",
+  "roles": [ { "role": "owner", "permissions": ["…"] }, { "role": "ops", "permissions": ["…"] } ],
+  "allPermissions": ["metrics:read", "…", "staff:write"],
+  "minPassword": 8
+} }
+```
+
+响应里**永远不出现 `salt` / `hash`**。`lastLoginAt` 从审计日志回捞，不是另存的字段——多存一份就多一处会对不上的地方。
+`roles` 与 `allPermissions` 一起返回，前端才能做到「换角色时把权限框按预置勾好」，而不是让前端自己抄一份常量。
+
+#### 🔑 `POST /admin/staff`
+
+```json
+{ "name": "Wei", "email": "wei@lastgrove.com", "role": "support",
+  "password": "至少 8 位", "permissions": ["orders:read", "products:read"] }
+```
+
+`permissions` 可省略，省略时按角色预置。传了也会**过滤掉不存在的权限位**（前端传错一个字符串不该造出一个半残账号）。
+邮箱唯一且不区分大小写；重复返回 `409 CONFLICT`。
+
+#### 🔑 `PATCH /admin/staff/:id`
+
+可改 `name / role / status / permissions / password`，全部可选。
+
+| 规则 | 行为 |
+| --- | --- |
+| 改 `role` 且**没传** `permissions` | 权限位按新角色**重置**。不重置会出现「角色降了、权限没降」：界面写着 support，一按退款还是能退 |
+| 改 `role` 且传了 `permissions` | 以传的为准，非法位过滤 |
+| 改 `password` 且改的是**自己** | 必须带 `currentPassword` 并校验通过，否则 `403` |
+| 改 `password` 且改的是**别人** | 不校验旧密码（这就是「重置」，旧密码多半已经忘了） |
+| 改完密码 | 该账号的**其他会话全部失效**；改自己时保留当前这一条，否则当场被踢出去 |
+| 权限变更 | **不需要重新登录**，权限每次请求现读库里 |
+
+#### 🔑 `DELETE /admin/staff/:id`
+
+删账号并清掉其会话。审计日志里该账号的条目**保留**——那是历史事实，不跟着人一起消失。
+
+#### 三条护栏
+
+| 护栏 | 返回 | 为什么 |
+| --- | --- | --- |
+| 不能停用 / 删除自己 | `409` | 这个后台没有「忘记密码」邮件，删掉自己等于永久失去后台 |
+| 不能停用 / 降级 / 删除**最后一个 active owner** | `409` | 没有 owner 之后，设置、退款、加人都没人能改，而且**没有任何界面能救回来** |
+| 非 owner 不能创建 owner、不能修改 owner 账号 | `403` | 否则拿到 `staff:write` 的人可以给自己开一个 owner 账号，绕开全部权限位 |
+
+#### owner 恒为全权限（一处刻意的不对称）
+
+`owner` 角色**不读库里那份 permissions 数组**，直接返回 `ALL_PERMISSIONS`。
+
+原因：权限位是数组，可以被单条改写；而 owner 的定义就是「全部权限」。如果只读库里那份，任何一次新增权限位（v1.4 就加了 `staff:read` / `staff:write`）都会让**已经存在**的 owner 账号凭空少两位，然后把自己锁在门外——而且是静默发生的，不会报错。
+所以库里那份对 owner 只作记录，不作依据。其他角色仍以库里的数组为准（角色只提供默认值）。
+
+| 失败 code | 说明 |
+| --- | --- |
+| `BAD_REQUEST` | 邮箱格式、姓名长度、未知角色、密码短于 8 位 |
+| `CONFLICT` | 邮箱已存在 / 动了自己 / 动了最后一个 owner |
+| `FORBIDDEN` | 缺 `staff:write`，或非 owner 试图操作 owner 账号 |
+| `NOT_FOUND` | 账号不存在 |
+
+---
+
 ## 6 数据字典
 
 ### 6.1 Product
@@ -1543,8 +1624,8 @@ curl -H "Authorization: Bearer $TOKEN" \
 | v1.2 | 2026-11-14 | 补 9 个操作（48 路径 / 56 操作）：`POST /admin/products`（新建，默认草稿）、`GET /admin/products/:id`、`POST /admin/products/:id/duplicate`、`DELETE /admin/products/:id`、`POST /admin/uploads`、CSV 导入三件套（preview / import / template）、公开的 `GET /uploads/:file`。`PATCH` 字段面从 8 个扩到 16 个（新增 `cat`/`motif`/`set`/`sizes`/`images`/`variants`/`details`/`handle`）。**权限收紧**：`cost` 从此只对 `role=owner` 返回，ops 的列表、详情、写返回、报错文案四处都做了脱敏。起因：后台 `Products` 页只有 `Price` 和 `Unlist` 两个按钮，100 款 SKU 无法录入 |
 
 | v1.3 | 2026-11-15 | 补 7 个操作（58 路径 / 67 操作）：`GET /payments/methods`、`POST /payments/capture`、`POST /payments/webhook/:provider`、`POST /webhooks/tracking`、`POST /admin/orders/:n/tracking/refresh`、`GET /admin/tracking/quota`、`GET /admin/tracking/health`。新增 §5.14 Webhook 专节；`POST /admin/orders/:n/tracking` 扩展为「保存即订阅 + 发发货信 + 承运商白名单」；Order 数据字典补 `trackingState` 与 `mail` 两个字段。同时补记 `quote` 无税额字段这一能力缺失。起因：文档写着 Stripe、写着「物流未接承运商 API」，而实际跑的是 PayPal + 17TRACK |
-| v1.4 | 2026-11-16 | 补 4 个操作（60 路径 / 71 操作）：`GET /admin/tax/report`、`GET /admin/export/tax.csv`，以及 `POST /checkout/quote` 的 `state` 入参、`PATCH /admin/settings` 的 `tax` 字段；新增 §5.15 销售税专节。**退款接口支持按行部分退款**：`items[]` 指定退哪几件，折扣与税按行分摊，退最后一件时补退运费，响应增加 `refundedTotal` / `fullyRefunded`；订单行补 `sku` 字段。**行为变更**：`POST /orders` 不再沿用报价里的税额，改为按订单收货地址的州重算，不一致即 `PRICE_CHANGED` —— 宁可让用户重看一眼金额，也不"按报价收钱、按新地址记账"。`orders.csv` 增 `Tax` / `Tax state` 两列。起因：FRD §13 P-01 是唯一一项「不解决就不能开门收钱」的代码缺口，而它同时是**收错了要退款、要修正申报**的那类错误，所以宁可少收也不多收（未配置的州一律不收）；P-06 部分退款则是"多件订单退一件会把整单的钱退回去"，直接亏钱 |
+| v1.4 | 2026-11-16 | 补 8 个操作（62 路径 / 73 操作）。**员工账号**：`GET/POST /admin/staff`、`PATCH/DELETE /admin/staff/:id`，新增 `staff:read` / `staff:write` 权限位（仅 owner 默认拥有），owner 角色恒为全权限；三条护栏（动自己 / 最后一个 owner / 非 owner 造 owner）写在接口层。**销售税**：`GET /admin/tax/report`、`GET /admin/export/tax.csv`，以及 `POST /checkout/quote` 的 `state` 入参、`PATCH /admin/settings` 的 `tax` 字段；新增 §5.15 销售税专节。**退款接口支持按行部分退款**：`items[]` 指定退哪几件，折扣与税按行分摊，退最后一件时补退运费，响应增加 `refundedTotal` / `fullyRefunded`；订单行补 `sku` 字段。**行为变更**：`POST /orders` 不再沿用报价里的税额，改为按订单收货地址的州重算，不一致即 `PRICE_CHANGED` —— 宁可让用户重看一眼金额，也不"按报价收钱、按新地址记账"。`orders.csv` 增 `Tax` / `Tax state` 两列。起因：FRD §13 P-01 是唯一一项「不解决就不能开门收钱」的代码缺口，而它同时是**收错了要退款、要修正申报**的那类错误，所以宁可少收也不多收（未配置的州一律不收）；P-06 部分退款则是"多件订单退一件会把整单的钱退回去"，直接亏钱 |
 
 ---
 
-— 文档结束 · LG-API-001 v1.4 · 60 路径 / 71 操作 · 与 `openapi.json` 同步维护（**openapi.json 仍为 v1.2 快照，支付与物流端点尚未写入**） —
+— 文档结束 · LG-API-001 v1.4 · 62 路径 / 73 操作 · 与 `openapi.json` 同步维护（**openapi.json 仍为 v1.2 快照，支付与物流端点尚未写入**） —

@@ -91,7 +91,12 @@ const getJSON = p => new Promise((res, rej) => {
       const q = await (await fetch('/api/v1/checkout/quote', { method: 'POST', headers: H,
         body: JSON.stringify({ items: [
           { productId: 'LG-101', metal: 'Gold', qty: 2 },
-          { productId: 'LG-102', metal: 'Silver', qty: 1 } ] }) })).json();
+          { productId: 'LG-102', metal: 'Silver', qty: 1 } ],
+          /* 报价必须带收货州：下单时服务端会按地址里的州重算税，
+             报价没带州而地址是 TX，就会判「金额变了」并拒单。
+             这条曾经让整套退款验收红成 15/15 —— 不是退款坏了，
+             是造单这一步被销售税挡住了。 */
+          state: 'TX' }) })).json();
       const o = await (await fetch('/api/v1/orders', { method: 'POST',
         headers: Object.assign({}, H, { 'Idempotency-Key': 'refund-ui-' + Date.now() }),
         body: JSON.stringify({ quoteId: q.data.quoteId, email: 'ui.refund@example.com',

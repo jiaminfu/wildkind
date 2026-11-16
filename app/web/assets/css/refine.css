@@ -663,3 +663,41 @@ body.ck-open{padding-bottom:calc(var(--ckh, 74px) + 14px)}
 /* 税率那块表单要跨整行：一行一州的 textarea 用 1/3 列宽写成三行就看不见了 */
 .cform .afld--full{grid-column:1/-1}
 .cform .hint--full{grid-column:1/-1; margin:0}
+
+/* ---------------- 员工权限勾选 ----------------
+   权限位本身是 `orders:write` 这种给机器看的字符串，直接摆一排复选框
+   没人知道自己勾的是什么。每格两行：上一行权限位，下一行一句人话。 */
+.permgrid{
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px 14px; margin-top:8px;
+}
+.permbox{
+  display:flex; gap:9px; align-items:flex-start;
+  padding:7px 10px; border:1px solid var(--line);
+  border-radius:7px; cursor:pointer; background:#fff;
+  transition:border-color .15s, background .15s;
+}
+.permbox:hover{border-color:var(--brass-l); background:#FDFBF6}
+.permbox input{margin:2px 0 0; flex:0 0 auto}
+.permbox span{display:flex; flex-direction:column; gap:1px; line-height:1.3; min-width:0}
+.permbox b{font-size:11.5px; font-weight:600; color:var(--ink); letter-spacing:.01em}
+.permbox i{font-style:normal; font-size:11px; color:var(--muted); white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis}
+.permbox input:disabled ~ span{opacity:.5}
+@media (max-width:860px){
+  .permgrid{grid-template-columns:1fr}
+  .permbox i{white-space:normal}
+}
+
+/* 上面那批卡片本身是 <label>，落在了 `.afld label` 的规矩里：
+   字号 9.5px、text-transform:uppercase、letter-spacing:.1em；
+   而里面的勾选框又吃了 `.afld input{width:100%}`，被撑成一整条，
+   于是勾选框被顶到卡片右边缘、说明文字全变大写。
+   这里逐项改回来：勾选框回到左侧、说明用正常大小写、只有权限位保留大写。 */
+.permgrid .permbox{font-size:12px; letter-spacing:0; text-transform:none; margin:0}
+.permgrid .permbox input[type="checkbox"]{
+  width:auto; padding:0; margin:2px 0 0; flex:0 0 auto;
+  border:0; background:none; accent-color:var(--sea);
+}
+.permgrid .permbox b{text-transform:uppercase; letter-spacing:.06em; font-size:11px}
+.permgrid .permbox i{text-transform:none; letter-spacing:0}

@@ -99,6 +99,57 @@ function inRange(o, days) {
 }
 
 /* ============================================================
+   员工账号：把「加个人得改数据库」这件事收进后台
+   三条护栏，都是把自己锁在门外的坑：
+     ① 不能删自己、不能停用自己 —— 手快一下当场失去后台
+     ② 不能删掉 / 降级 / 停用最后一个 owner —— 之后没人能改任何设置
+     ③ 改自己的密码必须验旧密码 —— 令牌泄了也不等于账号被接管
+   ============================================================ */
+const STAFF_ROLES = ['owner', 'ops', 'support'];
+const MIN_PASSWORD = 8;
+
+function countActiveOwners(db) {
+  return db.staff.filter(s => s.role === 'owner' && s.status === 'active').length;
+}
+
+/* 传了 permissions 就用传的（过滤掉不存在的位），没传就按角色预置 */
+function normalizePerms(input, role) {
+  if (!Array.isArray(input)) return (auth.ROLE_PRESETS[role] || []).slice();
+  const seen = {};
+  return input
+    .map(String)
+    .filter(p => auth.ALL_PERMISSIONS.indexOf(p) >= 0 && !seen[p] && (seen[p] = true));
+}
+
+function nextStaffId(db) {
+  let max = 0;
+  db.staff.forEach(s => {
+    const n = parseInt(String(s.id).replace(/\D/g, ''), 10);
+    if (n > max) max = n;
+  });
+  return 'S' + String(max + 1).padStart(3, '0');
+}
+
+/* 登录时间从审计日志里回捞（日志是 unshift，第一条命中就是最近一次） */
+function lastLoginMap(db) {
+  const map = {};
+  db.auditLog.forEach(a => {
+    if (a.action === 'login' && a.target && !map[a.target]) map[a.target] = a.at;
+  });
+  return map;
+}
+
+/* 对外的员工视图：永远不带 salt / hash */
+function staffView(s, lastLoginAt) {
+  return {
+    id: s.id, email: s.email, name: s.name, role: s.role, status: s.status,
+    permissions: auth.effectivePermissions(s),
+    createdAt: s.createdAt || null,
+    lastLoginAt: lastLoginAt || null,
+  };
+}
+
+/* ============================================================
    商品写操作的共用规则
    新建与编辑走同一套校验，避免「新建能过、编辑不拦」这种口径分裂。
    ============================================================ */
@@ -496,7 +547,7 @@ function routes(router) {
       token,
       staff: {
         id: staff.id, email: staff.email, name: staff.name,
-        role: staff.role, permissions: staff.permissions || auth.ROLE_PRESETS[staff.role],
+        role: staff.role, permissions: auth.effectivePermissions(staff),
       },
       expiresIn: auth.TOKEN_TTL_MS / 1000,
     });
@@ -511,6 +562,154 @@ function routes(router) {
   router.get('/api/v1/admin/me', (req, res) => {
     const me = auth.requireAuth(req);
     ok(res, { staff: { id: me.staffId, email: me.email, name: me.name, role: me.role, permissions: me.permissions } });
+  });
+
+  /* ---------------- 员工账号 ---------------- */
+  router.get('/api/v1/admin/staff', (req, res) => {
+    const me = auth.requireAuth(req);
+    auth.requirePerm(me, 'staff:read');
+    const db = store.get();
+    const last = lastLoginMap(db);
+    const order = { owner: 0, ops: 1, support: 2 };
+    const rows = db.staff
+      .map(s => staffView(s, last[s.id]))
+      .sort((a, b) => (order[a.role] - order[b.role]) || String(a.email).localeCompare(String(b.email)));
+    ok(res, {
+      staff: rows,
+      me: me.staffId,
+      roles: STAFF_ROLES.map(r => ({ role: r, permissions: (auth.ROLE_PRESETS[r] || []).slice() })),
+      allPermissions: auth.ALL_PERMISSIONS.slice(),
+      minPassword: MIN_PASSWORD,
+    });
+  });
+
+  router.post('/api/v1/admin/staff', (req, res) => {
+    const me = auth.requireAuth(req);
+    auth.requirePerm(me, 'staff:write');
+    const b = req.body || {};
+    const email = String(b.email || '').trim().toLowerCase();
+    const name = String(b.name || '').trim();
+    const role = String(b.role || 'support');
+    const password = String(b.password || '');
+
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw E.badRequest('Enter a valid email address.');
+    if (name.length < 2) throw E.badRequest('Enter a name.');
+    if (STAFF_ROLES.indexOf(role) < 0) throw E.badRequest('Unknown role: ' + role);
+    /* 只有 owner 能造 owner。否则拿到 staff:write 的人可以给自己开一个
+       owner 账号，等于绕开一切权限位。 */
+    if (role === 'owner' && me.role !== 'owner') throw E.forbidden('Only an owner can create another owner.');
+    if (password.length < MIN_PASSWORD) {
+      throw E.badRequest('Password must be at least ' + MIN_PASSWORD + ' characters.');
+    }
+
+    const db = store.get();
+    if (db.staff.some(s => String(s.email).toLowerCase() === email)) {
+      throw E.conflict('That email already has an account.');
+    }
+
+    const perms = normalizePerms(b.permissions, role);
+    const h = auth.hashPassword(password);
+    const rec = {
+      id: nextStaffId(db), email, name, role, status: 'active',
+      permissions: perms, salt: h.salt, hash: h.hash,
+      createdAt: new Date().toISOString(),
+    };
+    db.staff.push(rec);
+    audit(me, 'staff.create', rec.id, { email, role, permissions: perms.length });
+    store.flush();
+    ok(res, { staff: staffView(rec, null) }, 201);
+  });
+
+  router.patch('/api/v1/admin/staff/:id', (req, res) => {
+    const me = auth.requireAuth(req);
+    auth.requirePerm(me, 'staff:write');
+    const db = store.get();
+    const s = db.staff.find(x => x.id === req.params.id);
+    if (!s) throw E.notFound('Staff account not found.');
+    const b = req.body || {};
+    const isSelf = s.id === me.staffId;
+    const changes = {};
+    let roleChanged = false;
+
+    if (b.name != null) {
+      const n = String(b.name).trim();
+      if (n.length < 2) throw E.badRequest('Enter a name.');
+      if (n !== s.name) { s.name = n; changes.name = n; }
+    }
+
+    if (b.role != null) {
+      const role = String(b.role);
+      if (STAFF_ROLES.indexOf(role) < 0) throw E.badRequest('Unknown role: ' + role);
+      if (s.role === 'owner' && me.role !== 'owner') {
+        throw E.forbidden('Only an owner can change an owner account.');
+      }
+      if (s.role === 'owner' && role !== 'owner' && countActiveOwners(db) <= 1) {
+        throw E.conflict('This is the only owner. Promote someone else to owner first.');
+      }
+      if (role !== s.role) { s.role = role; changes.role = role; roleChanged = true; }
+    }
+
+    if (b.status != null) {
+      const st = String(b.status);
+      if (st !== 'active' && st !== 'disabled') throw E.badRequest('Status must be active or disabled.');
+      if (isSelf && st !== 'active') throw E.conflict('You cannot disable your own account.');
+      if (s.role === 'owner' && st !== 'active' && countActiveOwners(db) <= 1) {
+        throw E.conflict('This is the only owner. Add another owner first.');
+      }
+      if (st !== s.status) { s.status = st; changes.status = st; }
+    }
+
+    if (b.permissions != null) {
+      const perms = normalizePerms(b.permissions, s.role);
+      s.permissions = perms;
+      changes.permissions = perms.length;
+    } else if (roleChanged) {
+      /* 只改角色、没显式给权限位时，权限必须跟着角色重置。
+         库里那份旧数组优先级高于角色预置，所以不重置就等于「角色降了、权限没降」：
+         界面上写着 support，一按退款还是能退。权限显示与实际不符，比没有权限更危险。 */
+      s.permissions = (auth.ROLE_PRESETS[s.role] || []).slice();
+      changes.permissions = s.permissions.length;
+    }
+
+    if (b.password != null) {
+      const pw = String(b.password);
+      if (pw.length < MIN_PASSWORD) {
+        throw E.badRequest('Password must be at least ' + MIN_PASSWORD + ' characters.');
+      }
+      /* 改自己的密码要验旧密码：令牌泄漏时，光有令牌不能换锁。
+         改别人的密码不需要 —— 那本来就是「重置」，旧密码可能已经忘了。 */
+      if (isSelf && !auth.verifyPassword(String(b.currentPassword || ''), s.salt, s.hash)) {
+        throw E.forbidden('Current password is incorrect.');
+      }
+      const h = auth.hashPassword(pw);
+      s.salt = h.salt; s.hash = h.hash;
+      changes.password = 'reset';
+      /* 换密码后把该账号的会话清掉：改密码的场合通常是「怀疑泄漏」，
+         留着旧令牌等于什么都没改。改自己的那条保留，否则当场被踢出去。 */
+      db.sessions = db.sessions.filter(x => x.staffId !== s.id || (isSelf && x.token === me.token));
+    }
+
+    audit(me, 'staff.update', s.id, changes);
+    store.flush();
+    ok(res, { staff: staffView(s, null) });
+  });
+
+  router.delete('/api/v1/admin/staff/:id', (req, res) => {
+    const me = auth.requireAuth(req);
+    auth.requirePerm(me, 'staff:write');
+    const db = store.get();
+    const i = db.staff.findIndex(x => x.id === req.params.id);
+    if (i < 0) throw E.notFound('Staff account not found.');
+    const s = db.staff[i];
+    if (s.id === me.staffId) throw E.conflict('You cannot delete your own account.');
+    if (s.role === 'owner' && countActiveOwners(db) <= 1) {
+      throw E.conflict('This is the only owner. Add another owner first.');
+    }
+    db.staff.splice(i, 1);
+    db.sessions = db.sessions.filter(x => x.staffId !== s.id);
+    audit(me, 'staff.delete', s.id, { email: s.email, role: s.role });
+    store.flush();
+    ok(res, { deleted: s.id });
   });
 
   /* ---------------- 看板 ---------------- */

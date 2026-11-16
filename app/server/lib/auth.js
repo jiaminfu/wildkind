@@ -14,6 +14,9 @@ const ALL_PERMISSIONS = [
   'metrics:read', 'orders:read', 'orders:write', 'orders:refund',
   'products:read', 'products:write', 'inventory:write',
   'customers:read', 'coupons:write', 'settings:write',
+  /* 管人是最高危的一项：能建账号、能重置别人的密码、能把自己提成 owner。
+     默认只有 owner 有，且没开给 ops / support 任何一档。 */
+  'staff:read', 'staff:write',
 ];
 
 const ROLE_PRESETS = {
@@ -35,6 +38,17 @@ function verifyPassword(password, salt, hash) {
   const a = Buffer.from(h, 'hex');
   const b = Buffer.from(hash, 'hex');
   return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+/* 实际生效的权限位。
+   owner 恒为全权限 —— 权限位存在库里、可以被单条改写，而 owner 的定义就是
+   「全部权限」。如果只读库里那份数组，将来任何一次新增权限位（比如这次的
+   staff:write）都会让已经存在的 owner 账号凭空少一位，然后把自己锁在门外。
+   别人的权限仍以库里的数组为准（角色只提供默认值）。 */
+function effectivePermissions(staff) {
+  if (!staff) return [];
+  if (staff.role === 'owner') return ALL_PERMISSIONS.slice();
+  return staff.permissions || ROLE_PRESETS[staff.role] || [];
 }
 
 function issueToken(staffId, ip) {
@@ -75,7 +89,7 @@ function current(req) {
     email: staff.email,
     name: staff.name,
     role: staff.role,
-    permissions: staff.permissions || ROLE_PRESETS[staff.role] || [],
+    permissions: effectivePermissions(staff),
     token,
   };
 }
@@ -102,6 +116,6 @@ function revoke(token) {
 }
 
 module.exports = {
-  ALL_PERMISSIONS, ROLE_PRESETS, hashPassword, verifyPassword,
+  ALL_PERMISSIONS, ROLE_PRESETS, hashPassword, verifyPassword, effectivePermissions,
   issueToken, current, requireAuth, requirePerm, revoke, TOKEN_TTL_MS,
 };

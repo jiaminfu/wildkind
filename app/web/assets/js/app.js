@@ -629,6 +629,12 @@
         var tx = await API.get('/admin/tax/report?' + qsT.toString(), { auth: true });
         return A.shell(A.tax(tx.data), 'tax', 'Sales tax', staff);
       }
+      if (sec === 'staff') {
+        var stf = await API.get('/admin/staff', { auth: true });
+        var sel = r.seg[2] || null;
+        return A.shell(A.staff(stf.data, sel), 'staff',
+          sel ? 'Staff account' : 'Staff', staff);
+      }
       return A.shell('<div class="panel"><div class="panel__bd">Unknown section.</div></div>', sec, 'Admin', staff);
     } catch (e) {
       if (e.status === 401) return A.login(window.API.takeNotice());
@@ -1836,6 +1842,92 @@
     S.go('/admin/tax?from=' + encodeURIComponent(form.from.value) +
       '&to=' + encodeURIComponent(form.to.value));
   });
+
+  /* ---------------- 员工账号 ---------------- */
+  function checkedPerms(form) {
+    return Array.prototype.slice
+      .call(form.querySelectorAll('input[name="perms"]:checked'))
+      .map(function (i) { return i.value; });
+  }
+
+  /* 改角色时把权限框勾成该角色的预置，允许之后手动微调。
+     不这么做的话，选「Support」却留着 ops 的权限，人以为降权了其实没降。 */
+  S.onChange('staff-role', function (el) {
+    var form = el.form;
+    if (!form) return;
+    var presets = {};
+    try { presets = JSON.parse(el.getAttribute('data-presets') || '{}'); } catch (e) { presets = {}; }
+    var want = presets[el.value] || [];
+    Array.prototype.forEach.call(form.querySelectorAll('input[name="perms"]'), function (box) {
+      box.checked = want.indexOf(box.value) >= 0;
+    });
+  });
+
+  S.onSubmit('staff-create', async function (form) {
+    try {
+      var r = await API.post('/admin/staff', {
+        name: form.name.value.trim(),
+        email: form.email.value.trim(),
+        role: form.role.value,
+        password: form.password.value,
+        permissions: checkedPerms(form),
+      }, { auth: true });
+      S.toast('Account created — ' + r.data.staff.email, 'ok');
+      render();
+    } catch (e) { S.toast(e.message, 'err'); }
+  });
+
+  S.onSubmit('staff-save', async function (form) {
+    var id = form.getAttribute('data-id');
+    var body = {
+      name: form.name.value.trim(),
+      role: form.role.value,
+      permissions: checkedPerms(form),
+    };
+    /* 自己被禁用 / 最后一个 owner 这两个下拉是 disabled 的，
+       disabled 的控件不进 FormData —— 明着不传，比传了被服务端拒更干净。 */
+    if (form.status && !form.status.disabled) body.status = form.status.value;
+    try {
+      await API.patch('/admin/staff/' + encodeURIComponent(id), body, { auth: true });
+      S.toast('Saved', 'ok');
+      render();
+    } catch (e) { S.toast(e.message, 'err'); }
+  });
+
+  S.onSubmit('staff-pw', async function (form) {
+    var id = form.getAttribute('data-id');
+    var body = { password: form.password.value };
+    if (form.currentPassword) body.currentPassword = form.currentPassword.value;
+    try {
+      await API.patch('/admin/staff/' + encodeURIComponent(id), body, { auth: true });
+      S.toast('Password changed · that account is signed out elsewhere', 'ok');
+      render();
+    } catch (e) { S.toast(e.message, 'err'); }
+  });
+
+  S.onClick('staff-toggle', async function (el) {
+    var to = el.getAttribute('data-status');
+    if (!confirm(to === 'disabled'
+      ? 'Disable this account? They will be signed out immediately.'
+      : 'Re-enable this account?')) return;
+    try {
+      await API.patch('/admin/staff/' + encodeURIComponent(el.getAttribute('data-id')),
+        { status: to }, { auth: true });
+      S.toast(to === 'disabled' ? 'Account disabled' : 'Account re-enabled', 'ok');
+      render();
+    } catch (e) { S.toast(e.message, 'err'); }
+  });
+
+  S.onClick('staff-del', async function (el) {
+    var email = el.getAttribute('data-email');
+    if (!confirm('Delete ' + email + '? This cannot be undone. Their audit history stays.')) return;
+    try {
+      await API.del('/admin/staff/' + encodeURIComponent(el.getAttribute('data-id')), { auth: true });
+      S.toast('Account deleted', 'ok');
+      S.go('/admin/staff');
+    } catch (e) { S.toast(e.message, 'err'); }
+  });
+
   /* 搜索层：输入回车跳独立搜索页。
      以前跳的是 #/collections/best-sellers?q=，只在 best-sellers 那几件里过滤，
      全站 3 件戒指搜出来是「0 pieces」——接口一直是好的，是前端把搜索当成了集合筛选。 */

@@ -13,12 +13,20 @@
     { g: 'Overview', items: [['', 'Dashboard'], ['orders', 'Orders']] },
     { g: 'Catalog', items: [['products', 'Products'], ['collections', 'Collections'], ['inventory', 'Inventory']] },
     { g: 'Growth', items: [['coupons', 'Coupons'], ['reviews', 'Reviews'], ['custom', 'Custom requests'], ['customers', 'Customers']] },
-    { g: 'System', items: [['content', 'Content'], ['ledger', 'Stock ledger'], ['tax', 'Sales tax'], ['audit', 'Audit log'], ['settings', 'Settings']] },
+    { g: 'System', items: [['content', 'Content'], ['ledger', 'Stock ledger'], ['tax', 'Sales tax'], ['staff', 'Staff', 'staff:read'], ['audit', 'Audit log'], ['settings', 'Settings']] },
   ];
 
   function shell(body, active, title, staff) {
+    /* 第三项是可选的权限位：没权限的入口直接不渲染，而不是让人点进去吃 403。
+       文档一直这么写（§5.5），但实现里从来没做过——加员工管理时才发现：
+       support 登录后侧栏照样挂着 Staff，点一下才知道自己没权限。 */
+    var perms = (staff && staff.permissions) || [];
     var nav = NAV.map(function (grp) {
-      return '<div class="adm__grp">' + grp.g + '</div>' + grp.items.map(function (it) {
+      var items = grp.items.filter(function (it) {
+        return !it[2] || perms.indexOf(it[2]) >= 0;
+      });
+      if (!items.length) return '';
+      return '<div class="adm__grp">' + grp.g + '</div>' + items.map(function (it) {
         var href = '#/admin' + (it[0] ? '/' + it[0] : '');
         var on = (active || '') === it[0] ? ' class="on"' : '';
         return '<a href="' + href + '"' + on + '>' + it[1] + '</a>';
@@ -679,6 +687,165 @@
       '</ul></div></div>';
   }
 
+  /* ---------------- 员工账号 ---------------- */
+  var PERM_LABEL = {
+    'metrics:read': 'See dashboard numbers',
+    'orders:read': 'See orders',
+    'orders:write': 'Change order status / tracking',
+    'orders:refund': 'Issue refunds',
+    'products:read': 'See products',
+    'products:write': 'Create and edit products',
+    'inventory:write': 'Adjust stock',
+    'customers:read': 'See customers',
+    'coupons:write': 'Create and edit coupons',
+    'settings:write': 'Change store settings',
+    'staff:read': 'See staff accounts',
+    'staff:write': 'Add / edit / delete staff',
+  };
+
+  function permBoxes(all, checked, disabled) {
+    return (all || []).map(function (p) {
+      var on = (checked || []).indexOf(p) >= 0;
+      return '<label class="permbox"><input type="checkbox" name="perms" value="' + U.esc(p) + '"' +
+        (on ? ' checked' : '') + (disabled ? ' disabled' : '') + '>' +
+        '<span><b>' + U.esc(p) + '</b><i>' + U.esc(PERM_LABEL[p] || '') + '</i></span></label>';
+    }).join('');
+  }
+
+  function roleOpts(roles, cur) {
+    return (roles || []).map(function (r) {
+      var name = r.role.charAt(0).toUpperCase() + r.role.slice(1);
+      return '<option value="' + U.esc(r.role) + '"' + (r.role === cur ? ' selected' : '') + '>' + U.esc(name) + '</option>';
+    }).join('');
+  }
+
+  function staffPage(d, selectedId) {
+    var list = d.staff || [];
+    var roles = d.roles || [];
+    var all = d.allPermissions || [];
+    var presets = {};
+    roles.forEach(function (r) { presets[r.role] = r.permissions; });
+
+    var owners = list.filter(function (s) { return s.role === 'owner' && s.status === 'active'; }).length;
+    var activeN = list.filter(function (s) { return s.status === 'active'; }).length;
+
+    /* ---------- 单个账号：编辑 ---------- */
+    if (selectedId) {
+      var one = list.filter(function (s) { return s.id === selectedId; })[0];
+      if (!one) {
+        return '<div class="panel"><div class="panel__bd">Staff account not found. ' +
+          '<a href="#/admin/staff">Back to staff</a></div></div>';
+      }
+      var isMe = one.id === d.me;
+      var onlyOwner = one.role === 'owner' && owners <= 1;
+
+      return '<div class="panel"><div class="panel__hd"><h2>' + U.esc(one.name) + '</h2>' +
+        '<a class="abtn sm" href="#/admin/staff">← All staff</a></div>' +
+        '<div class="panel__bd"><form data-act="staff-save" data-id="' + U.esc(one.id) + '" class="cform">' +
+        '<label class="afld"><span>Name</span><input name="name" value="' + U.esc(one.name) + '" required></label>' +
+        '<label class="afld"><span>Email (cannot be changed)</span>' +
+        '<input value="' + U.esc(one.email) + '" disabled></label>' +
+        '<label class="afld"><span>Role</span>' +
+        '<select name="role" data-act="staff-role" data-presets=\'' + U.esc(JSON.stringify(presets)) + '\'>' +
+        roleOpts(roles, one.role) + '</select></label>' +
+        '<label class="afld"><span>Status</span>' +
+        '<select name="status"' + (isMe || onlyOwner ? ' disabled' : '') + '>' +
+        '<option value="active"' + (one.status === 'active' ? ' selected' : '') + '>Active</option>' +
+        '<option value="disabled"' + (one.status === 'disabled' ? ' selected' : '') + '>Disabled</option>' +
+        '</select></label>' +
+        (isMe || onlyOwner
+          ? '<p class="sub" style="grid-column:1/-1">' +
+            (isMe ? 'This is your own account — you cannot disable it.' :
+              'This is the only owner account — disable it and nobody can change settings again.') +
+            '</p>' : '') +
+        '<div class="afld afld--full"><span>Permissions</span>' +
+        '<div class="permgrid">' + permBoxes(all, one.permissions) + '</div></div>' +
+        '<button class="btn" type="submit">Save changes</button>' +
+        '</form></div>' +
+        '<div class="panel__bd sub">Role only picks a starting set of permissions — what actually applies is the ' +
+        'boxes above. Owner always has everything.</div></div>' +
+
+        '<div class="panel"><div class="panel__hd"><h2>Reset password</h2>' +
+        '<span class="sub">Signs this account out everywhere</span></div>' +
+        '<div class="panel__bd"><form data-act="staff-pw" data-id="' + U.esc(one.id) + '" class="cform">' +
+        (isMe ? '<label class="afld afld--full"><span>Current password</span>' +
+          '<input name="currentPassword" type="password" autocomplete="current-password" required></label>' : '') +
+        '<label class="afld afld--full"><span>New password (at least ' + (d.minPassword || 8) + ' characters)</span>' +
+        '<input name="password" type="password" autocomplete="new-password" required></label>' +
+        '<button class="btn" type="submit">' + (isMe ? 'Change my password' : 'Reset their password') + '</button>' +
+        '</form></div>' +
+        (isMe ? '<div class="panel__bd sub">Changing your own password asks for the current one — a stolen ' +
+          'sign-in token alone is not enough to take the account over.</div>' : '') + '</div>' +
+
+        (isMe ? '' :
+          '<div class="panel"><div class="panel__hd"><h2>Danger zone</h2></div>' +
+          '<div class="panel__bd" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">' +
+          '<button class="abtn" data-act="staff-toggle" data-id="' + U.esc(one.id) + '" data-status="' +
+          (one.status === 'active' ? 'disabled' : 'active') + '">' +
+          (one.status === 'active' ? 'Disable account' : 'Re-enable account') + '</button>' +
+          '<button class="abtn danger" data-act="staff-del" data-id="' + U.esc(one.id) + '" data-email="' +
+          U.esc(one.email) + '"' + (onlyOwner ? ' disabled' : '') + '>Delete account</button>' +
+          '<span class="sub">Disabling keeps the history and the audit trail. Deleting removes the account — ' +
+          'their audit entries stay.</span></div></div>');
+
+      /* 上面 danger zone 的 disabled 只挡按钮，服务端还有一道闸，见 DELETE 路由 */
+    }
+
+    /* ---------- 列表 ---------- */
+    var rows = list.map(function (s) {
+      var pill = s.status === 'active' ? 'active' : 'cancelled';
+      var rolePill = s.role === 'owner' ? 'paid' : 'new';
+      return '<tr><td><a href="#/admin/staff/' + U.esc(s.id) + '"><b>' + U.esc(s.name) + '</b></a>' +
+        (s.id === d.me ? ' <span class="tag">you</span>' : '') + '</td>' +
+        '<td>' + U.esc(s.email) + '</td>' +
+        '<td><span class="pill ' + rolePill + '">' + U.esc(s.role) + '</span></td>' +
+        '<td><span class="pill ' + pill + '">' + U.esc(s.status) + '</span></td>' +
+        '<td class="num">' + (s.permissions || []).length + '</td>' +
+        '<td>' + (s.lastLoginAt ? U.fmtDate(s.lastLoginAt) : '—') + '</td>' +
+        '<td><a class="abtn sm" href="#/admin/staff/' + U.esc(s.id) + '">Manage</a></td></tr>';
+    }).join('');
+
+    return '<div class="kpis" style="grid-template-columns:repeat(3,1fr)">' +
+      '<div class="kpi"><span>Accounts</span><b>' + list.length + '</b></div>' +
+      '<div class="kpi"><span>Active</span><b>' + activeN + '</b>' +
+        '<em>' + (list.length - activeN) + ' disabled</em></div>' +
+      '<div class="kpi"><span>Owners</span><b>' + owners + '</b>' +
+        '<em>' + (owners <= 1 ? 'add a second one before you need it' : 'at least two — safe') + '</em></div></div>' +
+
+      '<div class="panel"><div class="panel__hd"><h2>Staff</h2>' +
+      '<span class="sub">Who can sign in to this admin, and what they can do</span></div>' +
+      '<div class="panel__bd flush"><table class="atable">' +
+      '<colgroup><col style="width:20%"><col style="width:26%"><col style="width:11%"><col style="width:11%">' +
+      '<col style="width:10%"><col style="width:14%"><col style="width:8%"></colgroup>' +
+      '<thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th>' +
+      '<th class="num">Perms</th><th>Last sign-in</th><th></th></tr></thead>' +
+      '<tbody>' + (rows || '<tr><td colspan="7">No staff accounts.</td></tr>') + '</tbody></table></div></div>' +
+
+      '<div class="panel"><div class="panel__hd"><h2>Add someone</h2>' +
+      '<span class="sub">They can sign in as soon as you save</span></div>' +
+      '<div class="panel__bd"><form data-act="staff-create" data-presets=\'' + U.esc(JSON.stringify(presets)) + '\' class="cform cform--2">' +
+      '<label class="afld"><span>Name</span><input name="name" placeholder="Who is this" required></label>' +
+      '<label class="afld"><span>Email</span><input name="email" type="email" placeholder="name@example.com" required></label>' +
+      '<label class="afld"><span>Role</span>' +
+      '<select name="role" data-act="staff-role" data-presets=\'' + U.esc(JSON.stringify(presets)) + '\'>' +
+      roleOpts(roles, 'support') + '</select></label>' +
+      '<label class="afld"><span>Initial password (at least ' + (d.minPassword || 8) + ' characters)</span>' +
+      '<input name="password" type="text" autocomplete="off" ' +
+      'placeholder="Tell them to change it after first sign-in" required></label>' +
+      '<div class="afld afld--full"><span>Permissions</span>' +
+      '<div class="permgrid" id="permGrid">' + permBoxes(all, presets.support || []) + '</div></div>' +
+      '<button class="btn" type="submit" style="grid-column:1/-1">Create account</button>' +
+      '</form></div></div>' +
+
+      '<div class="panel"><div class="panel__hd"><h2>Two things this page will not let you do</h2></div>' +
+      '<div class="panel__bd"><ul class="abullets">' +
+      '<li><b>Delete or disable your own account.</b> One wrong click and you are locked out of your own store, ' +
+      'with no password reset to fall back on — there is no “forgot password” email on this admin.</li>' +
+      '<li><b>Remove the last owner.</b> If no active owner is left, nobody can change settings, refund, or add ' +
+      'staff again. Add a second owner first, confirm it can sign in, then downgrade the first.</li>' +
+      '</ul></div></div>';
+  }
+
   /* ---------------- 优惠券 / 营销 ---------------- */
   function coupons(list) {
     var live = list.filter(function (c) { return c.status === 'active'; }).length;
@@ -1016,7 +1183,7 @@
 
   window.AdminViews = {
     shell: shell, login: login, dash: dash, orders: orders, orderDetail: orderDetail,
-    products: products, inventory: inventory, settings: settings, tax: tax,
+    products: products, inventory: inventory, settings: settings, tax: tax, staff: staffPage,
     coupons: coupons, reviews: reviews, customers: customers, ledger: ledger, audit: audit,
     collections: collections, collectionEdit: collectionEdit,
     custom: custom, customDetail: customDetail, content: content,
