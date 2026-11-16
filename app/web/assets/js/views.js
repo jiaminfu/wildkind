@@ -454,9 +454,38 @@
         '<button class="cline__rm" data-act="rm" data-key="' + esc(l.key) + '">Remove</button></div></div>';
     }).join('');
 
+    /* 免邮 / 赠品进度条。抽屉里一直有，购物车页却没有 ——
+       而购物车页正是「差一点点就免邮」最该被看见的地方：
+       门槛设了、进度只在一个默认收起的抽屉里，等于没设。 */
+    var prog = '';
+    if (t.afterDiscount != null) {
+      prog += '<div class="progress"><div class="progress__bar"><i style="width:' +
+        Math.min(100, (t.afterDiscount / S.DB.settings.freeShip) * 100) + '%"></i></div>' +
+        '<div class="progress__txt">' + (t.freeShip
+          ? '<b>Free standard shipping</b> unlocked'
+          : 'Spend <b>' + money(t.freeShipGap) + '</b> more for free shipping') + '</div></div>';
+      if (S.DB.giftRule && S.DB.giftRule.threshold) {
+        prog += '<div class="progress"><div class="progress__bar"><i style="width:' +
+          Math.min(100, (t.afterDiscount / S.DB.giftRule.threshold) * 100) + '%"></i></div>' +
+          '<div class="progress__txt">' + (t.giftUnlocked
+            ? '<b>Free gift unlocked</b> — ' + esc(S.DB.giftRule.name) + ' added'
+            : 'Spend <b>' + money(t.giftGap) + '</b> more for a free ' + esc(S.DB.giftRule.name)) +
+          '</div></div>';
+      }
+    }
+
+    /* 优惠码表单与抽屉、结算页共用同一个 data-act="coupon" 处理器，
+       所以这里只是把同样的标记搬过来，没有第二套逻辑。 */
+    var couponBox = S.state.coupon
+      ? '<div class="coupon-applied"><span>Code <b>' + esc(S.state.coupon.code) + '</b> applied</span>' +
+      '<button type="button" data-act="rm-coupon">Remove</button></div>'
+      : '<form class="coupon" data-act="coupon"><input name="code" placeholder="Discount code" aria-label="Discount code">' +
+      '<button type="submit">Apply</button></form>' +
+      '<div class="coupon-msg" id="couponMsg"></div>';
+
     return '<div class="wrap"><div class="collhead"><h1>Your bag</h1>' +
       '<p>' + S.cartCount() + ' ' + (S.cartCount() === 1 ? 'piece' : 'pieces') + ' · duties included</p></div>' +
-      '<div class="co"><div><div class="cartlines">' + rows + '</div>' +
+      '<div class="co"><div>' + prog + '<div class="cartlines">' + rows + '</div>' +
       '<a class="link-u" href="/#/collections/best-sellers">← Keep shopping</a></div>' +
       '<div class="paysum"><h4>Summary</h4>' +
       '<div class="sum">' +
@@ -464,7 +493,7 @@
       (t.discount ? '<div class="sum__row disc"><span>Discount</span><span>−' + money(t.discount) + '</span></div>' : '') +
       '<div class="sum__row"><span>Shipping</span><span>' + (t.shipping ? money(t.shipping) : 'Free') + '</span></div>' +
       '<div class="sum__row tot"><span>Total</span><span>' + money(t.total) + '</span></div>' +
-      '</div>' +
+      '</div>' + couponBox +
       '<a class="btn btn--full" href="/#/checkout">Checkout</a>' +
       '<p class="drawer__note">Taxes and duties included · 30-day free returns</p>' +
       '</div></div></div>';
@@ -565,6 +594,14 @@
       '<div class="co__block"><h3>Shipping method</h3>' +
       shipOption('Standard', 'Tracked · duties included', form.shipping) +
       shipOption('Express', 'Priority handling · 3–5 days', form.shipping) + '</div>' +
+
+      /* 备注 / 礼品留言。后端 POST /orders 一直支持 note 字段，
+         只是结算页从来没给过输入框 —— 于是礼品单只能靠客服邮件来回问，
+         而「不要放价格单」这类要求往往在包裹发出去之后才被提到。 */
+      '<div class="co__block"><h3>Gift message or order note <span style="font-weight:400;color:var(--muted)">(optional)</span></h3>' +
+      '<div class="fld"><label>Note</label>' +
+      '<textarea name="note" rows="3" maxlength="500" placeholder="Gift message, delivery instructions, or anything we should know"></textarea></div>' +
+      '<p class="drawer__note">Printed on the packing slip. We never include prices in gift orders.</p></div>' +
 
       '<div class="co__block"><h3>Payment</h3>' + payOption(pay, quote ? quote.total : S.totals().total) + '</div>' +
       (err ? '<div class="falert">' + esc(err.message) + '</div>' : '') + detailList +

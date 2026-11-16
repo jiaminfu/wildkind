@@ -262,9 +262,30 @@ function buildIndexHtml() {
         return attr + '="assets/' + rel + (rel.indexOf('?') >= 0 ? '&' : '?') + 'v=' + Math.floor(ms).toString(36) + '"';
       } catch (e) { return m; }
     });
+    html = html.replace('<!--LG_ASSETS-->', lazyAssetScript());
+    /* 首页的 canonical / og:url 是写死在 HTML 里的绝对地址，而文章页的地址由
+       siteOrigin() 按请求算。两者口径必须一致 —— 一处是 http、一处是 https，
+       爬虫会当成两个站点，权重分散。设了 PUBLIC_URL 就以它为准。 */
+    if (PUBLIC_URL) html = html.replace(/https:\/\/lastgrove\.com/g, PUBLIC_URL);
     htmlCache = { mtime: st.mtimeMs, stamp, html, gz: zlib.gzipSync(html, { level: 6 }) };
   }
   return htmlCache.html;
+}
+
+/* 按需加载的后台脚本地址。
+   写在服务端是因为版本号只有服务端知道（按文件 mtime 生成）：
+   前端如果自己拼 `/assets/js/admin.js`，会拿到浏览器缓存里那份旧的，
+   表现是「后台改完发了版，某个页面还是旧行为」，而且只在部分人身上复现。
+   与上面 script 标签用同一套指纹，两处口径一致。 */
+function lazyAssetScript() {
+  const ver = rel => {
+    try { return '/assets/js/' + rel + '?v=' + Math.floor(fs.statSync(path.join(WEB_DIR, 'assets', 'js', rel)).mtimeMs).toString(36); }
+    catch (e) { return null; }
+  };
+  const admin = ver('admin.js');
+  const blogAdmin = ver('blog-admin.js');
+  if (!admin) return '';
+  return '<script>window.LG_ASSETS=' + JSON.stringify({ admin, blogAdmin }).replace(/</g, '\\u003c') + ';</script>';
 }
 
 /* 真路径页面（/journal、/journal/<slug>）的资源标签。
@@ -292,7 +313,15 @@ function headStatic() {
     .replace(/<meta charset[^>]*>/i, '')
     .replace(/<meta name="viewport"[^>]*>/i, '')
     .replace(/<title>[\s\S]*?<\/title>/i, '')
-    .replace(/<meta name="description"[^>]*>/i, '');
+    .replace(/<meta name="description"[^>]*>/i, '')
+    /* 下面这几类必须一起剥掉，否则 /journal 页会同时出现两套：
+       首页的 canonical 指向 /，首页的 OG 描述的是品牌而不是这篇文章，
+       两套 og:url 并列时抓取方按「后出现的算」——结果是一篇讲 PVD 的文章
+       在社媒上预览成首页。这些标签全部由各页面自己输出。 */
+    .replace(/<link rel="canonical"[^>]*>/gi, '')
+    .replace(/<meta property="og:[^"]*"[^>]*>/gi, '')
+    .replace(/<meta name="twitter:[^"]*"[^>]*>/gi, '')
+    .replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/gi, '');
   /* 相对路径在 /journal/x 上会解析成 /journal/assets/…，必须加前导斜杠 */
   return head.replace(/(src|href)="assets\//g, '$1="/assets/').trim();
 }

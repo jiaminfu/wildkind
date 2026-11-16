@@ -143,6 +143,7 @@
       collections: colls,
       nav: nav,
       announce: data.announce == null ? 'Free shipping over $95' : String(data.announce),
+      socials: (data.socials && typeof data.socials === 'object') ? data.socials : {},
       user: data.user || null,
       cartCount: Number(data.cartCount) || 0,
       wishCount: Number(data.wishCount) || 0,
@@ -272,6 +273,26 @@
   }
 
   /* ---------------- 页脚 ---------------- */
+
+  /* 社交图标只在店主真的填了账号之后才出现。
+     原来是三个图标全部指向「关于我们」—— 点得开，但不是它说的那件事。
+     假链接比没有更伤信任：访客点一次 Instagram、落到一段品牌故事上，
+     他会顺手把「这个站不太靠谱」这条结论也一起记住。 */
+  var SOCIAL_KEYS = [['instagram', 'Instagram'], ['pinterest', 'Pinterest'], ['tiktok', 'TikTok']];
+  function socialRow(d) {
+    var s = (d && d.socials) || {};
+    var out = SOCIAL_KEYS.filter(function (x) {
+      /* 只认绝对 http(s)。库里已经归一化过一次，这里再挡一次是因为
+         这段输出也会用在服务端预渲染的 /journal 页上，而那条路径不经过 bootstrap。 */
+      return typeof s[x[0]] === 'string' && /^https?:\/\//i.test(s[x[0]]);
+    }).map(function (x) {
+      return '<a href="' + esc(s[x[0]]) + '" aria-label="' + x[1] + '" rel="noopener noreferrer" target="_blank">' +
+        icon(x[0]) + '</a>';
+    });
+    if (!out.length) return '';
+    return '<div style="display:flex;gap:14px;margin-top:18px">' + out.join('') + '</div>';
+  }
+
   function footer(data) {
     var d = norm(data);
     /* Shop 列表只列真实存在的集合。写死的六个在清库后全是 404，
@@ -288,11 +309,7 @@
       '<div class="ftr__top">' +
       '<div class="ftr__brand"><a href="/#" class="brand" aria-label="LASTGROVE home"><span class="brand__mark" aria-hidden="true">' + MARK + '</span><span class="brand__word">LASTGROVE</span></a>' +
       '<p>316L stainless steel, made in short runs. Silver pieces are unplated; gold is 18k PVD over steel.</p>' +
-      '<div style="display:flex;gap:14px;margin-top:18px">' +
-      '<a href="/#/pages/about" aria-label="Instagram">' + icon('instagram') + '</a>' +
-      '<a href="/#/pages/about" aria-label="Pinterest">' + icon('pinterest') + '</a>' +
-      '<a href="/#/pages/about" aria-label="TikTok">' + icon('tiktok') + '</a>' +
-      '</div></div>' +
+      socialRow(d) + '</div>' +
       '<div><h5>Shop</h5><ul>' + shopLinks + '</ul></div>' +
       '<div><h5>Help</h5><ul>' +
       '<li><a href="/#/pages/shipping">Shipping &amp; Duties</a></li>' +

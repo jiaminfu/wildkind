@@ -505,13 +505,20 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
     /* SEO：详情页标题、og、canonical、JSON-LD */
     const seo = await ev(`(function(){
       var g=function(s){var e=document.querySelector(s);return e?e.getAttribute('content')||e.getAttribute('href')||e.textContent:''};
+      /* JSON-LD 要全部收上来，不能只取第一块：
+         首页的 <head> 里现在常驻一块 Organization，SPA 又追加一块 Product。
+         只取 querySelector 的第一个，等于永远看不到 Product —— 断言会红，
+         但页面其实是对的。反过来（只看最后一块）也会漏掉品牌声明。 */
+      var lds = Array.prototype.map.call(
+        document.querySelectorAll('script[type="application/ld+json"]'),
+        function (e) { return e.textContent; }).filter(function (t) { return t && t.indexOf('@type') >= 0; });
       return {
         title: document.title,
         desc: g('meta[name=description]'),
         ogImage: g('meta[property="og:image"]'),
         ogType: g('meta[property="og:type"]'),
         canonical: g('link[rel=canonical]'),
-        ld: g('script[type="application/ld+json"]')
+        ld: lds.join('\\n')
       };
     })()`);
     ok('U10', '详情页 title 是该商品名（不再全站同一句）',
@@ -520,14 +527,16 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
     ok('U10', '详情页有 og:image 与 og:type=product',
       !!seo.ogImage && seo.ogType === 'product', 'image=' + (seo.ogImage || '').slice(-40) + ' type=' + seo.ogType);
     ok('U10', '详情页有 canonical', /#\/products\//.test(seo.canonical || ''), seo.canonical);
-    let ldOk = false, ldType = '';
-    try {
-      const ld = JSON.parse(seo.ld || '{}');
-      const graph = ld['@graph'] || [ld];
-      ldType = graph.map(x => x['@type']).join(',');
-      ldOk = ldType.indexOf('Product') >= 0;
-    } catch (e) { ldType = 'parse-fail'; }
-    ok('U10', '详情页有 Product 结构化数据', ldOk, 'types=' + ldType);
+    let ldOk = false, ldTypes = [];
+    for (const chunk of String(seo.ld || '').split('\n')) {
+      try {
+        const ld = JSON.parse(chunk);
+        const graph = ld['@graph'] || [ld];
+        ldTypes = ldTypes.concat(graph.map(x => x['@type']));
+      } catch (e) { ldTypes.push('parse-fail'); }
+    }
+    ldOk = ldTypes.indexOf('Product') >= 0;
+    ok('U10', '详情页有 Product 结构化数据', ldOk, 'types=' + ldTypes.join(','));
 
     /* 导航：所有下拉子项都必须落在已存在的集合上，不能 404 */
     await goto(BASE + '/', `!!document.querySelector('.hdr__nav a')`, 25000);

@@ -1,12 +1,17 @@
 /* 端到端点击验证：用 CDP 驱动无头 Edge，走完「加购 → 结算 → 支付 → 后台核对」
-   用法：node tools/e2e.js
+
+   ⚠️ 这个脚本打的是**旧交付端口 4500**，那条线已经停了。
+   当前可用的前台端到端是 `tools/e2e-storefront.js`（18 条，跑 4600 交付版），
+   以及 `tools/accept-ui.js`（82 条）。保留本文件只为留历史，
+   跑它会得到「首页 cards=0」——那不是站点坏了，是这个地址没人监听。
+   临时要指向别处：BASE_URL=http://127.0.0.1:4600/#/ node tools/e2e.js
 */
 const http = require('http');
 const { spawn } = require('child_process');
 
 const EDGE = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const PORT = 9333;
-const URL = 'http://localhost:4500/#/';
+const URL = process.env.BASE_URL || 'http://localhost:4500/#/';
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 

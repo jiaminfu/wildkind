@@ -43,6 +43,7 @@ function shellData(route) {
   return {
     nav, collections,
     announce: ((db.settings.content || {}).announce) || '',
+    socials: db.settings.socials || {},
     /* 预渲染时没有登录态、没有购物车：一律给 0 和 null，
        前端接管后 bindCommon 会用 localStorage 的真实值补上。 */
     user: null, cartCount: 0, wishCount: 0,

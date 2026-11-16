@@ -163,6 +163,9 @@ function routes(router) {
         bestSellersEyebrow: (db.settings.content || {}).bestSellersEyebrow || 'As seen on TikTok',
         storeOpen: db.settings.storeOpen !== false,
         returnWindowDays: db.settings.returnWindowDays || 30,
+        /* 页脚社交账号。没配就不给前端任何东西 —— 前端据此整块不渲染，
+           而不是渲染一个点得开、却跳到「关于我们」的假链接。 */
+        socials: db.settings.socials || {},
       },
       /* 内容页标题与导语：后台 A-08 改完这里立刻变，正文仍在 pages.js */
       pages: db.pages || {},

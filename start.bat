@@ -25,8 +25,8 @@ echo   [2/2] Starting server on http://localhost:4600
 echo.
 echo   Storefront   http://localhost:4600/#/
 echo   Admin        http://localhost:4600/#/admin
-echo                owner@tideglassjewelry.com / tideglass2026
-echo                ops@tideglassjewelry.com   / tideglass-ops  (restricted)
+echo                owner@lastgrove.com  (password: app\server\seed.js > ADMIN_PASSWORD)
+echo                ops@lastgrove.com    (restricted; same source)
 echo.
 echo   Documents    handover\README.md
 echo   Old design prototype (read-only reference, port 4400):

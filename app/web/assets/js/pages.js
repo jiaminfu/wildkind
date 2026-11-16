@@ -291,23 +291,8 @@
         );
     }
 
-    if (kind === 'journal') {
-      return head('journal', 'Journal', 'Field notes', 'Materials, workshops, and where the 1% goes.') +
-        prose(
-          '<h2>Why PVD is not plating</h2>' +
-          '<p class="prose__meta">Materials · 2 November 2026</p>' +
-          '<p>Plating sits on top of the metal and flakes off it. Physical vapour deposition bonds at the molecular level, so the gold layer flexes with the steel underneath. That single difference is why a $76 necklace can survive a year of salt water.</p>' +
-          '<h2>Reading a tide glass</h2>' +
-          '<p class="prose__meta">Studio · 18 October 2026</p>' +
-          '<p>A tide glass is scratched on purpose. The mark records how far the water reached, so the next person knows what the shore is capable of. We borrowed the idea for the brand, and we keep the habit: every quarter we publish what the numbers actually did.</p>' +
-          '<h2>Where the 1% went</h2>' +
-          '<p class="prose__meta">Giving · 30 September 2026</p>' +
-          '<p>Two grants this quarter: a reef nursery in Hainan, and a native woodland planting scheme in Oregon. Receipts are linked from the newsletter, not summarised into a rounded-up number.</p>'
-        );
-    }
-
     return null;
   }
 
-  window.PageViews = { page: page, custom: custom, kinds: ['about', 'care', 'shipping', 'returns', 'size-guide', 'faq', 'materials', 'contact', 'privacy', 'terms', 'accessibility', 'journal'] };
+  window.PageViews = { page: page, custom: custom, kinds: ['about', 'care', 'shipping', 'returns', 'size-guide', 'faq', 'materials', 'contact', 'privacy', 'terms', 'accessibility'] };
 })();

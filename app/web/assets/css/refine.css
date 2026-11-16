@@ -737,3 +737,12 @@ body.ck-open{padding-bottom:calc(var(--ckh, 74px) + 14px)}
    否则运营会以为自己每点一次都在「同一页」。 */
 .abtn.is-on{background:var(--sea);border-color:var(--sea);color:#fff}
 .abtn.is-on:hover{color:#fff}
+
+/* 看板时间范围：7 / 30 / 90。
+   做成三个链接而不是 <select>，是因为它同时决定 URL —— 切完能直接
+   把地址发给别人，对方打开看到的就是同一个区间。 */
+.admrange{display:flex;gap:6px;margin:0 0 16px}
+.admrange a{font-size:12.5px;padding:6px 12px;border:1px solid var(--line);
+  border-radius:999px;color:var(--muted);text-decoration:none;background:#fff}
+.admrange a:hover{border-color:var(--ink);color:var(--ink)}
+.admrange a.on{background:var(--ink);border-color:var(--ink);color:#fff}

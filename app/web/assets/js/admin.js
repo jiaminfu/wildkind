@@ -85,7 +85,12 @@
       return '<tr><td>' + U.esc(x.title) + '</td><td>' + U.esc(x.metal) + '</td><td class="num">' + x.stock + '</td></tr>';
     }).join('');
 
-    return '<div class="kpis">' +
+    return '<div class="admrange">' +
+      [7, 30, 90].map(function (n) {
+        return '<a href="/#/admin?days=' + n + '"' + (m.window === n ? ' class="on"' : '') + '>' + n + ' days</a>';
+      }).join('') +
+      '</div>' +
+      '<div class="kpis">' +
       '<div class="kpi"><span>Revenue · ' + m.window + 'd</span><b>' + U.money(m.gmv) + '</b>' +
       (m.gmvDelta != null ? '<em class="' + (m.gmvDelta >= 0 ? '' : 'dn') + '">' + (m.gmvDelta >= 0 ? '↑ ' : '↓ ') + Math.abs(m.gmvDelta) + '% vs prev</em>' : '') + '</div>' +
       '<div class="kpi"><span>Orders</span><b>' + m.orders + '</b><em>' + m.units + ' units</em></div>' +
@@ -518,8 +523,24 @@
       '<input type="checkbox" name="storeOpen"' + (s.storeOpen ? ' checked' : '') + ' style="width:auto"> <span>Store is accepting orders</span></label>' +
       '<button class="btn" type="submit">Save settings</button>' +
       '</form></div></div>' +
+      socialPanel(s.socials || {}) +
       taxPanel(s.tax || {} ) +
       trackingPanel(tq);
+  }
+
+  /* ---------------- 社交账号 ----------------
+     留空 = 页脚不显示这个图标。这不是「还没填」，是「没有这个账号」——
+     以前三个图标全部硬指向「关于我们」，点得开但不是它说的那件事。 */
+  function socialPanel(soc) {
+    var rows = [['instagram', 'Instagram'], ['pinterest', 'Pinterest'], ['tiktok', 'TikTok']].map(function (x) {
+      return '<label class="afld"><span>' + x[1] + '</span>' +
+        '<input name="soc-' + x[0] + '" placeholder="https://www.' + x[0] + '.com/yourhandle" ' +
+        'value="' + U.esc(soc[x[0]] || '') + '"></label>';
+    }).join('');
+    return '<div class="panel"><div class="panel__hd"><h2>Social links</h2>' +
+      '<span class="sub">Leave empty to hide the icon in the footer</span></div>' +
+      '<div class="panel__bd"><form data-act="savesocials" style="max-width:520px;display:grid;gap:14px">' +
+      rows + '<button class="btn" type="submit">Save social links</button></form></div></div>';
   }
 
   /* ---------------- 物流订阅额度 ----------------

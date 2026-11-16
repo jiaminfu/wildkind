@@ -172,6 +172,7 @@
       nav: (S.state.boot && S.state.boot.nav) || [],
       collections: (S.DB.collections || []).filter(function (c) { return c.visible !== false; }),
       announce: (S.DB.settings && S.DB.settings.content && S.DB.settings.content.announce) || '',
+      socials: (S.DB.settings && S.DB.settings.socials) || {},
       user: S.state.user || null,
       cartCount: S.cartCount(),
       wishCount: S.wishCount(),
@@ -337,7 +338,7 @@
     if (v) return '';
     return '<div class="ckbar" id="ckbar" role="dialog" aria-label="Cookie preferences">' +
       '<p>We use cookies to run the store and, with your permission, to understand how it is used. ' +
-      '<a href="/#/pages/about">Learn more</a></p>' +
+      '<a href="/#/pages/privacy">Learn more</a></p>' +
       '<div class="ckbar__act">' +
       '<button class="btn btn--sm btn--ghost" data-act="ck-essential">Only necessary</button>' +
       '<button class="btn btn--sm" data-act="ck-all">Accept all</button>' +

@@ -17,11 +17,18 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const EDGE = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
-const PORT = 9353;
+/* 调试端口不能写死：连着跑两遍时，上一遍的 Edge 往往还没退干净，
+   新实例绑不上端口就不启动，而 getJSON('/json') 轮询 24 秒后拿到 null，
+   报的是「Cannot read properties of null」——看起来像脚本坏了。 */
+const PORT = Number(process.env.CDP_PORT) || (9300 + Math.floor(Math.random() * 300));
 const BASE = process.env.BASE_URL || 'http://127.0.0.1:4600';
 const EMAIL = process.env.ADMIN_EMAIL || 'owner@lastgrove.com';
 const PASS = process.env.ADMIN_PASS || 'lastgrove2026';
-const PROF = path.resolve(__dirname, '..', 'tmp_staff', 'prof');
+/* 每次运行用独立 profile。
+   复用同一个 --user-data-dir 时，第二遍启动的 Edge 会认定「这个配置目录已经
+   有实例在跑」，把请求转给旧进程然后自己退出 —— 调试端口始终没打开，
+   表现在脚本身上就是 24 秒后拿到 null、报一句看不懂的 TypeError。 */
+const PROF = path.resolve(__dirname, '..', 'tmp_staff', 'prof-' + process.pid);
 const OUT = path.resolve(__dirname, '..', 'tmp_staff');
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -62,8 +69,18 @@ const getJSON = p => new Promise((res, rej) => {
     const r = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true });
     fs.writeFileSync(path.join(OUT, name), Buffer.from(r.data, 'base64'));
   }
+  /* 异常不要当成值返回给调用方去真值判断。
+     js() 在页面导航的那一瞬间必然抛（Execution context was destroyed），
+     而 'ERR …' 是真值 —— waitFor 会立刻认定「条件已满足」，
+     接着那句「就绪了」的断言全部打在旧文档或空白页上。
+     所以 waitFor 必须把错误串排除掉，宁可多等一轮。 */
+  const isErr = v => typeof v === 'string' && v.indexOf('ERR ') === 0;
   async function waitFor(expr, tries, ms) {
-    for (let i = 0; i < tries; i++) { const v = await js(expr); if (v) return v; await sleep(ms); }
+    for (let i = 0; i < tries; i++) {
+      const v = await js(expr);
+      if (v && !isErr(v)) return v;
+      await sleep(ms);
+    }
     return null;
   }
 
@@ -75,10 +92,30 @@ const getJSON = p => new Promise((res, rej) => {
     await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 2, mobile: false });
 
     /* ---------- 登录 ---------- */
+    /* 先复位本地会话再进后台。
+       这个脚本结尾会用 ops 账号登录一次（验「非 owner 看不到 Staff」），
+       而 profile 是持久化的：不清掉的话第二轮上来就已经是 ops 登录态，
+       页面里没有登录表单，登录那一步静默什么都没做，
+       然后从「侧栏出现 Staff 入口」开始整片红 —— 看起来像功能坏了，
+       其实是上一次运行留下的状态。验收脚本必须自己复位。 */
     await send('Page.navigate', { url: BASE + '/#/admin' });
+    /* 等 #app 而不是 document.body：about:blank 也有 body，
+       用 body 当就绪条件是「可能还没离开空白页就往下走」——
+       于是清 localStorage 清在了 about:blank 的源上（等于没清），
+       Page.reload 也刷新的是空白页，之后永远等不到登录表单。
+       这是这句话偶发失败的全部原因。 */
+    const ready = await waitFor('!!document.querySelector("#app") && location.href.indexOf("#/admin") >= 0', 40, 400);
+    await js(`(function(){
+      try { localStorage.removeItem('lastgrove_admin'); localStorage.removeItem('lastgrove_cart'); } catch (e) { }
+      return 1;
+    })()`);
+    /* 必须真刷新：导航到同一个 URL（只有 hash 不同）不会重新加载文档，
+       当前这一页内存里还留着刚才那个登录态。 */
+    if (ready) await send('Page.reload', {});
     await waitFor('!!document.querySelector(\'form[data-act="login"]\')', 40, 400);
     await js(`(function(){
       var f = document.querySelector('form[data-act="login"]');
+      if (!f) return 'NO_FORM';
       f.email.value = ${JSON.stringify(EMAIL)};
       f.password.value = ${JSON.stringify(PASS)};
       f.querySelector('button[type=submit]').click();
@@ -237,6 +274,12 @@ const getJSON = p => new Promise((res, rej) => {
     })()`);
     ok('可用 ops 账号登录', opsLogin === 'OK', opsLogin);
     await send('Page.navigate', { url: BASE + '/#/admin' });
+    /* 必须真刷新再断言。只改 hash 时页面会就地重渲染，而 .adm__nav 这个节点
+       在重渲染完成前**已经存在**（还是上一个 owner 的那份），
+       waitFor 立刻返回，接着查到的自然是「有 Staff 入口」——假红。
+       刷新之后 boot 才会用新的 localStorage 会话重新拉一遍。 */
+    await sleep(300);
+    await send('Page.reload', {});
     await waitFor('!!document.querySelector(".adm__nav")', 40, 400);
     /* 没权限的入口不该出现在侧栏。只靠接口 403 拦的话，
        人会点进去才发现自己没权限，然后以为是坏了。 */

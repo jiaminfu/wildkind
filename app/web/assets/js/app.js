@@ -11,6 +11,34 @@
   var cache = Object.create(null);     // productId → product（快捷加购要用）
   var renderSeq = 0;
 
+  /* 后台脚本按需加载。
+     两个后台 bundle 合计约 100 KB，而买家一个页面都不会用到它 ——
+     同步加载等于让每个访客替店主付这份流量。
+     地址用服务端注入的 window.LG_ASSETS（带 ?v=mtime），不要在这里硬拼路径：
+     硬拼拿不到新版本，表现是「发了版但有人还在跑旧后台」。
+     A / BA 是模块内变量，加载完成后必须重新绑定，不能只在顶部读一次。 */
+  var adminLoading = null;
+  function loadAdminScripts() {
+    if (window.AdminViews && window.BlogAdmin) { A = window.AdminViews; BA = window.BlogAdmin; return Promise.resolve(); }
+    if (adminLoading) return adminLoading;
+    var urls = window.LG_ASSETS || {};
+    var list = [urls.admin, urls.blogAdmin].filter(Boolean);
+    adminLoading = Promise.all(list.map(function (src) {
+      return new Promise(function (res) {
+        var s = document.createElement('script');
+        s.src = src;
+        /* 加载失败不 reject：后台打不开是「这一页出不来」，
+           不该把整个 SPA 的 boot 流程一起卡死。 */
+        s.onload = res; s.onerror = res;
+        document.head.appendChild(s);
+      });
+    })).then(function () {
+      A = window.AdminViews || A;
+      BA = window.BlogAdmin || BA;
+    });
+    return adminLoading;
+  }
+
   function setProducts(list) {
     (list || []).forEach(function (p) { cache[p.id] = p; });
   }
@@ -250,6 +278,7 @@
 
     try {
       if (seg[0] === 'admin') {
+        await loadAdminScripts();
         html = await renderAdmin(r);
       } else {
         var body;
@@ -286,7 +315,8 @@
     } catch (e) {
       if (seq !== renderSeq) return;
       html = seg[0] === 'admin'
-        ? A.login(e.status === 401 ? window.API.takeNotice() : e)
+        ? (A ? A.login(e.status === 401 ? window.API.takeNotice() : e)
+          : '<div class="wrap"><p>Admin scripts failed to load. Refresh the page.</p></div>')
         : storeShell(errorPage(e), r);
     }
 
@@ -550,7 +580,12 @@
     var staff = sess.staff;
     try {
       if (sec === '' || sec === undefined) {
-        var m = await API.get('/admin/metrics?days=30', { auth: true });
+        /* 接口一直支持 ?days=1..365，前端却把 30 写死了 —— 能力被白白浪费。
+           只开放 7 / 30 / 90 三档：报表要能被比较，任意天数的「环比」
+           会变成两个不可比的区间，看久了反而更糊涂。 */
+        var dd = Number(r.query.days);
+        if ([7, 30, 90].indexOf(dd) < 0) dd = 30;
+        var m = await API.get('/admin/metrics?days=' + dd, { auth: true });
         return A.shell(A.dash(m.data), '', 'Dashboard', staff);
       }
       if (sec === 'orders') {
@@ -1148,6 +1183,9 @@
       line1: form.line1.value, city: form.city.value, state: form.state.value,
       zip: form.zip.value, country: form.country.value,
       shipping: (form.querySelector('input[name=shipping]:checked') || {}).value || 'Standard',
+      /* 备注随订单一起落库。后端 POST /orders 早就收这个字段（截到 500 字），
+         前端补上输入框才算真正可用。 */
+      note: form.note ? String(form.note.value || '').slice(0, 500) : '',
     };
     try {
       /* 用表单里此刻的州去报价，而不是上次 change 事件留下的缓存。
@@ -2028,6 +2066,24 @@
         content: { announce: form.announce.value },
       }, { auth: true });
       S.toast('Saved — storefront updated', 'ok');
+      S.state.boot = null;
+      render();
+    } catch (e) { S.toast(e.message, 'err'); }
+  });
+
+  /* 社交账号单独一个表单：和门店设置放在一起时，改运费顺手删掉一个输入框里的
+     网址就会被一起提交成空串 —— 页脚图标随之消失，而且没人会注意到。
+     单独提交，改哪块只影响哪块。 */
+  S.onSubmit('savesocials', async function (form) {
+    try {
+      await API.patch('/admin/settings', {
+        socials: {
+          instagram: form.elements['soc-instagram'].value.trim(),
+          pinterest: form.elements['soc-pinterest'].value.trim(),
+          tiktok: form.elements['soc-tiktok'].value.trim(),
+        },
+      }, { auth: true });
+      S.toast('Social links saved', 'ok');
       S.state.boot = null;
       render();
     } catch (e) { S.toast(e.message, 'err'); }

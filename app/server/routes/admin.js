@@ -1367,6 +1367,17 @@ function routes(router) {
     res.end(body);
   }
 
+  /* 导出必须留痕。
+     客户表与订单表导出去就是一份**带邮箱的名单**，是这个后台里唯一
+     可以一次性把全部客户资料带走的动作 —— 而它原本一条日志都不写。
+     合规上这是硬缺口（GDPR 的可追溯性、CCPA 的访问请求处理都需要「谁在什么时候
+     导了什么」）；运营上也有用：名单出现在第三方平台时，先查得到是谁导的。
+     GET 也要写日志，所以这里显式 flush —— 不 flush 就只存在内存里，重启即丢。 */
+  function auditExport(me, kind, count) {
+    audit(me, 'export.' + kind, 'csv', { count: count });
+    store.flush();
+  }
+
   router.get('/api/v1/admin/export/orders.csv', (req, res) => {
     const me = auth.requireAuth(req);
     auth.requirePerm(me, 'orders:read');
@@ -1395,6 +1406,7 @@ function routes(router) {
         o.tracking || '', o.carrier || '',
       ]);
     }
+    auditExport(me, 'orders', list.length);
     sendCsv(res, 'lastgrove-orders-' + new Date().toISOString().slice(0, 10) + '.csv', rows);
   });
 
@@ -1409,6 +1421,7 @@ function routes(router) {
     ]];
     s.byMonth.forEach(r => rows.push([r.period, r.state, r.orders, r.sales.toFixed(2), r.tax.toFixed(2)]));
     rows.push(['TOTAL', '', s.totals.orders - s.totals.untaxed, s.totals.sales.toFixed(2), s.totals.tax.toFixed(2)]);
+    auditExport(me, 'tax', null);
     sendCsv(res, 'lastgrove-tax-' + s.from + '_' + s.to + '.csv', rows);
   });
 
@@ -1441,6 +1454,7 @@ function routes(router) {
         ]);
       }
     }
+    auditExport(me, 'products', sorted.length);
     sendCsv(res, 'lastgrove-products-' + new Date().toISOString().slice(0, 10) + '.csv', rows);
   });
 
@@ -1458,6 +1472,7 @@ function routes(router) {
         c.tier || '', c.last || '', c.marketing ? 'yes' : 'no',
       ]);
     });
+    auditExport(me, 'customers', db.customers.length);
     sendCsv(res, 'lastgrove-customers-' + new Date().toISOString().slice(0, 10) + '.csv', rows);
   });
 
@@ -1571,6 +1586,7 @@ function routes(router) {
       storeOpen: s.storeOpen !== false,
       tax: s.tax || { enabled: false, rates: {}, shipTaxable: true, note: '' },
       content: s.content || {},
+      socials: s.socials || {},
     });
   });
 
@@ -1636,6 +1652,31 @@ function routes(router) {
     if (b.content && typeof b.content === 'object') {
       db.settings.content = Object.assign({}, db.settings.content, b.content);
     }
+    /* 社交账号：只接受 http(s) 绝对地址，空串表示「没有这个账号」。
+       存空串而不是删键，是为了让后台的表单能回填一个空输入框，
+       而不是每次保存后字段消失、下次又得猜有没有配过。 */
+    if (b.socials && typeof b.socials === 'object') {
+      const cur = db.settings.socials || {};
+      const next = { instagram: cur.instagram || '', pinterest: cur.pinterest || '', tiktok: cur.tiktok || '' };
+      ['instagram', 'pinterest', 'tiktok'].forEach(k => {
+        if (b.socials[k] === undefined) return;
+        const v = String(b.socials[k] || '').trim();
+        if (v && !/^https?:\/\//i.test(v)) {
+          throw E.badRequest('Social link for ' + k + ' must be a full https:// address.',
+            [{ field: 'socials.' + k, message: 'Missing http(s):// prefix.' }]);
+        }
+        next[k] = v.slice(0, 200);
+      });
+      db.settings.socials = next;
+    }
+    /* 改设置必须一起把预渲染缓存作废。
+       /journal 系列的页头页脚是服务端预渲染并缓存的（键是 meta.postsRev），
+       而公告条、社交图标、免邮门槛都来自 settings —— 只 ++ 文章写操作的话，
+       店主刚把页脚 Instagram 填上，博客页仍然是旧的那一份，看起来像没保存。
+       代价是文章页首次请求回源一次，可以接受。 */
+    db.meta = db.meta || {};
+    db.meta.postsRev = (Number(db.meta.postsRev) || 1) + 1;
+
     audit(me, 'settings.update', 'store', { before, after: b });
     store.flush();
     ok(res, { settings: db.settings, giftRule: db.giftRule });

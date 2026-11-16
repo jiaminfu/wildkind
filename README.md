@@ -1,4 +1,4 @@
-# TIDEGLASS
+# LASTGROVE
 
 跨境饰品 DTC 独立站 —— 前台商店 + 后台运营，前后端分离，零第三方依赖。
 
@@ -37,14 +37,15 @@ Windows 双击 `start.bat`，会自动 seed、起服务并打开浏览器。
 | 入口 | 地址 | 说明 |
 |---|---|---|
 | 商店（买家） | http://localhost:4600/#/ | 首页、集合、详情、购物车、结算、账户、12 个内容页 |
-| 后台（运营） | http://localhost:4600/#/admin | 13 个模块：看板 / 订单 / 商品 / 集合 / 库存 / 券 / 评价 / 定制需求 / 客户 / 内容 / 流水 / 审计 / 设置 |
+| 后台（运营） | http://localhost:4600/#/admin | 16 个模块：看板 / 订单 / 商品 / 集合 / 库存 / 券 / 评价 / 定制需求 / 客户 / 内容 / 文章 / 流水 / 销售税 / 员工 / 审计 / 设置 |
+| 博客（真路径） | http://localhost:4600/journal | 服务端预渲染，可被搜索引擎收录 |
 
-后台账号：
+后台账号：`owner@lastgrove.com` / `ops@lastgrove.com` / `support@lastgrove.com`。
 
-| 账号 | 密码 | 权限 |
-|---|---|---|
-| `owner@tideglassjewelry.com` | `tideglass2026` | 10 位权限全开 |
-| `ops@tideglassjewelry.com` | `tideglass-ops` | 少设置与退款权限，用来验收越权拦截 |
+**口令不写在仓库里**——初始口令由 `app/server/seed.js` 里的 `ADMIN_PASSWORD`
+决定（生产用 `deploy/.env` 的 `ADMIN_PASSWORD` 覆盖），首次登录后立刻改掉。
+加人不要改代码或数据文件，走后台「员工」页：那里有权限位勾选和三道护栏
+（不能停用自己、不能删最后一个 owner、非 owner 不能造 owner）。
 
 界面逐页说明见 [`handover/06-原型/原型说明.md`](handover/06-原型/原型说明.md)，两套整页截图在 `handover/06-原型/screenshots/`。
 
@@ -146,11 +147,11 @@ sudo LISTEN_PORT=8080 bash /opt/tideglass/current/deploy/install.sh - \
 
 | 限制 | 现状 | 解除条件 |
 |---|---|---|
-| 支付是测试模式 | 结算不扣真实款项 | 提供 Stripe 密钥（见 `handover/07-交付准备/`） |
-| 不发真实邮件 | 写入 `mailLog`，不投递 | 提供 Resend API Key + 验发信域名 |
-| 物流不回调 | 运单号可填，不查物流商 | 3PL 对接方式确定 |
-| 商品图不分金属 | 一商品一套图，色点只展示 | 补齐素材后恢复卡内切换 |
-| **hash 路由不利 SEO** | `#/products/xxx` 搜索引擎抓不到 | 上线前换真实路径 + SSR/预渲染（已进演进路线） |
+| 支付是测试模式 | 走 **PayPal 沙盒**（两段式收单 + webhook 已通），不扣真实款项 | 提供 PayPal Live 密钥（见 `handover/07-交付准备/`） |
+| 不发真实邮件 | 三封事务邮件模板已就绪，未配 Key 时走 dry-run（只打日志） | 提供 Resend API Key + 域名 SPF/DKIM 验证 |
+| 物流轨迹按额度受限 | **17TRACK 已全链路接入**（订阅 → webhook → 前台时间线）；免费额度每月 100 单，USPS 在试用额度下被拦 | 月发货逼近 100 单时买套餐 |
+| 商品图不分金属 | 一商品一套图，色点只展示 | 变体级图集（要先补素材，见 FR-S-045） |
+| 商品页仍走 hash 路由 | `#/products/xxx` 搜索引擎抓不到；**博客已开真路径 `/journal`** | 商品页真路径（OP-P0-02 ③，待拍板） |
 | JSON 单文件存储 | 单人运营够用 | 订单量上去后迁 Postgres |
 | 单仓 / 单币种 | 美国仓、USD | 首批 100 SKU 跑顺之后 |
 

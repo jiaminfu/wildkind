@@ -189,9 +189,13 @@ async function resetData() {
     const toOwner = await call('PATCH', '/api/v1/admin/staff/' + bId,
       { role: 'owner' }, { Authorization: owner });
     chk('ops 可以提成 owner', toOwner.status === 200, toOwner.status);
+    /* 别写死权限位总数：加一个 posts:write 就红一次，而真正要守的是
+       「提成 owner 后拿到的权限 == 系统里全部权限位」。
+       总数从同一个接口的 allPermissions 取，加权限时这条断言自动跟上。 */
+    const allPerms = (list.body.data.allPermissions || []).length;
     chk('提成 owner 后自动全权限',
-      toOwner.body.data.staff.permissions.length === 12,
-      toOwner.body.data.staff.permissions.length + ' 位');
+      allPerms > 0 && toOwner.body.data.staff.permissions.length === allPerms,
+      toOwner.body.data.staff.permissions.length + ' / ' + allPerms);
 
     const demoteOwner2 = await call('PATCH', '/api/v1/admin/staff/' + bId,
       { role: 'support' }, { Authorization: owner });

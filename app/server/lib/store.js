@@ -58,6 +58,17 @@ function normalize(d) {
   if (typeof d.settings.tax.enabled !== 'boolean') d.settings.tax.enabled = false;
   if (typeof d.settings.tax.shipTaxable !== 'boolean') d.settings.tax.shipTaxable = true;
 
+  /* 社交账号。默认全空 —— 页脚那几个图标在没有真实账号时指向「关于我们」，
+     那是最坏的一种链接：点得开、但不是它说的那件事。
+     现在改成「配了才显示」，没配就整块不渲染，不做假链接。 */
+  if (!d.settings.socials || typeof d.settings.socials !== 'object' || Array.isArray(d.settings.socials)) {
+    d.settings.socials = {};
+  }
+  ['instagram', 'pinterest', 'tiktok'].forEach(k => {
+    const v = d.settings.socials[k];
+    d.settings.socials[k] = (typeof v === 'string' && /^https?:\/\//i.test(v)) ? v.slice(0, 200) : '';
+  });
+
   return d;
 }
 
