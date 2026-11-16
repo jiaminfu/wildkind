@@ -145,7 +145,9 @@
     return {
       collections: colls,
       nav: nav,
-      announce: data.announce == null ? 'Free shipping over $95' : String(data.announce),
+      /* 公告条文案清空时不要退回「Free shipping over $95」这个默认值：
+         那会把一句运营没写过的承诺重新挂回首屏。空就是空，整条不渲染。 */
+      announce: data.announce == null ? '' : String(data.announce),
       socials: (data.socials && typeof data.socials === 'object') ? data.socials : {},
       user: data.user || null,
       cartCount: Number(data.cartCount) || 0,
@@ -252,10 +254,11 @@
       (journalOn ? ' class="is-active" aria-current="page"' : '') + '>Journal</a>';
 
     return '' +
-      '<div class="annbar"><div class="annbar__track">' +
-      announcement(d.announce) +
-      announcement(d.announce) +
-      '</div></div>' +
+      (String(d.announce || '').trim()
+        ? '<div class="annbar"><div class="annbar__track">' +
+          announcement(d.announce) + announcement(d.announce) +
+          '</div></div>'
+        : '') +
       '<header class="hdr" id="hdr"><div class="wrap"><div class="hdr__inner">' +
       '<button class="mob-menu-btn" data-act="open-menu" aria-label="Menu">' + icon('menu') + '</button>' +
       '<nav class="hdr__nav">' + nav + journalLink + '</nav>' +

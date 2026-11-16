@@ -12,8 +12,29 @@
   function esc(s) { return U.esc(s); }
 
   /* ---------------- 首页 ---------------- */
+  /* 空店首页：商品与集合都为 0 时的形态。
+     为什么需要它：完整首页的卖点文案、三张轮播图、"Best sellers / New in" 三个入口
+     里，文案读的是 settings.content，图片是打包进站的素材——数据库清空之后这些
+     仍然在，看起来就像"店里还有货"。而运营实际是从零开始建数据，把一套他没写过
+     的卖点摆在首屏，等于替他编文案。
+     判定只看两件事：有没有已发布商品、有没有可见集合。任意一个有，完整首页立刻回来。 */
+  function emptyHome(c) {
+    var brand = (c && c.brand) || 'LASTGROVE';
+    return '<section class="hero hero--empty">' +
+        '<div class="hero__copy">' +
+        '<div class="eyebrow">' + esc(brand) + '</div>' +
+        '<h1>Nothing on the shelf yet.</h1>' +
+        '<p class="hero__desc">No piece is published. As soon as the first collection goes live, it appears here.</p>' +
+        '<div class="hero__actions"><a class="btn" href="/#/pages/contact">Get in touch</a></div>' +
+        '</div></section>';
+  }
+
   function home(boot, best, reviews, stats) {
     var c = boot.settings;
+
+    /* 空店判定放在最前：不进入后面的轮播/卖点/入口拼装 */
+    var liveColls = (S.DB.collections || []).filter(function (x) { return x.visible !== false; });
+    if (!(stats && stats.productCount) && !(best || []).length && !liveColls.length) return emptyHome(c);
     /* 三张轮播图原始比例并不相同：首图 1100×1375 是竖构图，另两张是 1:1。
        宽高按各自的真实尺寸给，别统一抄 1100×1375——否则第二、三张在
        图还没下完时占位框比例是错的，切换轮播会看到一次轻微跳动。 */

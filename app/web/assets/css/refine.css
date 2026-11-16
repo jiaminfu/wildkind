@@ -829,3 +829,15 @@ body.ck-open{padding-bottom:calc(var(--ckh, 74px) + 14px)}
   .brand__mark{width:16px; height:16px}
   /* 图标的接缝式热区在上面的 ≤430 段落里，这里只负责把字标与内边距挤进 320。 */
 }
+
+/* ---------- 空店首页 ----------
+   商品与集合都为 0 时，首页只留一段说明，不再占右半屏。
+   refine.css 顶部把 .hero 定成 44fr 56fr 双列，这里必须显式改成单列，
+   否则文字只占左边 44%，右边是一块空的沙色。 */
+.hero--empty{grid-template-columns:1fr; min-height:min(56vh,440px)}
+.hero--empty .hero__copy{max-width:620px; padding-top:calc(var(--sp8) * 1.2); padding-bottom:calc(var(--sp8) * 1.2)}
+.hero--empty h1{font-size:clamp(32px,3.6vw,50px)}
+@media (max-width:900px){
+  .hero--empty{min-height:0}
+  .hero--empty .hero__copy{max-width:none; padding-top:var(--sp8); padding-bottom:var(--sp7)}
+}
