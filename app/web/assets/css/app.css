@@ -2,6 +2,36 @@
    LASTGROVE · 可交互原型样式
    前台 + 后台共用一套 token，后台以 .adm 命名空间隔离
    ============================================================ */
+
+/* ---------- 字体自托管 ----------
+   原来是 <link href="https://fonts.googleapis.com/css2?..."> 两跳外链：
+   先解析 fonts.googleapis.com 拿 CSS，再连 fonts.gstatic.com 取字体文件。
+   在没有缓存的 4G 上，这两次跨域握手比字体本身（约 73KB）更贵；
+   更要紧的是 Google Fonts 会把访客 IP 发给第三方 —— 英/德法院已判过这类
+   未经同意传输 IP 的用法违反 GDPR，而本站目标市场含英国。
+   四个文件只取 latin 子集（全站英文），原来那些 latin-ext / 希腊 / 西里尔
+   子集一次都没被下载过，等于白挂。图例：figtree 是可变字体（300–600 共用一个
+   文件），Instrument Serif 与 Italiana 各一份。 */
+@font-face{
+  font-family:'Figtree'; font-style:normal; font-weight:300 600; font-display:swap;
+  src:url("../fonts/figtree.woff2") format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face{
+  font-family:'Instrument Serif'; font-style:normal; font-weight:400; font-display:swap;
+  src:url("../fonts/instrument-serif.woff2") format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face{
+  font-family:'Instrument Serif'; font-style:italic; font-weight:400; font-display:swap;
+  src:url("../fonts/instrument-serif-italic.woff2") format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face{
+  font-family:'Italiana'; font-style:normal; font-weight:400; font-display:swap;
+  src:url("../fonts/italiana.woff2") format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2212,U+2215,U+FEFF,U+FFFD;
+}
 :root{
   --sea:#1B3A34; --sea-d:#132B26; --sea-l:#2A5249;
   --cream:#FAF6EF; --cream-d:#F2EBDF; --sand:#E7DAC8; --sand-d:#D8C7AF;
@@ -128,9 +158,16 @@ ul{margin:0; padding:0; list-style:none}
 .hero__media{position:relative; overflow:hidden; background:var(--sand)}
 .hero__media img{width:100%; height:100%; object-fit:cover; position:absolute; inset:0; opacity:0; transition:opacity .9s var(--ease); transform:scale(1.02)}
 .hero__media img.on{opacity:1; transform:scale(1); transition:opacity .9s var(--ease), transform 6s linear}
-.hero__dots{position:absolute; bottom:20px; left:50%; transform:translateX(-50%); display:flex; gap:7px; z-index:3}
-.hero__dots i{width:22px; height:2px; background:rgba(250,246,239,.4); cursor:pointer; transition:background .3s}
-.hero__dots i.on{background:var(--cream)}
+/* 轮播指示条：按钮本体承担热区（32×44），里面的 <span> 才是那道 22×2 的线。
+   以前 <i> 既是视觉又是热区，22×2 的命中面积在触屏上等于点不到。 */
+.hero__dots{position:absolute; bottom:0; left:50%; transform:translateX(-50%); display:flex; z-index:3}
+.hero__dot{
+  width:32px; height:44px; padding:0; border:0; background:none; cursor:pointer;
+  display:grid; place-items:center; -webkit-tap-highlight-color:transparent;
+}
+.hero__dot span{display:block; width:22px; height:2px; background:rgba(250,246,239,.4); transition:background .3s}
+.hero__dot.on span{background:var(--cream)}
+.hero__dot:focus-visible{outline:2px solid var(--cream); outline-offset:-6px}
 
 /* ---------- 数字背书 ---------- */
 .proof{display:grid; grid-template-columns:repeat(3,1fr); border-bottom:1px solid var(--line); background:var(--cream-d)}

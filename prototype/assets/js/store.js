@@ -39,8 +39,11 @@
       '<div><b>30 days</b>free returns</div>' +
       '</div></div>' +
       '<div class="hero__media" id="heroMedia">' + slides +
-      '<div class="hero__dots">' + heroImgs.map(function (_, i) {
-        return '<i class="' + (i === 0 ? 'on' : '') + '" data-act="slide" data-i="' + i + '"></i>';
+      '<div class="hero__dots" role="group" aria-label="Hero images">' + heroImgs.map(function (_, i) {
+        return '<button type="button" class="hero__dot' + (i === 0 ? ' on' : '') +
+          '" data-act="slide" data-i="' + i + '"' +
+          ' aria-label="Show image ' + (i + 1) + ' of ' + heroImgs.length + '"' +
+          (i === 0 ? ' aria-current="true"' : '') + '><span></span></button>';
       }).join('') + '</div></div>' +
       '</section>' +
 

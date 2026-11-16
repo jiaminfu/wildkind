@@ -62,7 +62,10 @@
     var alt = o.alt == null ? '' : o.alt;
     var cls = o.cls ? ' class="' + o.cls + '"' : '';
     var wh = (o.w && o.h) ? ' width="' + o.w + '" height="' + o.h + '"' : '';
-    var load = o.priority ? ' fetchpriority="high"' : ' loading="lazy"';
+    /* 与 core.js 的 U.pic 保持同一套优先级三档，否则同一张图在
+       hash 页与 /journal 预渲染页上的加载优先级不同，LCP 会随入口漂移。 */
+    var load = o.priority ? ' fetchpriority="high"'
+      : (o.low ? ' loading="lazy" fetchpriority="low"' : ' loading="lazy"');
     var extra = o.extra ? ' ' + o.extra : '';
     var p = picParts(s);
     if (!p) {

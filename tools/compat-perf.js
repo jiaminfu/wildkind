@@ -112,13 +112,19 @@ const VIEWS = [
            关掉的浮层（搜索层/抽屉）容器上是 pointer-events:none，里面虽然有按钮，
            但本来就不可点，一并跳过 —— 否则每页都会报一个"0% 命中"的假红。 */
         function dead(e){ var p=e; while(p){ if(getComputedStyle(p).pointerEvents==='none') return true; p=p.parentElement; } return false; }
+        /* cookie 条是固定定位、覆盖视口底部的。它盖住的那一行商品卡，
+           收藏心自然 0% 命中 —— 但那条子是提示，用户点一次就消失，
+           不该算成"按钮点不到"。按矩形判，不算进统计。 */
+        var ck = document.getElementById('ckbar');
+        var ckb = ck ? ck.getBoundingClientRect() : null;
+        function underCk(b){ return ckb && b.top < ckb.bottom && b.bottom > ckb.top; }
         var els = document.querySelectorAll('.btn, button, .icon-btn, [data-act]');
         for (var i=0;i<els.length;i++){
           var e = els[i], b = e.getBoundingClientRect();
           if (b.width < 1 || b.height < 1) continue;
           if (b.bottom < 0 || b.top > innerHeight) continue;
           if (b.width >= 44 && b.height >= 44) continue;
-          if (dead(e)) continue;
+          if (dead(e) || underCk(b)) continue;
           var cx = b.left + b.width/2, cy = b.top + b.height/2;
           var hit = 0, total = 0;
           for (var dx = -20; dx <= 20; dx += 8) {

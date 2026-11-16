@@ -117,9 +117,16 @@ ul{margin:0; padding:0; list-style:none}
 .hero__media{position:relative; overflow:hidden; background:var(--sand)}
 .hero__media img{width:100%; height:100%; object-fit:cover; position:absolute; inset:0; opacity:0; transition:opacity .9s var(--ease); transform:scale(1.02)}
 .hero__media img.on{opacity:1; transform:scale(1); transition:opacity .9s var(--ease), transform 6s linear}
-.hero__dots{position:absolute; bottom:20px; left:50%; transform:translateX(-50%); display:flex; gap:7px; z-index:3}
-.hero__dots i{width:22px; height:2px; background:rgba(250,246,239,.4); cursor:pointer; transition:background .3s}
-.hero__dots i.on{background:var(--cream)}
+/* 轮播指示条：按钮本体承担热区（32×44），里面的 <span> 才是那道 22×2 的线。
+   原来 <i> 既是视觉又是热区，22×2 的命中面积在触屏上等于点不到（与正式站同步）。 */
+.hero__dots{position:absolute; bottom:0; left:50%; transform:translateX(-50%); display:flex; z-index:3}
+.hero__dot{
+  width:32px; height:44px; padding:0; border:0; background:none; cursor:pointer;
+  display:grid; place-items:center; -webkit-tap-highlight-color:transparent;
+}
+.hero__dot span{display:block; width:22px; height:2px; background:rgba(250,246,239,.4); transition:background .3s}
+.hero__dot.on span{background:var(--cream)}
+.hero__dot:focus-visible{outline:2px solid var(--cream); outline-offset:-6px}
 
 /* ---------- 数字背书 ---------- */
 .proof{display:grid; grid-template-columns:repeat(3,1fr); border-bottom:1px solid var(--line); background:var(--cream-d)}

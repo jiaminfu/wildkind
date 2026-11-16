@@ -247,8 +247,11 @@ const CSP = [
   "default-src 'self'",
   "img-src 'self' data: blob: https:",
   "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com data:",
+  /* 字体与样式都已自托管，这里不再放行 fonts.googleapis.com / fonts.gstatic.com。
+     CSP 收窄之后，即便哪天后人又贴回一段 Google Fonts 的 <link>，
+     浏览器会当场拦下并报错，而不是悄悄把访客 IP 发给第三方。 */
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
   "connect-src 'self'",
   "form-action 'self'",
   "frame-ancestors 'self'",
@@ -328,6 +331,9 @@ function headStatic() {
        两套 og:url 并列时抓取方按「后出现的算」——结果是一篇讲 PVD 的文章
        在社媒上预览成首页。这些标签全部由各页面自己输出。 */
     .replace(/<link rel="canonical"[^>]*>/gi, '')
+    /* 首屏大图的预载只对首页有意义。博客页继承过来就是白白多下 117KB，
+       而且会和文章正文的封面图抢带宽。 */
+    .replace(/<link rel="preload"[^>]*data-home-hero[\s\S]*?>/gi, '')
     .replace(/<meta property="og:[^"]*"[^>]*>/gi, '')
     .replace(/<meta name="twitter:[^"]*"[^>]*>/gi, '')
     .replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/gi, '');

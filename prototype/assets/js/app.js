@@ -84,7 +84,7 @@
     var media = document.getElementById('heroMedia');
     if (media) {
       var imgs = media.querySelectorAll('img');
-      var dots = media.querySelectorAll('.hero__dots i');
+      var dots = media.querySelectorAll('.hero__dot');
       var idx = 0;
       heroTimer = setInterval(function () {
         idx = (idx + 1) % imgs.length;
@@ -208,7 +208,7 @@
   S.onClick('slide', function (el) {
     var media = document.getElementById('heroMedia');
     if (!media) return;
-    var imgs = media.querySelectorAll('img'), dots = media.querySelectorAll('.hero__dots i');
+    var imgs = media.querySelectorAll('img'), dots = media.querySelectorAll('.hero__dot');
     var i = Number(el.dataset.i);
     imgs.forEach(function (im, k) { im.classList.toggle('on', k === i); });
     dots.forEach(function (d, k) { d.classList.toggle('on', k === i); });

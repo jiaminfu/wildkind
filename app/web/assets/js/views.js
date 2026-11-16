@@ -58,7 +58,11 @@
     }
     var worldHtml = worlds.slice(0, 3).map(function (w) {
       return '<a class="tile" href="/#/collections/' + w.h + '">' +
-        U.pic(w.i, { alt: '', w: 820, h: 820, sizes: '(max-width:900px) 46vw, 30vw' }) +
+        /* 这三张是首页最重的三个请求（820w，合计约 250KB），却全部在首屏之下。
+           光加 loading="lazy" 不够 —— 它们仍在懒加载的预取半径内，会跟首屏大图
+           抢同一条 1.6Mbps 的连接，实测 Fast 3G 下把 LCP 拖到 4.6 秒。
+           加 fetchpriority="low" 让浏览器把它们的优先级压到大图之后。 */
+        U.pic(w.i, { alt: '', w: 820, h: 820, low: true, sizes: '(max-width:900px) 46vw, 30vw' }) +
         '<div class="tile__body"><h3>' + w.t + '</h3><p>' + w.s + '</p></div></a>';
     }).join('');
 
@@ -111,8 +115,14 @@
       '<div><b>30 days</b>free returns</div>' +
       '</div></div>' +
       '<div class="hero__media" id="heroMedia">' + slides +
-      '<div class="hero__dots">' + heroImgs.map(function (_, i) {
-        return '<i class="' + (i === 0 ? 'on' : '') + '" data-act="slide" data-i="' + i + '"></i>';
+      '<div class="hero__dots" role="group" aria-label="Hero images">' + heroImgs.map(function (_, i) {
+        /* 原来是 <i>，视觉 22×2 的一道细线，可点区域就是那道线本身 —— 实测命中率 22%。
+           换成 <button> 后：热区 32×44（线本身仍是 22×2，居中躺在里面），
+           并且读屏能读到「第几张 / 共几张」，键盘 Tab 也能停在这里。 */
+        return '<button type="button" class="hero__dot' + (i === 0 ? ' on' : '') +
+          '" data-act="slide" data-i="' + i + '"' +
+          ' aria-label="Show image ' + (i + 1) + ' of ' + heroImgs.length + '"' +
+          (i === 0 ? ' aria-current="true"' : '') + '><span></span></button>';
       }).join('') + '</div></div></section>' +
 
       proof +

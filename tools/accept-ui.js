@@ -679,7 +679,8 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
 
     /* 点圆点要能把挂起的图叫醒 */
     if (deferStat && deferStat.n > 1) {
-      await ev(`document.querySelectorAll('.hero__dots i')[1].click()`);
+      /* 指示条从 <i> 换成了 <button class="hero__dot">（热区 22×2 → 32×44） */
+      await ev(`document.querySelectorAll('.hero__dot')[1].click()`);
       await wait(1500);
       const woke = await ev(`(function(){
         var m=document.getElementById('heroMedia');

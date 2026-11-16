@@ -328,11 +328,9 @@
 
     root.innerHTML = html;
     if (seg[0] === 'admin') labelTables(root);
-    var ck = document.getElementById('ckbar');
-    document.body.classList.toggle('ck-open', !!ck);
-    // Cookie 条高度两端不同（桌面单行 / 手机两行），写死 padding 必有一端错，
-    // 所以每次渲染实测一次写进 --ckh，CSS 里的留白 calc 才准。
-    if (ck) document.documentElement.style.setProperty('--ckh', Math.round(ck.getBoundingClientRect().height) + 'px');
+    /* Cookie 条高度两端不同（桌面单行 / 手机两行），每次渲染实测一次写进 --ckh，
+       转屏与窗口缩放由 syncCookieSpace 挂在 resize 上重算。 */
+    syncCookieSpace();
     window.scrollTo(0, 0);
     if (seg[0] === 'admin') {
       var mb = document.getElementById('admMenuBtn');
@@ -357,6 +355,17 @@
   }
 
   async function bootLoad(withHome) {
+    /* 首页所需数据在解析 HTML 时就已经开始取了（index.html 里的预取，
+       因为等 JS 加载完再发请求，实测 Fast 3G 上白等 1.2 秒才等到第一个字节）。
+       预取只认 http 一次，取完就置空，避免路由切换时重复用旧数据。 */
+    if (withHome && window.__LG_BOOT) {
+      var pre = window.__LG_BOOT;
+      window.__LG_BOOT = null;
+      try {
+        var got = await pre;
+        if (got && got.data) { S.setBoot(got.data); return got.data; }
+      } catch (e) { /* 预取失败就走正常请求 */ }
+    }
     var res = await API.get('/bootstrap' + (withHome ? '?with=home' : ''));
     S.setBoot(res.data);
     return res.data;
@@ -834,7 +843,13 @@
     var media = document.getElementById('heroMedia');
     if (!media) return;
     media.querySelectorAll('img').forEach(function (img, k) { img.classList.toggle('on', k === i); });
-    media.querySelectorAll('.hero__dots i').forEach(function (d, k) { d.classList.toggle('on', k === i); });
+    /* 指示条从 <i> 换成了 <button>，选中态同时要更新 aria-current ——
+       否则读屏用户按了「第 2 张」，听到的仍是「第 1 张，当前」。 */
+    media.querySelectorAll('.hero__dot').forEach(function (d, k) {
+      d.classList.toggle('on', k === i);
+      if (k === i) d.setAttribute('aria-current', 'true');
+      else d.removeAttribute('aria-current');
+    });
     /* 切到哪一张再取哪一张——用户可能一个圆点都不点 */
     wakePic(media.querySelectorAll('img')[i]);
   });
@@ -2355,13 +2370,7 @@
     try { mountOverlays(); } catch (e) { console.warn('[ssr] overlays failed', e); }
     try { syncBadges(); } catch (e) { }
 
-    try {
-      var ck = document.getElementById('ckbar');
-      document.body.classList.toggle('ck-open', !!ck);
-      if (ck) {
-        document.documentElement.style.setProperty('--ckh', Math.round(ck.getBoundingClientRect().height) + 'px');
-      }
-    } catch (e) { }
+    try { syncCookieSpace(); } catch (e) { }
     return true;
   }
 
@@ -2378,7 +2387,12 @@
       }
     }
     try {
-      await bootLoad();
+      /* 落地页是不是首页，决定第一个请求带不带 with=home。
+         原来这里一律不带，于是首页要发两次：先 bootstrap，发现缺 home 数据
+         再补一次 bootstrap?with=home —— 两次串行，在 1.6Mbps 上等于白扔 500ms，
+         而 LCP 就卡在这两次之后。 */
+      var land = (location.hash || '').replace(/^#/, '') || '/';
+      await bootLoad(land === '/' || land === '');
     } catch (e) {
       root.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;' +
         'font-family:Georgia,serif;color:#1B3A34;text-align:center;padding:40px">' +
@@ -2389,6 +2403,24 @@
     }
     render();
   }
+
+  /* Cookie 条占位高度。
+     桌面是单行、手机是两行，高度差一倍，写死 padding 必有一端错，
+     所以实测一次写进 --ckh。但「实测一次」在转屏和拉窗口时会过期 ——
+     竖屏 100px 的量到横屏还用 100px，而横屏那条可能只有 56px，
+     页面底部就会多出一段空白。所以监听 resize，重算。 */
+  function syncCookieSpace() {
+    var ck = document.getElementById('ckbar');
+    document.body.classList.toggle('ck-open', !!ck);
+    if (!ck) { document.documentElement.style.removeProperty('--ckh'); return; }
+    document.documentElement.style.setProperty('--ckh', Math.round(ck.getBoundingClientRect().height) + 'px');
+  }
+  var ckTimer = 0;
+  window.addEventListener('resize', function () {
+    clearTimeout(ckTimer);
+    ckTimer = setTimeout(syncCookieSpace, 150);
+  });
+  window.addEventListener('orientationchange', function () { setTimeout(syncCookieSpace, 250); });
 
   window.addEventListener('hashchange', render);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

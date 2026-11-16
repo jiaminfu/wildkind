@@ -327,7 +327,13 @@
     return '<div class="mob-drawer" id="mobDrawer"><div class="mob-drawer__close">' +
       '<button class="icon-btn" data-act="close-menu">' + icon('close') + '</button></div>' +
       nav + '<a href="/journal">Journal</a>' +
-    '<a href="/#/account/lookup">Track order</a><a href="/#/pages/about">Our story</a></div>';
+      /* 账号与收藏原来只存在于头部两枚图标里。手机上这两枚在 320px 宽度下
+         热区最小，而且一旦以后把图标并进菜单，这两个入口就会整条断掉 ——
+         菜单里本来就该有它们，跟集合并列排在一起。 */
+      '<a href="/#/account/lookup">Track order</a>' +
+      '<a href="/#/account">Account</a>' +
+      '<a href="/#/account/wishlist">Wishlist</a>' +
+      '<a href="/#/pages/about">Our story</a></div>';
   }
 
   // Cookie 同意条（FR-S-095）。合规上必须先于分析类脚本执行，所以它由本层统一渲染，
@@ -337,7 +343,11 @@
     try { v = localStorage.getItem('lastgrove_cookie'); } catch (e) { }
     if (v) return '';
     return '<div class="ckbar" id="ckbar" role="dialog" aria-label="Cookie preferences">' +
-      '<p>We use cookies to run the store and, with your permission, to understand how it is used. ' +
+      /* 文案取短版，目标是在 390px 上正好两行（约 52 字符一行）。
+         原来那句折三行，整条 140px 高，盖掉首屏主图的下半部分 ——
+         一个合规提示不该盖住它正在保护的商品。
+         用途、同意、拒绝三项都还在，细节留在隐私页。 */
+      '<p>Cookies keep your bag working. With your consent we also measure site use. ' +
       '<a href="/#/pages/privacy">Learn more</a></p>' +
       '<div class="ckbar__act">' +
       '<button class="btn btn--sm btn--ghost" data-act="ck-essential">Only necessary</button>' +

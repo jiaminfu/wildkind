@@ -30,9 +30,20 @@
 {"@context":"https://schema.org","@type":"Organization","name":"LASTGROVE","url":"https://lastgrove.com/","logo":"https://lastgrove.com/assets/img/opt/c-ocean.jpg","description":"316L stainless steel jewellery with a PVD colour layer that does not fade.","foundingDate":"2024","areaServed":["US","CA","GB"]}
 </script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='13' fill='%231B2B2E'/%3E%3Cg transform='translate(2 2) scale(0.5)' fill='none' stroke='%23EDF1F0' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='60' cy='60' r='45'/%3E%3Cpath d='M 60 103 V 64 M 60 82 L 48 68 M 60 82 L 72 68'/%3E%3C/g%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&family=Italiana&display=swap" rel="stylesheet">
+<!-- 字体自托管（原因见 app.css 顶部的 @font-face 注释）。
+     只预载真正决定首屏字形的那两个：Figtree 撑正文与全部控件，
+     Instrument Serif 是首屏大标题。Italiana 只用于字标，交给正常加载 ——
+     三个一起预载会和 CSS/JS 抢同一条连接。 -->
+<link rel="preload" href="/assets/fonts/figtree.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/instrument-serif.woff2" as="font" type="font/woff2" crossorigin>
+<!-- 首屏大图。这个站的首页是客户端渲染，图片标签要等 JS 跑完才进 DOM ——
+     实测它 2.1 秒才开始下载，直接决定 LCP。这里按 <picture> 里同一套
+     srcset/sizes 提前声明，浏览器在解析 HTML 时就开始下载，且能与之去重
+     （URL 解析结果一致，不会下两遍）。/journal 那边会剥掉这一行（见 headStatic）。 -->
+<link rel="preload" as="image" fetchpriority="high" data-home-hero
+      href="/assets/img/opt/hero-necklaces-1100.webp"
+      imagesrcset="/assets/img/opt/hero-necklaces-700.webp 700w, /assets/img/opt/hero-necklaces-1100.webp 1100w"
+      imagesizes="100vw">
 <link rel="stylesheet" href="assets/css/app.css">
 <link rel="stylesheet" href="assets/css/refine.css">
 <link rel="stylesheet" href="assets/css/web.css">
@@ -41,8 +52,27 @@
   window.TG_API_BASE = window.TG_API_BASE || '/api/v1';
 </script>
 <script>
-  // 前后端分离：前端默认同源访问 /api/v1；分域部署时在 window.TG_API_BASE 里改
-  window.TG_API_BASE = window.TG_API_BASE || '/api/v1';
+  /* 首屏数据的预取。
+     这个站是 hash 路由 + 客户端渲染：页面骨架要等 11 个 JS 文件下完才跑，
+     跑起来才开始请求 /bootstrap。实测 Fast 3G + 4x CPU 下，第一个 API 请求
+     到 1.4 秒才发出，LCP 直接被推到 2.4 秒。
+     这段内联脚本在解析 HTML 时就发出同一个请求，把整条等待从关键路径上摘掉；
+     app.js 的 bootLoad() 会认领这个 Promise（window.__LG_BOOT），不重复取。
+     只在落地页是首页时预取 —— 深层链接（广告直接投商品页）用不上 home 数据，
+     白跑 19KB 反而是负优化。 */
+  (function () {
+    /* 必须同时看 pathname：/journal/x 这类预渲染页的 hash 也是空的，
+       只看 hash 会把首页数据预取到博客页上，白跑 19KB。 */
+    var p = location.pathname;
+    if (p !== '/' && p !== '/index.html') return;
+    var h = (location.hash || '').replace(/^#/, '');
+    if (h !== '' && h !== '/') return;
+    try {
+      window.__LG_BOOT = fetch((window.TG_API_BASE || '/api/v1') + '/bootstrap?with=home', {
+        credentials: 'same-origin', headers: { Accept: 'application/json' }
+      }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    } catch (e) { /* 老浏览器没有 fetch 时退回 app.js 里的正常请求 */ }
+  })();
 </script>
 <!--LG_ASSETS-->
 </head>

@@ -123,7 +123,12 @@
       var alt = o.alt == null ? '' : o.alt;
       var cls = o.cls ? ' class="' + o.cls + '"' : '';
       var wh = (o.w && o.h) ? ' width="' + o.w + '" height="' + o.h + '"' : '';
-      var load = o.priority ? ' fetchpriority="high"' : ' loading="lazy"';
+      /* 三档优先级：
+         priority → 首屏大图，抢带宽；
+         low      → 明确知道在首屏之下的大图（首页三个 mood tile），排到后面；
+         其余     → lazy 默认。 */
+      var load = o.priority ? ' fetchpriority="high"'
+        : (o.low ? ' loading="lazy" fetchpriority="low"' : ' loading="lazy"');
       var extra = o.extra ? ' ' + o.extra : '';
       var p = U.picParts(s);
       if (!p) {

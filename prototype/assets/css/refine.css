@@ -609,22 +609,26 @@ body.filter-open .fdrawer{transform:none}
   letter-spacing:.1em; text-transform:uppercase; color:var(--sea);
 }
 
-/* ---------- Cookie 同意条 ---------- */
+/* ---------- Cookie 同意条 ----------
+   与正式站同步：底色从深绿改为米色卡片。
+   深绿时它和页面里的深绿按钮是同一种绿，短页面上两块直接连成一片，
+   按钮的下边界消失。 */
 .ckbar{
   position:fixed; left:0; right:0; bottom:0; z-index:80;
   display:flex; align-items:center; justify-content:space-between; gap:var(--sp5);
-  padding:15px var(--pad); background:var(--sea); color:rgba(250,246,239,.88);
+  padding:15px var(--pad); background:var(--cream); color:var(--ink-2);
+  border-top:1px solid var(--line-2);
   font-size:var(--t2); line-height:1.55;
-  box-shadow:0 -8px 30px rgba(22,19,15,.14);
+  box-shadow:0 -10px 34px rgba(22,19,15,.10);
 }
 .ckbar p{margin:0; max-width:660px}
-.ckbar a{color:var(--sand); text-decoration:underline; text-underline-offset:2px}
+.ckbar a{color:var(--sea); text-decoration:underline; text-underline-offset:2px}
 .ckbar__act{display:flex; gap:10px; flex:none}
 .ckbar .btn{height:36px; padding:0 18px; font-size:var(--t1)}
-.ckbar .btn--ghost{color:rgba(250,246,239,.9); border-color:rgba(250,246,239,.34); background:transparent}
-.ckbar .btn--ghost:hover{color:var(--cream); border-color:rgba(250,246,239,.6); background:transparent}
-.ckbar .btn:not(.btn--ghost){background:var(--cream); color:var(--sea); border-color:var(--cream)}
-.ckbar .btn:not(.btn--ghost):hover{background:#fff; border-color:#fff}
+.ckbar .btn--ghost{color:var(--sea); border-color:var(--line-2); background:transparent}
+.ckbar .btn--ghost:hover{color:var(--sea); border-color:var(--sea); background:transparent}
+.ckbar .btn:not(.btn--ghost){background:var(--sea); color:var(--cream); border-color:var(--sea)}
+.ckbar .btn:not(.btn--ghost):hover{background:var(--sea-d); border-color:var(--sea-d)}
 body.ck-open{padding-bottom:calc(var(--ckh, 74px) + 14px)}
 
 /* ---------- 预计送达（FR-S-167）---------- */
@@ -639,7 +643,8 @@ body.ck-open{padding-bottom:calc(var(--ckh, 74px) + 14px)}
 
 @media(max-width:900px){
   .mega{display:none !important}      /* 窄屏交给汉堡菜单，避免面板溢出 */
-  .ckbar{flex-direction:column; align-items:stretch; gap:12px; padding:14px 20px}
+  .ckbar{flex-direction:column; align-items:stretch; gap:9px; padding:11px 16px 12px; font-size:12px; line-height:1.45}
   .ckbar__act{justify-content:flex-end}
-  body.ck-open{padding-bottom:calc(var(--ckh, 96px) + 14px)}
+  .ckbar .btn{height:32px; padding:0 14px}
+  body.ck-open{padding-bottom:calc(var(--ckh, 100px) + 12px)}
 }

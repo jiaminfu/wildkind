@@ -604,22 +604,29 @@ body.filter-open .fdrawer{transform:none}
   letter-spacing:.1em; text-transform:uppercase; color:var(--sea);
 }
 
-/* ---------- Cookie 同意条 ---------- */
+/* ---------- Cookie 同意条 ----------
+   原先是深绿实心（--sea）。问题不在好不好看，在它和页面里的深绿按钮是同一种绿：
+   查单、下单、登录这些短页面的最后一步就是一颗深绿按钮，条子贴在视口底部，
+   两块同色直接连成一片 —— 按钮的下边界消失，读者看不出那是个按钮
+   （手机上 390px 实测就是这样）。
+   改成米色卡片：与任何深色按钮之间永远隔着一道浅色边，
+   视觉重量也从"压在页面上的一块砖"变成"浮起来的提示卡"。 */
 .ckbar{
   position:fixed; left:0; right:0; bottom:0; z-index:80;
   display:flex; align-items:center; justify-content:space-between; gap:var(--sp5);
-  padding:15px var(--pad); background:var(--sea); color:rgba(250,246,239,.88);
+  padding:15px var(--pad); background:var(--cream); color:var(--ink-2);
+  border-top:1px solid var(--line-2);
   font-size:var(--t2); line-height:1.55;
-  box-shadow:0 -8px 30px rgba(22,19,15,.14);
+  box-shadow:0 -10px 34px rgba(22,19,15,.10);
 }
 .ckbar p{margin:0; max-width:660px}
-.ckbar a{color:var(--sand); text-decoration:underline; text-underline-offset:2px}
+.ckbar a{color:var(--sea); text-decoration:underline; text-underline-offset:2px}
 .ckbar__act{display:flex; gap:10px; flex:none}
 .ckbar .btn{height:36px; padding:0 18px; font-size:var(--t1)}
-.ckbar .btn--ghost{color:rgba(250,246,239,.9); border-color:rgba(250,246,239,.34); background:transparent}
-.ckbar .btn--ghost:hover{color:var(--cream); border-color:rgba(250,246,239,.6); background:transparent}
-.ckbar .btn:not(.btn--ghost){background:var(--cream); color:var(--sea); border-color:var(--cream)}
-.ckbar .btn:not(.btn--ghost):hover{background:#fff; border-color:#fff}
+.ckbar .btn--ghost{color:var(--sea); border-color:var(--line-2); background:transparent}
+.ckbar .btn--ghost:hover{color:var(--sea); border-color:var(--sea); background:transparent}
+.ckbar .btn:not(.btn--ghost){background:var(--sea); color:var(--cream); border-color:var(--sea)}
+.ckbar .btn:not(.btn--ghost):hover{background:var(--sea-d); border-color:var(--sea-d)}
 body.ck-open{padding-bottom:calc(var(--ckh, 74px) + 14px)}
 
 /* ---------- 预计送达（FR-S-167）---------- */
@@ -634,9 +641,14 @@ body.ck-open{padding-bottom:calc(var(--ckh, 74px) + 14px)}
 
 @media(max-width:900px){
   .mega{display:none !important}      /* 窄屏交给汉堡菜单，避免面板溢出 */
-  .ckbar{flex-direction:column; align-items:stretch; gap:12px; padding:14px 20px}
+  /* cookie 条在手机上原来高 140px，占掉 844px 视口的 1/6，而它盖住的正是首屏主图。
+     收窄的三处：字号 13.5→12、行高 1.55→1.45、按钮 36→32 高、上下内边距 15→11。
+     文案另在 ui.js 里换成短版（原文在 390px 下折三行），合计降到约 100px。
+     合规要点不变：仍在首屏、仍写明用途、仍给「只留必要」与「全部接受」两个选项。 */
+  .ckbar{flex-direction:column; align-items:stretch; gap:9px; padding:11px 16px 12px; font-size:12px; line-height:1.45}
   .ckbar__act{justify-content:flex-end}
-  body.ck-open{padding-bottom:calc(var(--ckh, 96px) + 14px)}
+  .ckbar .btn{height:32px; padding:0 14px}
+  body.ck-open{padding-bottom:calc(var(--ckh, 100px) + 12px)}
 }
 
 /* ---------- 后台：提示块与要点列表（销售税页用）----------
@@ -775,10 +787,35 @@ body.ck-open{padding-bottom:calc(var(--ckh, 74px) + 14px)}
      扩到 44×44 后仍留在卡片内（距上/右各 10px），不会盖到相邻卡片。 */
   .card__wish::after{content:''; position:absolute; inset:-6px; border-radius:50%}
 
-  /* 首屏轮播的指示条：视觉上是 22×2 的一道细线，可点区域也就只有 44 平方像素，
-     在触屏上等于点不到。上下各补 10px、左右各补 4px，变成 30×22 的透明热区。 */
-  .hero__dots i{position:relative}
-  .hero__dots i::after{content:''; position:absolute; inset:-10px -4px}
+  /* 首屏轮播的指示条已改成 <button>（32×44 热区），这里不再需要用伪元素补命中区。
+     原规则补到 30×22 后实测命中率仍只有 22% —— 补丁补不到 44 的底线。 */
+}
+
+/* ---------- 手机上的四枚头部图标：热区改为「接缝式」 ----------
+   伪元素把热区扩到 44×44 的做法在桌面没问题，但四枚图标要是排在
+   90–130px 的总宽里，四块 44 宽的热区必然互相叠：实测 390px 下
+   搜索 78% / 账号 78% / 收藏 54% / 购物袋 85%，收藏那枚基本按不准；
+   320px 更差（33%）。
+   根治不是把热区继续放大，而是把盒宽撑到 30、间距归零，让四块热区
+   首尾相接 —— 谁的地盘归谁，没有叠加区，也不会因为「谁在上面」而误判。
+   30 的宽度高于 WCAG 2.5.8 的 24×24 底线；高度仍是 44。
+   ≤430 覆盖到 iPhone 15 Pro Max，主流机型都用这一套。 */
+@media (max-width:430px){
+  /* 四枚 30px 盒子比原来的 22px 盒子宽 32px，375px 上整套头部就装不下了
+     （实测工具区右缘 376 越过视口 375）。字标从 18px 收到 16px、字距从 .3em 收到 .2em，
+     让出的 40px 正好补上 —— 字标仍然完整可读，图标不必缩小。 */
+  .hdr__inner{gap:12px}
+  .brand__word{font-size:16px; letter-spacing:.2em; margin-right:-.2em}
+  /* 字标收窄后这一行就不满了，flex 默认左对齐会把四枚图标丢在离右边 30 多像素的地方，
+     而左边汉堡贴边 20 —— 左右不对称，看起来像没写完的样式。margin-left:auto 把
+     工具区推回右缘。 */
+  .hdr__tools{gap:0; margin-left:auto}
+  .icon-btn{width:30px; height:30px}
+  .icon-btn svg{width:17px; height:17px}
+  .icon-btn::after{inset:-7px 0}
+  /* 覆盖 coarse-pointer 那段「最右一枚向左扩」：那只在两端排布下成立，
+     现在四块接缝已经把右边界占满，再向左扩就会盖住收藏那枚。 */
+  .hdr__tools .icon-btn:last-child::after{left:0; right:0}
 }
 
 /* ---------- 360px 以下的头部 ----------
@@ -790,9 +827,5 @@ body.ck-open{padding-bottom:calc(var(--ckh, 74px) + 14px)}
   .hdr__inner{gap:6px}
   .brand__word{font-size:16px; letter-spacing:.14em; margin-right:-.14em}
   .brand__mark{width:16px; height:16px}
-  .hdr__tools{gap:6px}
-  .icon-btn{width:20px; height:20px}
-  .icon-btn svg{width:16px; height:16px}
-  /* 命中区按 20px 盒子重新算，仍是 44×44 */
-  .icon-btn::after{inset:-12px}
+  /* 图标的接缝式热区在上面的 ≤430 段落里，这里只负责把字标与内边距挤进 320。 */
 }
