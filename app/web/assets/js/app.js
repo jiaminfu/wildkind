@@ -6,6 +6,7 @@
   'use strict';
 
   var U = S.U, ui = window.UI, V = window.Views, A = window.AdminViews, Pages = window.PageViews;
+  var BA = window.BlogAdmin;
   var root = document.getElementById('app');
   var cache = Object.create(null);     // productId → product（快捷加购要用）
   var renderSeq = 0;
@@ -588,6 +589,22 @@
         var cu = await API.get('/admin/customers', { auth: true });
         return A.shell(A.customers(cu.data), 'customers', 'Customers', staff);
       }
+      if (sec === 'articles') {
+        /* 栏目列表从服务端拿，与校验用的是同一份 —— 前端写死一份，
+           迟早出现「这里能选、保存时说过时了」的自相矛盾。 */
+        var pm = await API.get('/admin/post-meta', { auth: true });
+        if (r.seg[2] && r.seg[2] !== 'new') {
+          var one = await API.get('/admin/posts/' + encodeURIComponent(r.seg[2]), { auth: true });
+          return A.shell(BA.editor(one.data, pm.data.sections), 'articles',
+            'Edit article', staff);
+        }
+        if (r.seg[2] === 'new') {
+          return A.shell(BA.editor(null, pm.data.sections), 'articles', 'New article', staff);
+        }
+        var aq = r.query.status ? '?status=' + encodeURIComponent(r.query.status) : '';
+        var al = await API.get('/admin/posts' + aq, { auth: true });
+        return A.shell(BA.list(al.data, al.meta, r.query), 'articles', 'Articles', staff);
+      }
       if (sec === 'ledger') {
         var lg = await API.get('/admin/stock-ledger' + (r.query.sku ? '?sku=' + encodeURIComponent(r.query.sku) : ''), { auth: true });
         return A.shell(A.ledger(lg.data, r.query), 'ledger', 'Stock ledger', staff);
@@ -901,6 +918,199 @@
   S.onClick('ck-essential', function () {
     try { localStorage.setItem('lastgrove_cookie', 'essential'); } catch (e) { }
     dismissCookie();
+  });
+
+  /* ---------------- 博客文章编辑器 ----------------
+     块操作一律改 DOM，不重渲染整页：重渲染会丢焦点，
+     编辑到一半被吞掉一段话是最伤人的 bug。 */
+  function markDirty() {
+    var f = document.querySelector('.postform');
+    if (!f) return;
+    f.dataset.dirty = '1';
+    var s = f.querySelector('[data-role=dirty]');
+    if (s) s.textContent = 'Unsaved changes';
+  }
+
+  function renumberAll() {
+    var f = document.querySelector('.postform');
+    if (f) BA.renumber(f);
+  }
+
+  /* 通用选图：压缩 → 上传 → 回调路径。商品图那套流程原样复用，
+     不另写一份上传代码（否则两处的压缩参数早晚不一致）。 */
+  function pickImage(done) {
+    var inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*';
+    inp.onchange = async function () {
+      var file = inp.files && inp.files[0];
+      if (!file) return;
+      try {
+        var dataUrl = await compressImage(file);
+        var r = await API.post('/admin/uploads', { dataUrl: dataUrl }, { auth: true });
+        done(r.data.path);
+      } catch (e) { S.toast(e.message || 'Upload failed', 'err'); }
+    };
+    inp.click();
+  }
+
+  S.onChange('blk-add', function (el) {
+    var t = el.value;
+    if (!t) return;
+    var list = document.getElementById('blkList');
+    if (!list) return;
+    list.insertAdjacentHTML('beforeend', BA.blockHtml({ type: t }, list.children.length));
+    el.value = '';
+    var ta = list.lastElementChild && list.lastElementChild.querySelector('textarea');
+    if (ta) ta.focus();
+    markDirty();
+  });
+
+  S.onChange('blk-type', function (el) {
+    var blk = el.closest('.blk');
+    if (!blk) return;
+    var idx = Array.prototype.indexOf.call(blk.parentNode.children, blk);
+    var box = document.createElement('div');
+    box.innerHTML = BA.blockHtml({ type: el.value }, idx);
+    blk.parentNode.replaceChild(box.firstElementChild, blk);
+    renumberAll();
+    markDirty();
+  });
+
+  function moveBlock(el, dir) {
+    var blk = el.closest('.blk');
+    if (!blk) return;
+    var sib = dir < 0 ? blk.previousElementSibling : blk.nextElementSibling;
+    if (!sib) return;
+    if (dir < 0) blk.parentNode.insertBefore(blk, sib);
+    else blk.parentNode.insertBefore(sib, blk);
+    renumberAll();
+    markDirty();
+  }
+
+  S.onClick('blk-up', function (el) { moveBlock(el, -1); });
+  S.onClick('blk-down', function (el) { moveBlock(el, 1); });
+
+  S.onClick('blk-del', function (el) {
+    var blk = el.closest('.blk');
+    if (!blk) return;
+    /* 删到只剩零块会得到一个空文章，服务端会拒（blocks 全丢 = 400）。
+       与其让人保存时才看到红色报错，不如当场拦住。 */
+    if (blk.parentNode.children.length <= 1) {
+      S.toast('An article needs at least one block', 'err');
+      return;
+    }
+    blk.remove();
+    renumberAll();
+    markDirty();
+  });
+
+  S.onClick('blk-img', function (el) {
+    var blk = el.closest('.blk');
+    if (!blk) return;
+    pickImage(function (path) {
+      var f = blk.querySelector('[name=bsrc]');
+      if (f) f.value = path;
+      var prev = blk.querySelector('.blk__prev');
+      if (prev) prev.innerHTML = '<img src="' + U.esc(path) + '" alt="">';
+      else blk.insertAdjacentHTML('beforeend', '<div class="blk__prev"><img src="' + U.esc(path) + '" alt=""></div>');
+      markDirty();
+    });
+  });
+
+  S.onClick('post-cover', function () {
+    pickImage(function (path) {
+      var f = document.querySelector('.postform');
+      if (!f) return;
+      f.coverImage.value = path;
+      var box = f.querySelector('[data-role=coverprev]');
+      if (box) box.innerHTML = '<img src="' + U.esc(path) + '" alt="">';
+      markDirty();
+    });
+  });
+
+  S.onClick('post-cover-clear', function () {
+    var f = document.querySelector('.postform');
+    if (!f) return;
+    f.coverImage.value = '';
+    var box = f.querySelector('[data-role=coverprev]');
+    if (box) box.innerHTML = '';
+    markDirty();
+  });
+
+  /* 表单里任何输入都算「有未保存改动」。用 document 级监听，
+     因为块是动态插入的，逐块绑监听会在插入后漏掉。 */
+  document.addEventListener('input', function (e) {
+    if (e.target && e.target.closest && e.target.closest('.postform')) markDirty();
+  });
+  window.addEventListener('beforeunload', function (e) {
+    var f = document.querySelector('.postform');
+    if (f && f.dataset.dirty === '1') { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  S.onSubmit('post-save', async function (form) {
+    var id = form.getAttribute('data-id');
+    var body = {
+      title: form.title.value.trim(),
+      slug: form.slug.value.trim(),
+      excerpt: form.excerpt.value.trim(),
+      section: form.section.value,
+      coverImage: form.coverImage.value.trim(),
+      coverAlt: form.coverAlt.value.trim(),
+      seoTitle: form.seoTitle.value.trim(),
+      seoDescription: form.seoDescription.value.trim(),
+      blocks: BA.collectBlocks(form),
+    };
+    var cl = form.ctaLabel.value.trim(), ch = form.ctaHref.value.trim();
+    body.cta = (cl && ch) ? { label: cl, href: ch } : null;
+
+    try {
+      if (id) {
+        await API.patch('/admin/posts/' + encodeURIComponent(id), body, { auth: true });
+        form.dataset.dirty = '0';
+        S.toast('Saved', 'ok');
+        render();
+      } else {
+        var r = await API.post('/admin/posts', body, { auth: true });
+        form.dataset.dirty = '0';
+        S.toast('Created', 'ok');
+        S.go('/admin/articles/' + encodeURIComponent(r.data.id));
+      }
+    } catch (e) { S.toast(e.message, 'err'); }
+  });
+
+  S.onClick('post-publish', async function (el) {
+    var form = el.closest('.postform');
+    if (!form) return;
+    var id = form.getAttribute('data-id');
+    if (!id) { S.toast('Save the draft first — then publish.', 'err'); return; }
+    var next = el.textContent.trim() === 'Unpublish' ? 'draft' : 'published';
+    try {
+      await API.patch('/admin/posts/' + encodeURIComponent(id), { status: next }, { auth: true });
+      form.dataset.dirty = '0';
+      S.toast(next === 'published' ? 'Published — live at /journal/' + form.slug.value.trim() : 'Back to draft', 'ok');
+      render();
+    } catch (e) { S.toast(e.message, 'err'); }
+  });
+
+  S.onClick('post-delete', async function (el) {
+    var form = el.closest('.postform');
+    var id = form && form.getAttribute('data-id');
+    if (!id) return;
+    var title = el.getAttribute('data-title') || '';
+    /* 二次确认要求逐字打出标题：删文章没有回收站，点错一次就没了。 */
+    var typed = window.prompt('Type the article title to delete it permanently:\n\n' + title);
+    if (typed === null) return;
+    if (typed.trim() !== title) {
+      S.toast('Title did not match — nothing was deleted', 'err');
+      return;
+    }
+    try {
+      await API.del('/admin/posts/' + encodeURIComponent(id), { auth: true });
+      form.dataset.dirty = '0';
+      S.toast('Deleted', 'ok');
+      S.go('/admin/articles');
+    } catch (e) { S.toast(e.message, 'err'); }
   });
 
   S.onClick('go-checkout', function () {

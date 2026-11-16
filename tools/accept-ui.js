@@ -531,18 +531,21 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
 
     /* 导航：所有下拉子项都必须落在已存在的集合上，不能 404 */
     await goto(BASE + '/', `!!document.querySelector('.hdr__nav a')`, 25000);
+    /* 站内链接统一加了前导斜杠（/#/collections/...），这里用「包含」而不是「开头」匹配。
+       注意别再写成 ^="#/..."：那样会匹配 0 条，而死链数为 0 依然成立 —— 检查会假装通过。 */
     const navHrefs = await ev(`(function(){
-      var out=[];document.querySelectorAll('.mega a[href^="#/collections/"]').forEach(function(a){out.push(a.getAttribute('href'))});
+      var out=[];document.querySelectorAll('.mega a[href*="#/collections/"]').forEach(function(a){out.push(a.getAttribute('href'))});
       return Array.from(new Set(out));
     })()`);
     let deadNav = [];
     for (const h of navHrefs.slice(0, 20)) {
-      const handle = h.replace('#/collections/', '');
+      const handle = h.replace(/^\/?#\/collections\//, '');
       const r = await fetch(BASE + '/api/v1/collections/' + encodeURIComponent(handle));
       if (!r.ok) deadNav.push(handle);
     }
     ok('U10', '导航下拉没有死链（每个子项都有对应集合）',
-      deadNav.length === 0, `共 ${navHrefs.length} 个链接，死链：${JSON.stringify(deadNav)}`);
+      navHrefs.length > 0 && deadNav.length === 0,
+      `共 ${navHrefs.length} 个链接，死链：${JSON.stringify(deadNav)}`);
 
     /* 价格格式：整数价不带 .00 */
     await goto(BASE + '/#/collections/all', `document.querySelectorAll('.card__price b').length>0`, 30000);

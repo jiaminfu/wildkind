@@ -103,7 +103,7 @@ const getJSON = p => new Promise((res, rej) => {
         firstHasOwner: /owner/.test(trs[0] ? trs[0].textContent : ''),
         youTag: trs.filter(function(tr){var g = tr.querySelector('.tag'); return !!g && /you/.test(g.textContent);}).length,
         kpis: Array.prototype.slice.call(document.querySelectorAll('.kpi b')).map(function(b){return b.textContent;}),
-        hasManage: document.querySelectorAll('a.abtn[href^="#/admin/staff/"]').length
+        hasManage: document.querySelectorAll('a.abtn[href*="/admin/staff/"]').length
       };
     })())`);
     const L = JSON.parse(info || '{}');
@@ -116,14 +116,20 @@ const getJSON = p => new Promise((res, rej) => {
     /* ---------- 权限勾选联动 ---------- */
     const grid = await js(`(function(){
       var f = document.querySelector('form[data-act="staff-create"]');
+      var ps = {};
+      try { ps = JSON.parse(f.getAttribute('data-presets') || '{}'); } catch (e) { }
       return JSON.stringify({
         boxes: f.querySelectorAll('input[name="perms"]').length,
         checked: f.querySelectorAll('input[name="perms"]:checked').length,
+        allPerms: (ps.owner || []).length,
         role: f.role.value
       });
     })()`);
     const G = JSON.parse(grid || '{}');
-    ok('权限位共 12 项', G.boxes === 12, G.boxes + ' 项');
+    /* 别把权限总数写死成 12：加一个 posts:write 就红一片，而真正要守的是
+       「渲染出的勾选框数量 === owner 预设里的权限数量」，写死数字只是副产品。 */
+    const ALL = G.allPerms;
+    ok('权限位数量与 owner 预设一致', ALL > 0 && G.boxes === ALL, G.boxes + ' / ' + ALL);
     ok('默认角色 support 预勾 4 项', G.role === 'support' && G.checked === 4, G.role + ' / ' + G.checked);
 
     const afterOwner = await js(`(function(){
@@ -132,7 +138,7 @@ const getJSON = p => new Promise((res, rej) => {
       f.role.dispatchEvent(new Event('change', { bubbles: true }));
       return String(f.querySelectorAll('input[name="perms"]:checked').length);
     })()`);
-    ok('切到 owner 时权限全勾（12）', afterOwner === '12', afterOwner);
+    ok('切到 owner 时权限全勾', afterOwner === String(ALL), afterOwner + ' / ' + ALL);
 
     const afterSupport = await js(`(function(){
       var f = document.querySelector('form[data-act="staff-create"]');
@@ -162,7 +168,7 @@ const getJSON = p => new Promise((res, rej) => {
     const myId = await js(`(function(){
       var tr = Array.prototype.slice.call(document.querySelectorAll('.atable tbody tr'))
         .filter(function(x){return !!x.querySelector('.tag');})[0];
-      var a = tr && tr.querySelector('a.abtn[href^="#/admin/staff/"]');
+      var a = tr && tr.querySelector('a.abtn[href*="/admin/staff/"]');
       return a ? a.getAttribute('href').split('/').pop() : '';
     })()`);
     await send('Page.navigate', { url: BASE + '/#/admin/staff/' + myId });
@@ -183,7 +189,7 @@ const getJSON = p => new Promise((res, rej) => {
     const qaId = await js(`(function(){
       var tr = Array.prototype.slice.call(document.querySelectorAll('.atable tbody tr'))
         .filter(function(x){return x.textContent.indexOf(${JSON.stringify(QA_EMAIL)}) >= 0;})[0];
-      var a = tr && tr.querySelector('a.abtn[href^="#/admin/staff/"]');
+      var a = tr && tr.querySelector('a.abtn[href*="/admin/staff/"]');
       return a ? a.getAttribute('href').split('/').pop() : '';
     })()`);
     await send('Page.navigate', { url: BASE + '/#/admin/staff' });
@@ -193,7 +199,9 @@ const getJSON = p => new Promise((res, rej) => {
         .filter(function(x){return x.textContent.indexOf(${JSON.stringify(QA_EMAIL)}) >= 0;})[0];
       return tr ? tr.querySelector('a.abtn').getAttribute('href') : '';
     })()`);
-    ok('新账号可取到详情链接', /^#\/admin\/staff\/S\d+$/.test(String(qaHref)), qaHref);
+    /* 站内链接统一加了前导斜杠（/#/admin/staff/S003），这里同时接受新旧两种写法：
+       验收要守的是「详情链接存在且格式对」，不是「有没有那个斜杠」。 */
+    ok('新账号可取到详情链接', /^\/?#\/admin\/staff\/S\d+$/.test(String(qaHref)), qaHref);
     await send('Page.navigate', { url: BASE + qaHref });
     await waitFor('!!document.querySelector(\'form[data-act="staff-save"]\')', 40, 400);
     const other = await js(`JSON.stringify({

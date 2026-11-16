@@ -13,7 +13,7 @@
     { g: 'Overview', items: [['', 'Dashboard'], ['orders', 'Orders']] },
     { g: 'Catalog', items: [['products', 'Products'], ['collections', 'Collections'], ['inventory', 'Inventory']] },
     { g: 'Growth', items: [['coupons', 'Coupons'], ['reviews', 'Reviews'], ['custom', 'Custom requests'], ['customers', 'Customers']] },
-    { g: 'System', items: [['content', 'Content'], ['ledger', 'Stock ledger'], ['tax', 'Sales tax'], ['staff', 'Staff', 'staff:read'], ['audit', 'Audit log'], ['settings', 'Settings']] },
+    { g: 'System', items: [['content', 'Content'], ['articles', 'Articles', 'posts:write'], ['ledger', 'Stock ledger'], ['tax', 'Sales tax'], ['staff', 'Staff', 'staff:read'], ['audit', 'Audit log'], ['settings', 'Settings']] },
   ];
 
   function shell(body, active, title, staff) {

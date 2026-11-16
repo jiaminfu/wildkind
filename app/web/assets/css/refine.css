@@ -701,3 +701,39 @@ body.ck-open{padding-bottom:calc(var(--ckh, 74px) + 14px)}
 }
 .permgrid .permbox b{text-transform:uppercase; letter-spacing:.06em; font-size:11px}
 .permgrid .permbox i{text-transform:none; letter-spacing:0}
+
+/* ============================================================
+   后台 · 博客分块编辑器
+   ------------------------------------------------------------
+   正文按块存（段落/小标题/引用/列表/图片/分割线），编辑器就是
+   一块一块的 textarea。块边框要够清楚，否则运营分不清「这一段」
+   和「下一段」的边界 —— 那种错抓错改比没有编辑器更麻烦。
+   ============================================================ */
+.postform{display:block}
+.blklist{display:flex;flex-direction:column;gap:14px}
+.blk{border:1px solid var(--line-2);background:#fff;padding:12px 12px 14px}
+.blk__hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.blk__n{
+  width:22px;height:22px;flex:none;display:grid;place-items:center;
+  background:var(--cream-d);font-size:10.5px;color:var(--muted);font-weight:400;
+}
+.blk__hd select{max-width:190px;margin:0;padding:4px 8px;font-size:11px}
+.blk__sp{flex:1}
+.blk textarea{
+  width:100%;font-family:inherit;font-size:13.5px;line-height:1.62;
+  padding:10px 12px;border:1px solid var(--line-2);background:#fff;
+  resize:vertical;color:var(--ink);
+}
+.blk textarea:focus{outline:none;border-color:var(--sea)}
+.blk__row{display:flex;gap:10px;align-items:flex-end;margin-bottom:10px}
+.blk__row .afld{flex:1;margin:0}
+.blk__empty{font-size:12px;color:var(--muted);padding:4px 0 2px}
+.blk__prev{margin-top:10px}
+.blk__prev img{max-width:220px;display:block;border:1px solid var(--line-2)}
+.postform__act{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.slugprev{font-family:var(--mono,ui-monospace,monospace);font-weight:500;color:var(--sea)}
+[data-role=coverprev] img{max-width:240px;display:block;border:1px solid var(--line-2);margin-top:8px}
+/* 筛选 tab：All / Published / Draft。命中态要一眼能看出来，
+   否则运营会以为自己每点一次都在「同一页」。 */
+.abtn.is-on{background:var(--sea);border-color:var(--sea);color:#fff}
+.abtn.is-on:hover{color:#fff}

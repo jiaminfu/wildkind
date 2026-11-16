@@ -50,6 +50,7 @@ require('./routes/checkout').routes(router);
 require('./routes/payments').routes(router);
 require('./routes/tracking').routes(router);
 require('./routes/admin').routes(router);
+require('./routes/posts').routes(router);
 
 /* 博客真路径渲染（/journal 与 /journal/<slug>）。
    不注册到 router：router 只管 /api/*，这条走的是页面渲染。 */

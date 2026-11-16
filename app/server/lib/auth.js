@@ -17,12 +17,16 @@ const ALL_PERMISSIONS = [
   /* 管人是最高危的一项：能建账号、能重置别人的密码、能把自己提成 owner。
      默认只有 owner 有，且没开给 ops / support 任何一档。 */
   'staff:read', 'staff:write',
+  /* 博客文章的增删改发。support 不给：客服改不了文案，
+     但能读到已发布的内容（那部分走公开接口，不需要权限位）。 */
+  'posts:write',
 ];
 
 const ROLE_PRESETS = {
   owner: ALL_PERMISSIONS.slice(),
   ops: ['metrics:read', 'orders:read', 'orders:write', 'orders:refund',
-    'products:read', 'products:write', 'inventory:write', 'customers:read', 'coupons:write'],
+    'products:read', 'products:write', 'inventory:write', 'customers:read', 'coupons:write',
+    'posts:write'],
   support: ['orders:read', 'products:read', 'customers:read', 'metrics:read'],
 };
 
