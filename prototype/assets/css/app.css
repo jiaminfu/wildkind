@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS · 可交互原型样式
+   LASTGROVE · 可交互原型样式
    前台 + 后台共用一套 token，后台以 .adm 命名空间隔离
    ============================================================ */
 :root{
@@ -556,6 +556,8 @@ body.search-open .searchlayer{opacity:1; pointer-events:auto}
 .pill.active{background:rgba(74,107,74,.14); color:var(--olive)}
 .pill.expired{background:rgba(110,103,94,.13); color:var(--muted)}
 .pill.scheduled{background:rgba(192,138,46,.14); color:#8A6318}
+.pill.exhausted{background:rgba(180,71,47,.12); color:var(--clay)}
+.pill.disabled{background:rgba(110,103,94,.14); color:var(--muted)}
 .pill.on{background:rgba(74,107,74,.14); color:var(--olive)}
 .pill.off{background:rgba(110,103,94,.13); color:var(--muted)}
 .pill.vip{background:var(--sea); color:var(--cream)}

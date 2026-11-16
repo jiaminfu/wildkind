@@ -894,7 +894,11 @@
       var state = st(c);
       var cap = c.limit == null ? '∞' : c.limit;
       var pct = c.limit ? Math.min(100, Math.round((c.used || 0) / c.limit * 100)) : null;
-      var klass = state === 'active' ? 'completed' : state === 'scheduled' ? 'paid' : 'cancelled';
+      /* CSS 为五种状态各备一色：active 绿 / scheduled 黄 / expired 灰 / exhausted 红 / disabled 灰。
+         原来复用的是订单状态类（active→completed、其余→cancelled），结果 Expired 与 Exhausted
+         显示成同一种灰 —— 客户最需要分辨的这两种，恰好分不出来。 */
+      var klass = state;
+      var label = state.charAt(0).toUpperCase() + state.slice(1);
       /* 一张券可以既过期又发满。主状态只显示一个，但另一个必须留痕 ——
          否则运营看到 Expired 会以为「早点发就好了」，其实名额也早就没了。 */
       var also = (c.reasons || []).filter(function (r) { return r !== state; });
@@ -903,8 +907,10 @@
         '<td class="num">' + (c.minSubtotal ? U.money(c.minSubtotal) : '—') + '</td>' +
         '<td class="num">' + (c.used || 0) + ' / ' + cap + (pct != null ? ' <span class="sub">' + pct + '%</span>' : '') + '</td>' +
         '<td><span class="sub">' + U.esc(c.startsAt || '—') + ' → ' + U.esc(c.endsAt || '—') + '</span></td>' +
-        '<td><span class="pill ' + klass + '">' + U.esc(state) + '</span>' +
-        (also.length ? '<br><span class="sub">also ' + U.esc(also.join(' · ')) + '</span>' : '') + '</td>' +
+        '<td><span class="pill ' + klass + '">' + U.esc(label) + '</span>' +
+        (also.length ? '<br><span class="sub">also ' + also.map(function (r) {
+          return '<span class="sub c-' + r + '">' + U.esc(r.charAt(0).toUpperCase() + r.slice(1)) + '</span>';
+        }).join(' · ') + '</span>' : '') + '</td>' +
         '<td style="text-align:right"><button class="abtn sm danger" data-act="del-coupon" data-code="' + U.esc(c.code) + '">Delete</button></td></tr>';
     }).join('');
 

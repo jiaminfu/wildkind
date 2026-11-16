@@ -1,11 +1,11 @@
 /* ============================================================
-   TIDEGLASS 可交互原型 · 核心状态与业务逻辑
+   LASTGROVE 可交互原型 · 核心状态与业务逻辑
    数据存在 localStorage，刷新不丢；后台「设置」可一键重置
    ============================================================ */
 (function () {
   'use strict';
 
-  var KEY = 'tideglass_proto_v4';
+  var KEY = 'lastgrove_proto_v4';
 
   var U = {
     money: function (n) {
@@ -601,7 +601,7 @@
     navCollections: navCollections, variantsOf: variantsOf, totalStock: totalStock,
     reviewsOf: reviewsOf, cartLines: cartLines, cartCount: cartCount, totals: totals,
     addToCart: addToCart, setQty: setQty, removeLine: removeLine, emptyCart: emptyCart,
-    couponError: couponError, placeOrder: placeOrder, saveDB: saveDB, saveState: saveState,
+    couponState: couponState, couponError: couponError, placeOrder: placeOrder, saveDB: saveDB, saveState: saveState,
     refundOrder: refundOrder, cancelOrder: cancelOrder, giftLine: giftLine,
     resetDB: resetDB, parseHash: parseHash, go: go, onClick: onClick, onSubmit: onSubmit,
     toast: toast, openSearch: openSearch

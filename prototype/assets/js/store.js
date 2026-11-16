@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS · 前台视图
+   LASTGROVE · 前台视图
    ============================================================ */
 (function () {
   'use strict';
@@ -68,12 +68,12 @@
       '<div class="grid">' + news.map(function (p) { return ui.productCard(p); }).join('') + '</div></div>' +
 
       '<div class="wrap"><div class="story">' +
-      '<img src="assets/img/opt/c-woodland.jpg" alt="TIDEGLASS workshop">' +
+      '<img src="assets/img/opt/c-woodland.jpg" alt="LASTGROVE workshop">' +
       '<div class="story__copy"><div class="eyebrow">Why steel</div>' +
       '<h2>Gold fades.<br>Steel tells the truth.</h2>' +
-      '<p>We started TIDEGLASS because every “waterproof” necklace we owned turned our wrists green by August. So we stopped buying coatings that pretend to be gold, and started with the metal that does not need to pretend: 316L surgical steel, finished with a PVD layer measured in microns.</p>' +
+      '<p>We started LASTGROVE because every “waterproof” necklace we owned turned our wrists green by August. So we stopped buying coatings that pretend to be gold, and started with the metal that does not need to pretend: 316L surgical steel, finished with a PVD layer measured in microns.</p>' +
       '<p>It will pick up fine scratches. That is steel being honest. What it will not do is turn your skin green, or lose its colour in the sea.</p>' +
-      '<div class="story__sig">— The TIDEGLASS workshop, Portugal &amp; Guangzhou</div>' +
+      '<div class="story__sig">— The LASTGROVE workshop, Portugal &amp; Guangzhou</div>' +
       '<a href="#/pages/materials" class="btn btn--ghost" style="margin-top:20px">How it is made</a></div>' +
       '</div>' +
 
@@ -623,7 +623,7 @@
   var PAGES = {
     about: {
       title: 'Our story', body:
-        '<p>TIDEGLASS started with a green wrist.</p>' +
+        '<p>LASTGROVE started with a green wrist.</p>' +
         '<p>Every summer, a new “waterproof” necklace; every September, a green mark where it used to be. The coatings were pretending to be gold, and the metal underneath was pretending to be jewellery.</p>' +
         '<p>So we stopped pretending. We use 316L surgical stainless steel — the same alloy used in surgical implants, because it does not react with skin — and finish it with a PVD layer measured in microns, applied in a vacuum chamber rather than a bath.</p>' +
         '<h3>What that means in practice</h3>' +
@@ -713,10 +713,10 @@
     contact: {
       title: 'Contact', body:
         '<p>We answer every email within one business day, usually faster.</p>' +
-        '<h3>Customer care</h3><p><b>hello@tideglass.co</b><br>Monday–Friday, 9am–6pm EST</p>' +
+        '<h3>Customer care</h3><p><b>hello@lastgrove.co</b><br>Monday–Friday, 9am–6pm EST</p>' +
         '<h3>Colour guarantee claims</h3><p>Include a photo of the piece and the email you ordered with. No receipt needed.</p>' +
-        '<h3>Wholesale &amp; press</h3><p><b>trade@tideglass.co</b></p>' +
-        '<h3>Workshop</h3><p>TIDEGLASS<br>Rua do Mar 42, Porto, Portugal<br>and Guangzhou, China</p>'
+        '<h3>Wholesale &amp; press</h3><p><b>trade@lastgrove.co</b></p>' +
+        '<h3>Workshop</h3><p>LASTGROVE<br>Rua do Mar 42, Porto, Portugal<br>and Guangzhou, China</p>'
     }
   };
 

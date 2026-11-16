@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS · 后台视图
+   LASTGROVE · 后台视图
    ============================================================ */
 (function () {
   'use strict';
@@ -142,15 +142,15 @@
   function login() {
     return '<div class="loginwrap">' +
       '<div class="loginwrap__img"><img src="assets/img/c-ocean.png" alt="">' +
-      '<div class="cap"><b>Sea glass doesn\'t fade.</b><span>TIDEGLASS admin · prototype</span></div></div>' +
+      '<div class="cap"><b>Sea glass doesn\'t fade.</b><span>LASTGROVE admin · prototype</span></div></div>' +
       '<div class="loginwrap__form">' +
-      '<div class="brand">' + ui.MARK + '<span class="brand__word">TIDEGLASS</span></div>' +
+      '<div class="brand">' + ui.MARK + '<span class="brand__word">LASTGROVE</span></div>' +
       '<h1>Sign in</h1><p>Manage orders, stock and storefront content.</p>' +
       '<form data-act="login">' +
-      '<div class="afld"><label>Email</label><input name="email" value="owner@tideglass.co" autocomplete="username"></div>' +
+      '<div class="afld"><label>Email</label><input name="email" value="owner@lastgrove.com" autocomplete="username"></div>' +
       '<div class="afld"><label>Password</label><input name="password" type="password" value="" placeholder="••••••••" autocomplete="current-password"></div>' +
       '<button class="btn btn--full" type="submit" style="margin-top:6px">Sign in</button></form>' +
-      '<div class="loginwrap__hint">Prototype access — no real account. The password is <code>tideglass2026</code>.<br>' +
+      '<div class="loginwrap__hint">Prototype access — no real account. The password is <code>lastgrove2026</code>.<br>' +
       '<a href="#/" style="text-decoration:underline">← Back to store</a></div>' +
       '</div></div>';
   }
@@ -544,7 +544,7 @@
   /* ---------------- Marketing ---------------- */
   function marketing() {
     var cs = db().coupons;
-    var active = cs.filter(function (c) { return c.status === 'active'; }).length;
+    var active = cs.filter(function (c) { return S.couponState(c) === 'active'; }).length;
     var used = cs.reduce(function (a, c) { return a + c.used; }, 0);
 
     return '<div class="kpis" style="grid-template-columns:repeat(3,1fr)">' +
@@ -557,6 +557,7 @@
       '<div class="panel__bd flush"><table class="atable"><thead><tr>' +
       '<th>Code</th><th>Type</th><th class="num">Value</th><th class="num">Min spend</th><th>Window</th><th class="num">Used</th><th>Status</th><th></th></tr></thead><tbody>' +
       cs.map(function (c) {
+        var st = S.couponState(c);
         return '<tr><td><b class="mono" style="font-size:11.5px;color:var(--ink)">' + U.esc(c.code) + '</b>' +
           '<div style="font-size:10px;color:var(--muted)">' + U.esc(c.note) + '</div></td>' +
           '<td style="font-size:11px">' + (c.type === 'percent' ? 'Percent off' : 'Fixed amount') + '</td>' +
@@ -564,7 +565,7 @@
           '<td class="num">' + (c.minSubtotal ? U.money0(c.minSubtotal) : '—') + '</td>' +
           '<td style="font-size:10.5px;color:var(--muted)">' + c.startsAt.slice(5) + ' → ' + c.endsAt.slice(5) + '</td>' +
           '<td class="num">' + c.used + ' / ' + c.limit + '</td>' +
-          '<td><span class="pill ' + c.status + '">' + c.status + '</span></td>' +
+          '<td><span class="pill ' + st + '">' + st.charAt(0).toUpperCase() + st.slice(1) + '</span></td>' +
           '<td style="text-align:right"><button class="abtn sm danger" data-act="delcoupon" data-code="' + U.esc(c.code) + '">Delete</button></td></tr>';
       }).join('') + '</tbody></table></div>' +
       '<div class="panel__bd" style="border-top:1px solid var(--line)">' +
@@ -797,7 +798,7 @@
       '<button class="abtn danger" data-act="reset">Reset prototype data</button></div></div>' +
 
       '<div class="panel"><div class="panel__hd"><h2>Session</h2></div><div class="panel__bd">' +
-      '<div style="font-size:11.5px;color:var(--muted);line-height:1.9">Signed in as <b style="color:var(--ink)">owner@tideglass.co</b><br>' +
+      '<div style="font-size:11.5px;color:var(--muted);line-height:1.9">Signed in as <b style="color:var(--ink)">owner@lastgrove.com</b><br>' +
       'Role: owner (full access)<br>Session: 24 hours</div>' +
       '<button class="abtn" style="margin-top:12px" data-act="logout">Sign out</button></div></div></div></div>';
   }

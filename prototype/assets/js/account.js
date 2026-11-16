@@ -6,8 +6,8 @@
  */
 window.Account = (function () {
   var S = window.S, U = S.U, ui = window.UI;
-  var UKEY = 'tideglass_proto_v4_users';
-  var DEMO = { email: 'maya.patel@gmail.com', pw: 'tideglass2026' };
+  var UKEY = 'lastgrove_proto_v4_users';
+  var DEMO = { email: 'maya.patel@gmail.com', pw: 'lastgrove2026' };
 
   /* ---------- 账号表 ---------- */
   function digest(str) {

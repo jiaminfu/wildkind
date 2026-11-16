@@ -128,7 +128,7 @@ handover/
 > 另外 `server.js` + `data/` + `prototype/` 是最早的**单文件原型**（4400），只用于看设计，不再是交付物。两者不要混用。
 
 ```bash
-node app/server/seed.js            # 生成演示数据（37 款商品 / 70 个变体 / 90 单 / 210 条库存流水）
+node app/server/seed.js            # 生成演示数据（36 款商品 / 67 个变体 / 90 单 / 200 条库存流水）
 node app/server/index.js           # 起服务 → http://localhost:4600
 ```
 

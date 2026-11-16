@@ -37,4 +37,4 @@ http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream' });
     res.end(buf);
   });
-}).listen(PORT, () => console.log('TIDEGLASS prototype → http://localhost:' + PORT));
+}).listen(PORT, () => console.log('LASTGROVE prototype → http://localhost:' + PORT));

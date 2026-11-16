@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS · 路由与交互
+   LASTGROVE · 路由与交互
    ============================================================ */
 (function () {
   'use strict';
@@ -145,13 +145,13 @@
   // Cookie 同意（FR-S-095）：选择写入 localStorage，之后不再弹出。
   // 只有选了 all 才允许加载分析类脚本——这是归因采集的前提（BR 见 SDD 7.8）。
   S.onClick('ck-all', function () {
-    try { localStorage.setItem('tideglass_cookie', 'all'); } catch (e) { }
+    try { localStorage.setItem('lastgrove_cookie', 'all'); } catch (e) { }
     var el = document.getElementById('ckbar'); if (el) el.remove();
     document.body.classList.remove('ck-open');
     if (S.toast) S.toast('Cookies accepted — analytics on');
   });
   S.onClick('ck-essential', function () {
-    try { localStorage.setItem('tideglass_cookie', 'essential'); } catch (e) { }
+    try { localStorage.setItem('lastgrove_cookie', 'essential'); } catch (e) { }
     var el = document.getElementById('ckbar'); if (el) el.remove();
     document.body.classList.remove('ck-open');
     if (S.toast) S.toast('Only necessary cookies');
@@ -698,12 +698,12 @@
 
   S.onSubmit('login', function (form) {
     var pw = form.password.value;
-    if (pw === 'tideglass2026' || pw === '') {
+    if (pw === 'lastgrove2026' || pw === '') {
       S.state.admin = true; S.saveState();
       render();
       S.toast('Welcome back', 'ok');
     } else {
-      S.toast('Wrong password — try tideglass2026', 'err');
+      S.toast('Wrong password — try lastgrove2026', 'err');
       form.password.value = '';
     }
   });

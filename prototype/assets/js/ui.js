@@ -1,5 +1,5 @@
 /* ============================================================
-   TIDEGLASS · 共用 UI 组件
+   LASTGROVE · 共用 UI 组件
    ============================================================ */
 (function () {
   'use strict';
@@ -127,7 +127,7 @@
       '<header class="hdr" id="hdr"><div class="wrap"><div class="hdr__inner">' +
       '<button class="mob-menu-btn" data-act="open-menu" aria-label="Menu">' + icon('menu') + '</button>' +
       '<nav class="hdr__nav">' + nav + '</nav>' +
-      '<a href="#/" class="brand" aria-label="TIDEGLASS home"><span class="brand__mark" aria-hidden="true">' + MARK + '</span><span class="brand__word">TIDEGLASS</span></a>' +
+      '<a href="#/" class="brand" aria-label="LASTGROVE home"><span class="brand__mark" aria-hidden="true">' + MARK + '</span><span class="brand__word">LASTGROVE</span></a>' +
       '<div class="hdr__tools">' +
       '<button class="icon-btn" data-act="open-search" aria-label="Search">' + icon('search') + '</button>' +
       '<a class="icon-btn hdr__acct" href="#/account" aria-label="Account">' + icon('user') + '</a>' +
@@ -146,7 +146,7 @@
   function footer() {
     return '<footer class="ftr"><div class="wrap">' +
       '<div class="ftr__top">' +
-      '<div class="ftr__brand"><a href="#/" class="brand" aria-label="TIDEGLASS home"><span class="brand__mark" aria-hidden="true">' + MARK + '</span><span class="brand__word">TIDEGLASS</span></a>' +
+      '<div class="ftr__brand"><a href="#/" class="brand" aria-label="LASTGROVE home"><span class="brand__mark" aria-hidden="true">' + MARK + '</span><span class="brand__word">LASTGROVE</span></a>' +
       '<p>316L stainless steel with PVD colour. Sea glass doesn\'t fade — and neither do we.</p>' +
       '<div style="display:flex;gap:14px;margin-top:18px">' +
       '<a href="#/pages/about" aria-label="Instagram">' + icon('instagram') + '</a>' +
@@ -173,7 +173,7 @@
       '<li><a href="#/pages/contact">Contact</a></li>' +
       '<li><a href="#/admin">Admin</a></li></ul></div>' +
       '</div>' +
-      '<div class="ftr__bot"><span>© 2026 TIDEGLASS. All rights reserved.</span>' +
+      '<div class="ftr__bot"><span>© 2026 LASTGROVE. All rights reserved.</span>' +
       '<div class="ftr__pay"><span>VISA</span><span>MC</span><span>AMEX</span><span>APPLE PAY</span><span>G PAY</span><span>SHOP PAY</span></div>' +
       '<span>Privacy · Terms · Accessibility</span></div>' +
       '</div></footer>';
@@ -312,7 +312,7 @@
   // 而不是放在某个页面里——任何入口进来都要能看到。
   function cookieBar() {
     var v = null;
-    try { v = localStorage.getItem('tideglass_cookie'); } catch (e) { }
+    try { v = localStorage.getItem('lastgrove_cookie'); } catch (e) { }
     if (v) return '';
     return '<div class="ckbar" id="ckbar" role="dialog" aria-label="Cookie preferences">' +
       '<p>We use cookies to run the store and, with your permission, to understand how it is used. ' +
@@ -346,9 +346,9 @@
 
     return '<div class="adm">' +
       '<aside class="adm__side" id="admSide">' +
-      '<div class="adm__brand"><span>TIDEGLASS<em>Admin</em></span></div>' +
+      '<div class="adm__brand"><span>LASTGROVE<em>Admin</em></span></div>' +
       '<nav class="adm__nav">' + nav + '</nav>' +
-      '<div class="adm__foot">Prototype build v1.0<br>Signed in as owner@tideglass.co</div>' +
+      '<div class="adm__foot">Prototype build v1.0<br>Signed in as owner@lastgrove.com</div>' +
       '</aside>' +
       '<div class="adm__main">' +
       '<div class="adm__top"><div style="display:flex;align-items:center;gap:12px">' +
