@@ -160,11 +160,11 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
     await shot('03-cart-drawer');
 
     /* 5. 抽屉里的结账入口 */
-    const hasCheckoutLink = await ev(`!!document.querySelector('a[href="#/checkout"]')`);
+    const hasCheckoutLink = await ev(`!!document.querySelector('a[href$="#/checkout"]')`);
     ok('购物袋抽屉里有结账入口', hasCheckoutLink === true);
 
     /* 6. 进结算页 */
-    await ev(`(function(){var a=document.querySelector('a[href="#/checkout"]');if(a)a.click();return true})()`);
+    await ev(`(function(){var a=document.querySelector('a[href$="#/checkout"]');if(a)a.click();return true})()`);
     const ckReady = await waitFor(`location.hash.indexOf('#/checkout')===0 && document.querySelectorAll('input').length>0`, 25000);
     ok('进入结算页且渲染出表单', ckReady === true, 'hash=' + (await ev('location.hash')));
     /* 切路由到表单渲染之间有间隙，报价又会二次重绘，所以字段断言要轮询 */

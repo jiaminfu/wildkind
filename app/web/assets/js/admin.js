@@ -44,7 +44,7 @@
       '<div style="display:flex;align-items:center;gap:12px">' +
       '<button class="abtn sm" data-act="adm-menu" id="admMenuBtn">' + window.UI.icon('menu') + '</button>' +
       '<h1>' + U.esc(title) + '</h1></div>' +
-      '<div class="adm__top-r"><a href="#/" class="abtn sm">View store</a>' +
+      '<div class="adm__top-r"><a href="/#/" class="abtn sm">View store</a>' +
       '<span class="who"><i>TG</i><span class="who__n">' + U.esc(who) + '</span></span>' +
       '<button class="abtn sm" data-act="logout">Sign out</button></div></div>' +
       '<div class="adm__body">' + body + '</div></div></div>' +
@@ -57,7 +57,7 @@
       '<div class="loginwrap__img"><img src="assets/img/opt/c-ocean.jpg" alt="">' +
       '<div class="cap"><b>Grows on you.</b><span>LASTGROVE admin</span></div></div>' +
       '<div class="loginwrap__form">' +
-      '<a href="#/" class="brand" style="margin-bottom:26px"><span class="brand__mark">' + window.UI.MARK + '</span>' +
+      '<a href="/#/" class="brand" style="margin-bottom:26px"><span class="brand__mark">' + window.UI.MARK + '</span>' +
       '<span class="brand__word">LASTGROVE</span></a>' +
       '<h1>Sign in</h1><p>Manage orders, stock and storefront settings.</p>' +
       (msg ? '<div class="falert falert--note">' + U.esc(msg) + '</div>' : '') +
@@ -68,7 +68,7 @@
       // 这里绝对不能再写默认口令：这一页挂在公网上，等于把账号密码挂牌公示。
       // 需要看演示账号的，看 handover/README.md 或服务器上的 deploy/.env。
       '<div class="loginwrap__hint">Forgot the password? The store owner resets it on the server.<br>' +
-      '<a href="#/" style="text-decoration:underline">← Back to store</a></div>' +
+      '<a href="/#/" style="text-decoration:underline">← Back to store</a></div>' +
       '</div></div>';
   }
 
@@ -106,7 +106,7 @@
       '<div class="panel"><div class="panel__hd"><h2>Top products</h2></div>' +
       '<div class="panel__bd flush"><table class="atable"><thead><tr><th>Product</th><th class="num">Units</th><th class="num">Revenue</th></tr></thead>' +
       '<tbody>' + (top || '<tr><td colspan="3">No sales in this window.</td></tr>') + '</tbody></table></div></div>' +
-      '<div class="panel"><div class="panel__hd"><h2>Restock soon</h2><a href="#/admin/inventory" class="sub" style="text-decoration:underline">All stock</a></div>' +
+      '<div class="panel"><div class="panel__hd"><h2>Restock soon</h2><a href="/#/admin/inventory" class="sub" style="text-decoration:underline">All stock</a></div>' +
       '<div class="panel__bd flush"><table class="atable"><thead><tr><th>Product</th><th>Finish</th><th class="num">Left</th></tr></thead>' +
       '<tbody>' + (low || '<tr><td colspan="3">Everything is healthy.</td></tr>') + '</tbody></table></div></div>' +
       '</div>';
@@ -128,7 +128,7 @@
       ['cancelled', 'Cancelled'], ['refunded', 'Refunded']]
       .map(function (t) {
         var on = (q.status || '') === t[0] ? ' solid' : '';
-        return '<a class="abtn' + on + '" href="#/admin/orders' + (t[0] ? '?status=' + t[0] : '') + '">' + t[1] + '</a>';
+        return '<a class="abtn' + on + '" href="/#/admin/orders' + (t[0] ? '?status=' + t[0] : '') + '">' + t[1] + '</a>';
       }).join('');
 
     /* 导出：以前一个都没有，对账、打发货单、丢给 ERP 全得手工抄。
@@ -258,7 +258,7 @@
     }).join('');
 
     return '<div class="panel"><div class="panel__hd"><h2>' + U.esc(o.number) + '</h2>' +
-      '<a class="abtn sm" href="#/admin/orders">← All orders</a></div>' +
+      '<a class="abtn sm" href="/#/admin/orders">← All orders</a></div>' +
       '<div class="panel__bd" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
       '<span class="pill ' + o.status + '">' + U.esc(o.statusLabel) + '</span>' + acts +
       (o.partiallyRefunded ? '<span class="pill refunded">Partially refunded</span>' : '') +
@@ -637,7 +637,7 @@
     return (on ? '' :
       '<div class="panel"><div class="panel__bd"><div class="acallout acallout--warn">' +
       '<b>Tax collection is off.</b> Nothing is being added at checkout, so this report is empty by design. ' +
-      'Turn it on in <a href="#/admin/settings">Settings → Sales tax</a> once you are registered in at least one state.' +
+      'Turn it on in <a href="/#/admin/settings">Settings → Sales tax</a> once you are registered in at least one state.' +
       '</div></div></div>') +
 
       '<div class="kpis" style="grid-template-columns:repeat(3,1fr)">' +
@@ -682,7 +682,7 @@
       '<li><b>No county / city tax.</b> The rate you enter is one number per state. If you need per-ZIP accuracy, ' +
       'that requires a tax engine (TaxJar, Avalara) — this report then becomes the cross-check.</li>' +
       '<li><b>No automatic refund netting.</b> Partially refunded orders stay at their original amount here. ' +
-      'Deduct the refunded tax manually using the order list in <a href="#/admin/orders">Orders</a>.</li>' +
+      'Deduct the refunded tax manually using the order list in <a href="/#/admin/orders">Orders</a>.</li>' +
       '<li><b>No filing.</b> This only tells you what to file. Filing itself happens on the state\u2019s portal.</li>' +
       '</ul></div></div>';
   }
@@ -734,13 +734,13 @@
       var one = list.filter(function (s) { return s.id === selectedId; })[0];
       if (!one) {
         return '<div class="panel"><div class="panel__bd">Staff account not found. ' +
-          '<a href="#/admin/staff">Back to staff</a></div></div>';
+          '<a href="/#/admin/staff">Back to staff</a></div></div>';
       }
       var isMe = one.id === d.me;
       var onlyOwner = one.role === 'owner' && owners <= 1;
 
       return '<div class="panel"><div class="panel__hd"><h2>' + U.esc(one.name) + '</h2>' +
-        '<a class="abtn sm" href="#/admin/staff">← All staff</a></div>' +
+        '<a class="abtn sm" href="/#/admin/staff">← All staff</a></div>' +
         '<div class="panel__bd"><form data-act="staff-save" data-id="' + U.esc(one.id) + '" class="cform">' +
         '<label class="afld"><span>Name</span><input name="name" value="' + U.esc(one.name) + '" required></label>' +
         '<label class="afld"><span>Email (cannot be changed)</span>' +
@@ -795,14 +795,14 @@
     var rows = list.map(function (s) {
       var pill = s.status === 'active' ? 'active' : 'cancelled';
       var rolePill = s.role === 'owner' ? 'paid' : 'new';
-      return '<tr><td><a href="#/admin/staff/' + U.esc(s.id) + '"><b>' + U.esc(s.name) + '</b></a>' +
+      return '<tr><td><a href="/#/admin/staff/' + U.esc(s.id) + '"><b>' + U.esc(s.name) + '</b></a>' +
         (s.id === d.me ? ' <span class="tag">you</span>' : '') + '</td>' +
         '<td>' + U.esc(s.email) + '</td>' +
         '<td><span class="pill ' + rolePill + '">' + U.esc(s.role) + '</span></td>' +
         '<td><span class="pill ' + pill + '">' + U.esc(s.status) + '</span></td>' +
         '<td class="num">' + (s.permissions || []).length + '</td>' +
         '<td>' + (s.lastLoginAt ? U.fmtDate(s.lastLoginAt) : '—') + '</td>' +
-        '<td><a class="abtn sm" href="#/admin/staff/' + U.esc(s.id) + '">Manage</a></td></tr>';
+        '<td><a class="abtn sm" href="/#/admin/staff/' + U.esc(s.id) + '">Manage</a></td></tr>';
     }).join('');
 
     return '<div class="kpis" style="grid-template-columns:repeat(3,1fr)">' +
@@ -902,7 +902,7 @@
   function reviews(list, filter) {
     var tabs = [['', 'All'], ['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected']]
       .map(function (t) {
-        return '<a class="abtn' + ((filter || '') === t[0] ? ' solid' : '') + '" href="#/admin/reviews' +
+        return '<a class="abtn' + ((filter || '') === t[0] ? ' solid' : '') + '" href="/#/admin/reviews' +
           (t[0] ? '?status=' + t[0] : '') + '">' + t[1] + '</a>';
       }).join('');
 
@@ -986,7 +986,7 @@
       '<div class="panel"><div class="panel__hd"><h2>Stock ledger</h2>' +
       '<span class="sub">Append-only — every movement, with the balance after it</span></div>' +
       (opts && opts.sku ? '<div class="panel__bd"><span class="pill paid">Filtered: ' + U.esc(opts.sku) + '</span> ' +
-        '<a class="abtn sm" href="#/admin/ledger">Clear filter</a></div>' : '') +
+        '<a class="abtn sm" href="/#/admin/ledger">Clear filter</a></div>' : '') +
       '<div class="panel__bd flush"><table class="atable"><thead><tr>' +
       '<th>When</th><th>SKU</th><th>Reason</th><th class="num">Change</th><th class="num">Balance</th><th>Source</th>' +
       '</tr></thead><tbody>' + (rows || '<tr><td colspan="6">No movements yet.</td></tr>') + '</tbody></table></div></div>';
@@ -1037,7 +1037,7 @@
         '<td class="num">' + (c.order || 0) + '</td>' +
         '<td class="num">' + (c.level || 1) + '</td>' +
         '<td style="text-align:right;white-space:nowrap">' +
-        '<a class="abtn sm" href="#/admin/collections/' + encodeURIComponent(c.handle) + '">Edit</a> ' +
+        '<a class="abtn sm" href="/#/admin/collections/' + encodeURIComponent(c.handle) + '">Edit</a> ' +
         '<button class="abtn sm" data-act="col-nav" data-handle="' + U.esc(c.handle) + '" data-nav="' + (c.nav ? '0' : '1') + '">' +
         (c.nav ? 'Hide' : 'Show') + '</button>' +
         (c.productCount ? '' : ' <button class="abtn sm danger" data-act="col-del" data-handle="' + U.esc(c.handle) + '">Delete</button>') +
@@ -1065,7 +1065,7 @@
 
   function collectionEdit(c) {
     return '<div class="panel"><div class="panel__hd"><h2>' + U.esc(c.title) + '</h2>' +
-      '<a class="abtn sm" href="#/admin/collections">← All collections</a></div>' +
+      '<a class="abtn sm" href="/#/admin/collections">← All collections</a></div>' +
       '<div class="panel__bd"><form data-act="editcol" data-handle="' + U.esc(c.handle) + '" class="cform">' +
       '<label class="afld"><span>Title</span><input name="title" value="' + U.esc(c.title) + '" required></label>' +
       '<label class="afld"><span>Handle (fixed)</span><input value="' + U.esc(c.handle) + '" disabled></label>' +
@@ -1088,7 +1088,7 @@
     var count = function (s) { return list.filter(function (r) { return r.status === s; }).length; };
     var tabs = [['', 'All'], ['new', 'New'], ['quoted', 'Quoted'], ['ordered', 'Ordered'], ['closed', 'Closed']]
       .map(function (t) {
-        return '<a class="abtn' + ((filter || '') === t[0] ? ' solid' : '') + '" href="#/admin/custom' +
+        return '<a class="abtn' + ((filter || '') === t[0] ? ' solid' : '') + '" href="/#/admin/custom' +
           (t[0] ? '?status=' + t[0] : '') + '">' + t[1] + '</a>';
       }).join('');
 
@@ -1099,7 +1099,7 @@
         '<td class="num">' + (r.qty || 1) + '</td>' +
         '<td>' + U.esc(r.dueDate || '—') + '</td>' +
         '<td><span class="pill ' + (CR_PILL[r.status] || 'paid') + '">' + U.esc(CR_LABEL[r.status] || r.status) + '</span></td>' +
-        '<td style="text-align:right"><a class="abtn sm" href="#/admin/custom/' + encodeURIComponent(r.id) + '">Open</a></td></tr>';
+        '<td style="text-align:right"><a class="abtn sm" href="/#/admin/custom/' + encodeURIComponent(r.id) + '">Open</a></td></tr>';
     }).join('');
 
     return '<div class="kpis">' +
@@ -1122,7 +1122,7 @@
     }).join('');
 
     return '<div class="panel"><div class="panel__hd"><h2>' + U.esc(r.id) + '</h2>' +
-      '<a class="abtn sm" href="#/admin/custom">← All requests</a></div>' +
+      '<a class="abtn sm" href="/#/admin/custom">← All requests</a></div>' +
       '<div class="panel__bd" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
       '<span class="pill ' + (CR_PILL[r.status] || 'paid') + '">' + U.esc(CR_LABEL[r.status] || r.status) + '</span>' + acts + '</div>' +
       '<div class="panel__bd"><div class="srow"><span>Customer</span><b>' + U.esc(r.name || '—') + '</b></div>' +

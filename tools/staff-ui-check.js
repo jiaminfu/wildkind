@@ -88,7 +88,7 @@ const getJSON = p => new Promise((res, rej) => {
     ok('登录进入后台', !!logged);
 
     /* ---------- 侧栏入口 ---------- */
-    const navHas = await js(`!!document.querySelector('.adm__nav a[href="#/admin/staff"]')`);
+    const navHas = await js(`!!document.querySelector('.adm__nav a[href$="#/admin/staff"]')`);
     ok('侧栏出现 Staff 入口', !!navHas);
 
     await send('Page.navigate', { url: BASE + '/#/admin/staff' });
@@ -232,9 +232,9 @@ const getJSON = p => new Promise((res, rej) => {
     await waitFor('!!document.querySelector(".adm__nav")', 40, 400);
     /* 没权限的入口不该出现在侧栏。只靠接口 403 拦的话，
        人会点进去才发现自己没权限，然后以为是坏了。 */
-    const opsHidden = await js(`!document.querySelector('.adm__nav a[href="#/admin/staff"]')`);
+    const opsHidden = await js(`!document.querySelector('.adm__nav a[href$="#/admin/staff"]')`);
     ok('非 owner 侧栏不显示 Staff', !!opsHidden);
-    const opsStillHasOrders = await js(`!!document.querySelector('.adm__nav a[href="#/admin/orders"]')`);
+    const opsStillHasOrders = await js(`!!document.querySelector('.adm__nav a[href$="#/admin/orders"]')`);
     ok('非 owner 其他入口照常显示', !!opsStillHasOrders);
     await shot('04-ops-nav.png');
 

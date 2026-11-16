@@ -57,7 +57,7 @@
       });
     }
     var worldHtml = worlds.slice(0, 3).map(function (w) {
-      return '<a class="tile" href="#/collections/' + w.h + '">' +
+      return '<a class="tile" href="/#/collections/' + w.h + '">' +
         U.pic(w.i, { alt: '', w: 820, h: 820, sizes: '(max-width:900px) 46vw, 30vw' }) +
         '<div class="tile__body"><h3>' + w.t + '</h3><p>' + w.s + '</p></div></a>';
     }).join('');
@@ -99,8 +99,8 @@
       heroTitle +
       '<p class="hero__desc">' + esc(c.heroBody || '') + '</p>' +
       '<div class="hero__actions">' +
-      '<a href="#/collections/best-sellers" class="btn">Shop best sellers</a>' +
-      '<a href="#/collections/new" class="btn btn--ghost">What\'s new</a></div>' +
+      '<a href="/#/collections/best-sellers" class="btn">Shop best sellers</a>' +
+      '<a href="/#/collections/new" class="btn btn--ghost">What\'s new</a></div>' +
       '<div class="hero__meta">' +
       '<div><b>316L</b>surgical steel</div>' +
       '<div><b>PVD</b>colour lock</div>' +
@@ -123,14 +123,14 @@
       '<div class="rail" id="railBest">' + best.map(function (p) { return ui.productCard(p); }).join('') + '</div></div>' +
 
       (worldHtml ? '<div class="wrap"><div class="sec-head"><div><div class="eyebrow">Shop by mood</div><h2>Three worlds</h2></div>' +
-        '<a href="#/collections/all" class="link-u" style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase">All collections</a></div>' +
+        '<a href="/#/collections/all" class="link-u" style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase">All collections</a></div>' +
         '<div class="tiles">' + worldHtml + '</div></div>' : '') +
 
       '<section class="birth"><div class="wrap birth__in">' +
       '<div><div class="eyebrow">Made to be worn daily</div>' +
       '<h2>A colour that<br>doesn\'t wash off.</h2>' +
       '<p>Every piece starts as 316L surgical steel, then gets a 0.8 micron PVD layer bonded at 400°C. Salt water, sunscreen, shampoo — none of it gets through.</p>' +
-      '<a href="#/pages/care" class="btn btn--ghost">How to care for it</a></div>' +
+      '<a href="/#/pages/care" class="btn btn--ghost">How to care for it</a></div>' +
       '<div class="birth__tags"><span>Salt water</span><span>Sunscreen</span><span>Showers</span><span>Gym</span><span>Sleep</span></div>' +
       '</div></section>' +
 
@@ -194,7 +194,7 @@
       '<div class="fgroup"><h5>Availability</h5><div class="fopts">' +
       '<a class="fopt' + (q.stock === 'in' ? ' on' : '') + '" href="' + chipQ('stock', q.stock === 'in' ? '' : 'in') + '">In stock only</a>' +
       '</div></div></div>' +
-      '<div class="fdrawer__ft"><a class="fdrawer__clear" href="#/collections/' + handle + '">Clear all</a>' +
+      '<div class="fdrawer__ft"><a class="fdrawer__clear" href="/#/collections/' + handle + '">Clear all</a>' +
       '<button class="btn" data-act="close-filter">Show ' + meta.total + ' pieces</button></div></aside>';
 
     var grid = items.length
@@ -202,7 +202,7 @@
       : '<div class="empty" style="padding:80px 0"><h3>Nothing here yet</h3><p>Try removing a filter.</p></div>';
 
     return '<div class="wrap">' +
-      '<div class="crumbs"><a href="#/">Home</a><span>/</span>' + esc(c.title) + '</div>' +
+      '<div class="crumbs"><a href="/#/">Home</a><span>/</span>' + esc(c.title) + '</div>' +
       '<div class="collhead"><h1>' + esc(c.title) + '</h1>' +
       (c.intro ? '<p>' + esc(c.intro) + '</p>' : '') + '</div>' +
       fbar + grid +
@@ -237,16 +237,16 @@
       : '<div class="empty" style="padding:72px 0;text-align:center">' +
         '<h3>No pieces matched “' + esc(q) + '”</h3>' +
         '<p style="color:var(--muted);margin:10px 0 22px">Try a shorter word, or browse everything we have.</p>' +
-        '<a class="btn" href="#/collections/all">Shop all</a></div>';
+        '<a class="btn" href="/#/collections/all">Shop all</a></div>';
 
     return '<div class="wrap">' +
-      '<div class="crumbs"><a href="#/">Home</a><span>/</span>Search</div>' +
+      '<div class="crumbs"><a href="/#/">Home</a><span>/</span>Search</div>' +
       '<div class="collhead"><h1>' + (q ? 'Results for “' + esc(q) + '”' : 'Search') + '</h1>' +
       '<p>' + meta.total + ' ' + (meta.total === 1 ? 'piece' : 'pieces') + (q ? '' : ' — tell us what you are after') + '</p></div>' +
       '<div class="fbar"><span class="fbar__count">' + meta.total + ' pieces</span>' +
       '<div class="fbar__sort"><span>Sort</span>' + sortSel + '</div></div>' +
       grid +
-      (meta.hasMore ? '<div style="text-align:center;padding:36px 0"><a class="btn btn--ghost" href="#/search?q=' +
+      (meta.hasMore ? '<div style="text-align:center;padding:36px 0"><a class="btn btn--ghost" href="/#/search?q=' +
         encodeURIComponent(q) + '&page=' + (meta.page + 1) + '">Load more</a></div>' : '') +
       '</div>';
   }
@@ -261,7 +261,7 @@
         '<div class="empty" style="padding:80px 0;text-align:center">' +
         '<h3>Nothing saved yet</h3>' +
         '<p style="color:var(--muted);margin:10px 0 22px">Tap the heart on any piece to keep it here.</p>' +
-        '<a class="btn" href="#/collections/all">Browse the shop</a></div></div>';
+        '<a class="btn" href="/#/collections/all">Browse the shop</a></div></div>';
     }
     return '<div class="wrap">' +
       '<div class="collhead"><h1>Saved pieces</h1>' +
@@ -352,7 +352,7 @@
       '</form>';
 
     var rel = (related || []).map(function (x) {
-      return '<a class="card card--mini" href="#/products/' + esc(x.handle) + '">' +
+      return '<a class="card card--mini" href="/#/products/' + esc(x.handle) + '">' +
         '<div class="card__media">' + U.pic(x.image, { alt: '', w: 900, h: 900 }) + '</div>' +
         '<div class="card__body"><span class="card__title">' + esc(x.title) + '</span>' +
         '<span class="card__price">' + money(x.price) + '</span></div></a>';
@@ -365,7 +365,7 @@
     var saved = S.wishHas(p.handle);
 
     return '<div class="wrap">' +
-      '<div class="crumbs"><a href="#/">Home</a><span>/</span><a href="#/collections/' + esc(p.category) + '">' + esc(p.category) + '</a><span>/</span>' + esc(p.title) + '</div>' +
+      '<div class="crumbs"><a href="/#/">Home</a><span>/</span><a href="/#/collections/' + esc(p.category) + '">' + esc(p.category) + '</a><span>/</span>' + esc(p.title) + '</div>' +
       '<div class="pdp">' +
       '<div class="gal"><div class="gal__thumbs">' + thumbs + '</div>' +
       '<div class="gal__main">' +
@@ -439,12 +439,12 @@
       return '<div class="wrap"><div class="collhead"><h1>Your bag</h1></div>' +
         '<div class="empty" style="padding:80px 0;text-align:center"><h3>Your bag is empty</h3>' +
         '<p style="color:var(--muted);margin:10px 0 22px">Start with the pieces everyone reorders.</p>' +
-        '<a class="btn" href="#/collections/best-sellers">Shop best sellers</a></div></div>';
+        '<a class="btn" href="/#/collections/best-sellers">Shop best sellers</a></div></div>';
     }
     var rows = lines.map(function (l) {
       return '<div class="cline">' +
-        '<a class="cline__img" href="#/products/' + esc(l.handle) + '">' + U.pic(l.image, { alt: '', w: 900, h: 900, sizes: '90px' }) + '</a>' +
-        '<div class="cline__info"><a class="cline__title" href="#/products/' + esc(l.handle) + '">' + esc(l.title) + '</a>' +
+        '<a class="cline__img" href="/#/products/' + esc(l.handle) + '">' + U.pic(l.image, { alt: '', w: 900, h: 900, sizes: '90px' }) + '</a>' +
+        '<div class="cline__info"><a class="cline__title" href="/#/products/' + esc(l.handle) + '">' + esc(l.title) + '</a>' +
         '<span class="cline__var">' + esc(l.metal) + (l.size ? ' / ' + esc(l.size) : '') + '</span>' +
         '<div class="cline__row"><span class="stepper">' +
         '<button data-act="qty" data-key="' + esc(l.key) + '" data-d="-1">' + ui.icon('minus') + '</button>' +
@@ -457,7 +457,7 @@
     return '<div class="wrap"><div class="collhead"><h1>Your bag</h1>' +
       '<p>' + S.cartCount() + ' ' + (S.cartCount() === 1 ? 'piece' : 'pieces') + ' · duties included</p></div>' +
       '<div class="co"><div><div class="cartlines">' + rows + '</div>' +
-      '<a class="link-u" href="#/collections/best-sellers">← Keep shopping</a></div>' +
+      '<a class="link-u" href="/#/collections/best-sellers">← Keep shopping</a></div>' +
       '<div class="paysum"><h4>Summary</h4>' +
       '<div class="sum">' +
       '<div class="sum__row"><span>Subtotal</span><span>' + money(t.subtotal) + '</span></div>' +
@@ -465,7 +465,7 @@
       '<div class="sum__row"><span>Shipping</span><span>' + (t.shipping ? money(t.shipping) : 'Free') + '</span></div>' +
       '<div class="sum__row tot"><span>Total</span><span>' + money(t.total) + '</span></div>' +
       '</div>' +
-      '<a class="btn btn--full" href="#/checkout">Checkout</a>' +
+      '<a class="btn btn--full" href="/#/checkout">Checkout</a>' +
       '<p class="drawer__note">Taxes and duties included · 30-day free returns</p>' +
       '</div></div></div>';
   }
@@ -693,8 +693,8 @@
       (o.tax ? '<div class="sum__row"><span>Tax' + (o.taxState ? ' (' + esc(o.taxState) + ')' : '') + '</span><span>' + money(o.tax) + '</span></div>' : '') +
       '<div class="sum__row tot"><span>Total paid</span><span>' + money(o.total) + '</span></div></div></div>' +
       '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:22px">' +
-      '<a class="btn" href="#/account/lookup?number=' + encodeURIComponent(o.number) + '&email=' + encodeURIComponent(o.email) + '">Track this order</a>' +
-      '<a class="btn btn--ghost" href="#/collections/best-sellers">Keep shopping</a></div>' +
+      '<a class="btn" href="/#/account/lookup?number=' + encodeURIComponent(o.number) + '&email=' + encodeURIComponent(o.email) + '">Track this order</a>' +
+      '<a class="btn btn--ghost" href="/#/collections/best-sellers">Keep shopping</a></div>' +
       '</div></div>';
   }
 
@@ -730,7 +730,7 @@
         '<div class="sum__row"><span>Shipping</span><span>' + (order.shipping ? money(order.shipping) : 'Free') + '</span></div>' +
         (order.tax ? '<div class="sum__row"><span>Tax' + (order.taxState ? ' (' + esc(order.taxState) + ')' : '') + '</span><span>' + money(order.tax) + '</span></div>' : '') +
         '<div class="sum__row tot"><span>Total</span><span>' + money(order.total) + '</span></div></div></div>' +
-        '<a class="link-u" href="#/account/lookup" style="display:inline-block;margin-top:20px">Look up another order</a></div>';
+        '<a class="link-u" href="/#/account/lookup" style="display:inline-block;margin-top:20px">Look up another order</a></div>';
     }
     return '<div class="wrap" style="max-width:520px"><div class="collhead"><h1>Track an order</h1>' +
       '<p>Order number and email, both needed — that\'s how we keep other people out of your order.</p></div>' +
@@ -745,7 +745,7 @@
     return '<div class="wrap" style="padding:90px 0;text-align:center">' +
       '<h1 style="font-family:var(--serif);font-weight:400;font-size:40px">Page not found</h1>' +
       '<p style="color:var(--muted);margin:12px 0 26px">That link may be old, or the piece sold out.</p>' +
-      '<a class="btn" href="#/">Back home</a></div>';
+      '<a class="btn" href="/#/">Back home</a></div>';
   }
 
   window.Views = {

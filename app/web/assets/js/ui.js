@@ -131,135 +131,57 @@
 
     var col1 = kids.length
       ? kids.map(function (c) {
-        return '<a href="#/collections/' + c.handle + '">' + U.esc(c.title) + '</a>';
+        return '<a href="/#/collections/' + c.handle + '">' + U.esc(c.title) + '</a>';
       }).join('')
-      : '<a href="#/collections/' + handle + '">All ' + U.esc(collTitle(handle)) + '</a>' +
-        '<a href="#/search?q=' + encodeURIComponent(collTitle(handle)) + '">Search ' + U.esc(collTitle(handle).toLowerCase()) + '</a>';
+      : '<a href="/#/collections/' + handle + '">All ' + U.esc(collTitle(handle)) + '</a>' +
+        '<a href="/#/search?q=' + encodeURIComponent(collTitle(handle)) + '">Search ' + U.esc(collTitle(handle).toLowerCase()) + '</a>';
 
     /* 空列不渲染——三列里两列空着比一个干净的短菜单更难看 */
     var cols = '<div class="mega__col"><h6>Shop by style</h6>' + col1 + '</div>';
     if (motifs.length) {
       cols += '<div class="mega__col"><h6>Shop by motif</h6>' +
         motifs.map(function (m) {
-          return '<a href="#/collections/' + m + '">' + U.esc(collTitle(m)) + '</a>';
+          return '<a href="/#/collections/' + m + '">' + U.esc(collTitle(m)) + '</a>';
         }).join('') + '</div>';
     }
     if (gifts.length) {
       cols += '<div class="mega__col"><h6>Gifts</h6>' +
         gifts.map(function (h) {
-          return '<a href="#/collections/' + h + '">' + U.esc(collTitle(h)) + '</a>';
+          return '<a href="/#/collections/' + h + '">' + U.esc(collTitle(h)) + '</a>';
         }).join('') + '</div>';
     }
     cols += '<div class="mega__col"><h6>More</h6>' +
-      '<a href="#/collections/' + handle + '">Shop all</a>' +
-      '<a href="#/search?q=' + encodeURIComponent(collTitle(handle)) + '">Search</a>' +
-      (hasColl('sale') ? '<a href="#/collections/sale">Sale</a>' : '') +
+      '<a href="/#/collections/' + handle + '">Shop all</a>' +
+      '<a href="/#/search?q=' + encodeURIComponent(collTitle(handle)) + '">Search</a>' +
+      (hasColl('sale') ? '<a href="/#/collections/sale">Sale</a>' : '') +
       '</div>';
 
     return '<div class="mega' + (right ? ' mega--right' : '') + '">' + cols +
-      '<a class="mega__feat" href="#/collections/' + handle + '">' +
+      '<a class="mega__feat" href="/#/collections/' + handle + '">' +
       U.pic('assets/img/opt/hero-necklaces.jpg', { alt: '', w: 1100, h: 1375, sizes: '(max-width:900px) 90vw, 420px' }) +
       '<span>Shop all ' + U.esc(collTitle(handle)) + '</span></a>' +
       '</div>';
   }
 
-  function header(r) {
-    // 当前所在的集合（#/collections/<handle>）用于给导航项加选中态
-    var seg = (r && r.seg) || [];
-    var cur = seg[0] === 'collections' ? (seg[1] || '') : '';
-    var nav = navItems().map(function (c, i) {
-      var k = [];
-      if (c.handle === 'sale') k.push('hot');
-      if (c.handle === cur) k.push('is-active');
-      var cls = k.length ? ' class="' + k.join(' ') + '"' : '';
-      var label = c.handle === 'new' ? 'New in' : c.title;
-      var link = '<a href="#/collections/' + c.handle + '"' + cls +
-        (c.handle === cur ? ' aria-current="page"' : '') + '>' + U.esc(label) + '</a>';
-      if (!MEGA[c.handle]) return link;
-      return '<div class="navitem">' + link + megaPanel(c.handle, i >= 7) + '</div>';
-    }).join('');
-
-    return '' +
-      '<div class="annbar"><div class="annbar__track">' +
-      announcement() +
-      announcement() +
-      '</div></div>' +
-      '<header class="hdr" id="hdr"><div class="wrap"><div class="hdr__inner">' +
-      '<button class="mob-menu-btn" data-act="open-menu" aria-label="Menu">' + icon('menu') + '</button>' +
-      '<nav class="hdr__nav">' + nav + '</nav>' +
-      '<a href="#/" class="brand" aria-label="LASTGROVE home"><span class="brand__mark" aria-hidden="true">' + MARK + '</span><span class="brand__word">LASTGROVE</span></a>' +
-      '<div class="hdr__tools">' +
-      '<button class="icon-btn" data-act="open-search" aria-label="Search">' + icon('search') + '</button>' +
-      /* 账号入口只留图标，和搜索/收藏/购物袋保持同一套语言。
-         之前这里是「文字 Sign in（桌面）+ 人形图标（手机）」两套并存：
-         同一个入口在断点两侧长得不一样，桌面上那枚 .hdr__acct 还被 CSS 藏掉了，
-         于是桌面只剩一行裸文字 SIGN IN，比左右图标都重，视觉上很突兀。 */
-      '<a class="icon-btn hdr__acct" href="#/account" id="acctBtn" aria-label="' +
-      (S.state.user ? 'Account — hello, ' + U.esc(S.state.user.first) : 'Sign in or create an account') +
-      '">' + icon('user') + '</a>' +
-      /* 心形图标以前链到 #/account/wishlist，但那条路由根本没实现，
-         点进去落在「订单查询」页——图标说 Wishlist、页面是查单。
-         现在 /account/wishlist 有真实视图，收藏存本地，访客也能用。 */
-      '<a class="icon-btn hdr__wish" href="#/account/wishlist" id="wishBtn"' +
-      ' aria-label="Wishlist' + (S.wishCount() ? ', ' + S.wishCount() + ' saved' : '') + '">' +
-      icon('heart') +
-      '<span class="bag-count' + (S.wishCount() ? '' : ' is-zero') + '" id="wishCount">' + S.wishCount() + '</span></a>' +
-      '<button class="icon-btn" data-act="open-cart" aria-label="Bag">' + icon('bag') + '<span class="bag-count' + (S.cartCount() ? '' : ' is-zero') + '" id="bagCount">' + S.cartCount() + '</span></button>' +
-      '</div></div></div></header>';
+  /* ---------------- 页头 / 页脚 ----------------
+     模板已搬到 shell.js（UMD）：服务端渲染 /journal 时要同一份页头页脚，
+     两份实现早晚漂移，漂移后的症状是「服务端一版、JS 接管后又变一版」。
+     这里只负责把浏览器端的状态整理成 shell 需要的数据形状。 */
+  function shellData(r) {
+    return {
+      nav: (S.state.boot && S.state.boot.nav) || [],
+      collections: (S.DB.collections || []).filter(function (c) { return c.visible !== false; }),
+      announce: (S.DB.settings && S.DB.settings.content && S.DB.settings.content.announce) || '',
+      user: S.state.user || null,
+      cartCount: S.cartCount(),
+      wishCount: S.wishCount(),
+      route: r || {}
+    };
   }
 
-  function footer() {
-    /* 页脚的 Shop 列表也只列真实存在的集合。
-       写死的六个（necklaces / bracelets / anklets / sale …）在清库后全是 404，
-       而且这类死链藏在页脚里，平时没人点，上线后才发现。 */
-    var shopWant = ['best-sellers', 'new', 'necklaces', 'rings', 'bracelets', 'anklets', 'earrings', 'sale'];
-    var shopHave = shopWant.filter(hasColl);
-    var shopLinks = shopHave.length
-      ? shopHave.map(function (h) {
-        return '<li><a href="#/collections/' + h + '">' + U.esc(collTitle(h)) + '</a></li>';
-      }).join('')
-      : '<li><a href="#/collections/all">Shop all</a></li>';
+  function header(r) { return Shell.header(shellData(r)); }
 
-    return '<footer class="ftr"><div class="wrap">' +
-      '<div class="ftr__top">' +
-      '<div class="ftr__brand"><a href="#/" class="brand" aria-label="LASTGROVE home"><span class="brand__mark" aria-hidden="true">' + MARK + '</span><span class="brand__word">LASTGROVE</span></a>' +
-      '<p>316L stainless steel, made in short runs. Silver pieces are unplated; gold is 18k PVD over steel.</p>' +
-      '<div style="display:flex;gap:14px;margin-top:18px">' +
-      '<a href="#/pages/about" aria-label="Instagram">' + icon('instagram') + '</a>' +
-      '<a href="#/pages/about" aria-label="Pinterest">' + icon('pinterest') + '</a>' +
-      '<a href="#/pages/about" aria-label="TikTok">' + icon('tiktok') + '</a>' +
-      '</div></div>' +
-      '<div><h5>Shop</h5><ul>' + shopLinks + '</ul></div>' +
-      '<div><h5>Help</h5><ul>' +
-      '<li><a href="#/pages/shipping">Shipping &amp; Duties</a></li>' +
-      '<li><a href="#/pages/returns">Returns</a></li>' +
-      '<li><a href="#/pages/care">Care Guide</a></li>' +
-      '<li><a href="#/pages/size-guide">Size Guide</a></li>' +
-      '<li><a href="#/account/lookup">Track My Order</a></li>' +
-      '<li><a href="#/pages/faq">FAQ</a></li></ul></div>' +
-      '<div><h5>About</h5><ul>' +
-      '<li><a href="#/pages/about">Our Story</a></li>' +
-      '<li><a href="#/pages/materials">Materials</a></li>' +
-      '<li><a href="#/custom">Custom orders</a></li>' +
-      '<li><a href="#/pages/journal">Field Notes</a></li>' +
-      '<li><a href="#/pages/contact">Contact</a></li></ul></div>' +
-      '</div>' +
-      '<div class="ftr__bot"><span>© 2026 LASTGROVE. All rights reserved.</span>' +
-      /* 支付标识必须和真实开通的通道一致：
-         原来写着 SHOP PAY，那是 Shopify 的产品，本站自研、从未接入，属于虚假标识；
-         收单机构审核会逐项核对网站上的卡组织/钱包 logo 与账户实际能力。 */
-      '<div class="ftr__pay">' + payMark('visa') + payMark('mastercard') + payMark('amex') + payMark('paypal') + '</div>' +
-      /* 底栏三个法务页原来是纯文本 <span>，点不进去。收单审核必须能一键打开隐私政策，
-         所以改成真链接，并把 Shipping / Returns 也放进来（同样是审核必查项）。 */
-      '<div class="ftr__legal">' +
-      '<a href="#/pages/privacy">Privacy Policy</a>' +
-      '<a href="#/pages/terms">Terms of Service</a>' +
-      '<a href="#/pages/shipping">Shipping Policy</a>' +
-      '<a href="#/pages/returns">Returns Policy</a>' +
-      '<a href="#/pages/accessibility">Accessibility</a>' +
-      '</div></div>' +
-      '</div></footer>';
-  }
+  function footer() { return Shell.footer(shellData(null)); }
 
   function productCard(p, opts) {
     opts = opts || {};
@@ -290,7 +212,7 @@
 
     var saved = S.wishHas(p.handle);
     return '<article class="card">' +
-      '<a class="card__media" href="#/products/' + p.handle + '">' +
+      '<a class="card__media" href="/#/products/' + p.handle + '">' +
       /* width/height 给浏览器一个比例，图没下完时先占位。
          CSS 里 .card__media 已经写了 aspect-ratio，双保险能压掉移动端的布局跳动。
          注意：源图是 1:1，这里写 4:5 会让占位框和实际图不一致——
@@ -302,7 +224,7 @@
       ' aria-label="' + (saved ? 'Remove ' : 'Save ') + U.esc(p.title) + (saved ? ' from wishlist' : ' to wishlist') + '"' +
       ' aria-pressed="' + (saved ? 'true' : 'false') + '">' + icon(saved ? 'heartFull' : 'heart') + '</button>' +
       '<div class="card__body">' +
-      '<a class="card__title" href="#/products/' + p.handle + '">' + U.esc(p.title) + '</a>' +
+      '<a class="card__title" href="/#/products/' + p.handle + '">' + U.esc(p.title) + '</a>' +
       swRow +
       rateRow +
       '<div class="card__price"><b>' + U.money(v.price) + '</b>' +
@@ -321,7 +243,7 @@
       body = '<div style="text-align:center;padding:70px 0;color:var(--muted)">' +
         '<p style="font-family:var(--serif);font-size:22px;color:var(--ink);margin-bottom:8px">Your bag is empty</p>' +
         '<p style="font-size:12px;margin-bottom:20px">Steel that stays gold. Start with a best seller.</p>' +
-        '<a href="#/collections/best-sellers" class="btn" data-act="close-cart">Shop best sellers</a></div>';
+        '<a href="/#/collections/best-sellers" class="btn" data-act="close-cart">Shop best sellers</a></div>';
     } else {
       body = lines.map(function (l) {
         if (l.isGift) {
@@ -331,8 +253,8 @@
             '<span class="cline__var">Auto-added · limit 1 per order</span>' +
             '<div class="cline__row"><span class="cline__price" style="color:var(--brass)">$0.00</span></div></div></div>';
         }
-        return '<div class="cline"><a class="cline__img" href="#/products/' + l.handle + '">' + U.pic(l.image, { alt: '', w: 900, h: 900, sizes: '90px' }) + '</a>' +
-          '<div class="cline__info"><a class="cline__title" href="#/products/' + l.handle + '">' + U.esc(l.title) + '</a>' +
+        return '<div class="cline"><a class="cline__img" href="/#/products/' + l.handle + '">' + U.pic(l.image, { alt: '', w: 900, h: 900, sizes: '90px' }) + '</a>' +
+          '<div class="cline__info"><a class="cline__title" href="/#/products/' + l.handle + '">' + U.esc(l.title) + '</a>' +
           '<span class="cline__var">' + U.esc(l.metal) + (l.size ? ' / ' + U.esc(l.size) : '') + '</span>' +
           '<div class="cline__row"><span class="stepper">' +
           '<button data-act="qty" data-key="' + l.key + '" data-d="-1">' + icon('minus') + '</button>' +
@@ -380,10 +302,10 @@
       '<button class="icon-btn" data-act="close-cart" aria-label="Close">' + icon('close') + '</button></div>' +
       '<div class="drawer__body" id="drawerBody">' + body + (lines.length ? couponBox : '') + '</div>' +
       (lines.length ? '<div class="drawer__ft" id="drawerFoot">' + prog + sum +
-        '<a href="#/checkout" class="btn btn--full" data-act="go-checkout">Checkout</a>' +
+        '<a href="/#/checkout" class="btn btn--full" data-act="go-checkout">Checkout</a>' +
         '<div class="drawer__who">' + (S.state.user
           ? icon('user') + '<span>Signed in as <b>' + U.esc(S.state.user.email) + '</b> — this order saves to your account</span>'
-          : icon('user') + '<span><a href="#/account/login?next=/checkout">Sign in</a> to save your details, or check out as guest</span>') + '</div>' +
+          : icon('user') + '<span><a href="/#/account/login?next=/checkout">Sign in</a> to save your details, or check out as guest</span>') + '</div>' +
         '<div class="drawer__note">Duties included · Taxes calculated at checkout</div></div>' : '') +
       '</aside>';
   }
@@ -399,11 +321,11 @@
 
   function mobileMenu() {
     var nav = navItems().map(function (c) {
-      return '<a href="#/collections/' + c.handle + '">' + U.esc(c.title) + '</a>';
+      return '<a href="/#/collections/' + c.handle + '">' + U.esc(c.title) + '</a>';
     }).join('');
     return '<div class="mob-drawer" id="mobDrawer"><div class="mob-drawer__close">' +
       '<button class="icon-btn" data-act="close-menu">' + icon('close') + '</button></div>' +
-      nav + '<a href="#/account/lookup">Track order</a><a href="#/pages/about">Our story</a></div>';
+      nav + '<a href="/#/account/lookup">Track order</a><a href="/#/pages/about">Our story</a></div>';
   }
 
   // Cookie 同意条（FR-S-095）。合规上必须先于分析类脚本执行，所以它由本层统一渲染，
@@ -414,7 +336,7 @@
     if (v) return '';
     return '<div class="ckbar" id="ckbar" role="dialog" aria-label="Cookie preferences">' +
       '<p>We use cookies to run the store and, with your permission, to understand how it is used. ' +
-      '<a href="#/pages/about">Learn more</a></p>' +
+      '<a href="/#/pages/about">Learn more</a></p>' +
       '<div class="ckbar__act">' +
       '<button class="btn btn--sm btn--ghost" data-act="ck-essential">Only necessary</button>' +
       '<button class="btn btn--sm" data-act="ck-all">Accept all</button>' +
@@ -454,7 +376,7 @@
       '<div class="adm__top"><div style="display:flex;align-items:center;gap:12px">' +
       '<button class="abtn sm" data-act="adm-menu" style="display:none" id="admMenuBtn">' + icon('menu') + '</button>' +
       '<h1>' + title + '</h1></div>' +
-      '<div class="adm__top-r"><a href="#/" class="abtn sm" target="_self">View store</a>' +
+      '<div class="adm__top-r"><a href="/#/" class="abtn sm" target="_self">View store</a>' +
       '<span class="who"><i>TG</i>Owner</span>' +
       '<button class="abtn sm" data-act="logout">Sign out</button></div></div>' +
       '<div class="adm__body">' + content + '</div></div></div>' +

@@ -113,7 +113,7 @@ const chk = (name, cond, extra) => cond ? ok(name, extra) : bad(name, extra);
   /* ---- 2 抽屉 → 结算（这一步以前是断的） ---- */
   console.log('\n[2] 抽屉 → Checkout');
   chk('抽屉里有 Checkout 链接', await evalJS('!!document.querySelector(".drawer a[href=\\"#/checkout\\"]")'));
-  await click('.drawer a[href="#/checkout"]');
+  await click('.drawer a[href$="#/checkout"]');
   const reachedCheckout = await waitFor('location.hash.indexOf("/checkout")>=0', 3000);
   chk('点 Checkout 真的跳到结算页', reachedCheckout, 'hash=' + (await hash()));
   chk('抽屉已收起', await evalJS('!document.body.classList.contains("drawer-open")'));
@@ -184,7 +184,7 @@ const chk = (name, cond, extra) => cond ? ok(name, extra) : bad(name, extra);
 
   /* ---- 8 刚下的订单出现在账户里 ---- */
   console.log('\n[8] 订单归属');
-  await click('.acct2__nav a[href="#/account/orders"]');
+  await click('.acct2__nav a[href$="#/account/orders"]');
   await waitFor('location.hash === "#/account/orders"', 3000);
   const listTxt = await text();
   chk('订单列表能找到刚才那一单', listTxt.indexOf(orderNo.replace(/^%23/, '#')) >= 0 || /#TG\d+/.test(listTxt),
@@ -195,7 +195,7 @@ const chk = (name, cond, extra) => cond ? ok(name, extra) : bad(name, extra);
 
   /* ---- 9 地址簿 ---- */
   console.log('\n[9] 地址簿');
-  await click('.acct2__nav a[href="#/account/addresses"]');
+  await click('.acct2__nav a[href$="#/account/addresses"]');
   await waitFor('location.hash === "#/account/addresses"', 3000);
   chk('地址簿空态', /No saved addresses/.test(await text()));
   await click('[data-act="addr-new"]');
@@ -235,7 +235,7 @@ const chk = (name, cond, extra) => cond ? ok(name, extra) : bad(name, extra);
   await click('form[data-act="acc-signin"] button[type="submit"]');
   await waitFor('location.hash === "#/account"', 4000);
   chk('demo 账号登录成功', /Hello, Maya/.test(await text()));
-  await click('.acct2__nav a[href="#/account/orders"]');
+  await click('.acct2__nav a[href$="#/account/orders"]');
   await waitFor('location.hash === "#/account/orders"', 3000);
   const mayaOrders = await evalJS('document.querySelectorAll(".ol").length');
   chk('demo 账号能看到历史订单', mayaOrders > 0, mayaOrders + ' 单');

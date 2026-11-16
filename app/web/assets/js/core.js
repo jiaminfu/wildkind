@@ -325,7 +325,21 @@
     });
     return { seg: seg, query: qs, path: h };
   }
-  function go(path) { location.hash = '#' + path; }
+  /* ---------------- 跳转 ----------------
+     加购后跳结算、登录后跳账户，都走这里。
+
+     为什么不能一律 `location.hash = '#/x'`：
+     博客是真路径页面（/journal/<slug>）。在那种页面上设置 hash 只会得到
+     /journal/<slug>#/x —— 页面没有换，SPA 却以为已经在目标路由，
+     表现为「点了跳转，什么都没发生」，刷新一次才对。
+     所以先看当前 pathname：不在站点根目录就整页导航到 /#x。
+     根目录下的行为与原来逐字节一致，不影响现有 hash 路由。 */
+  function go(path) {
+    var p = '';
+    try { p = location.pathname; } catch (e) { }
+    if (p && p !== '/' && p !== '/index.html') { location.href = '/#' + path; return; }
+    location.hash = '#' + path;
+  }
 
   /* ---------------- 事件委托 ---------------- */
   var HANDLERS = { click: {}, submit: {}, change: {} };
@@ -339,7 +353,14 @@
       var fn = HANDLERS.click[el.getAttribute('data-act')];
       if (fn) {
         var href = el.getAttribute('href');
-        var isHashLink = el.tagName === 'A' && href && href.charAt(0) === '#';
+        /* 站内链接现在有两种写法，都要让浏览器自己处理默认行为：
+             `#/x`    —— hash 页面里的常规写法
+             `/#/x`   —— 带前导斜杠，在 /journal 这类真路径页面上点击才会整页导航，
+                         否则会变成 /journal/x#/x，页面不换而 SPA 以为已经跳了
+           这里原来只认 `#` 开头，改完 href 格式后，那个「关抽屉 + 靠 href 导航」
+           的结账按钮被 preventDefault 拦掉，点了毫无反应。 */
+        var isHashLink = el.tagName === 'A' && href &&
+          (href.charAt(0) === '#' || href.indexOf('/#') === 0);
         if (!isHashLink) e.preventDefault();
         fn(el, e);
         return;

@@ -195,7 +195,7 @@
       '<h1 style="font-family:var(--serif);font-weight:400;font-size:34px;margin:10px 0">' +
       U.esc(err.message || 'Request failed') + '</h1>' +
       (err.code ? '<p class="small" style="color:var(--muted)">Error code: ' + U.esc(err.code) + '</p>' : '') +
-      '<a class="btn" href="#/" style="margin-top:20px">Back home</a></div>';
+      '<a class="btn" href="/#/" style="margin-top:20px">Back home</a></div>';
   }
 
   /* ---------------- 渲染 ---------------- */
@@ -472,7 +472,7 @@
       return panel('Payment link incomplete',
         'We did not receive a payment reference from the payment provider. ' +
         'If you were charged, contact us and we will find your order.',
-        '<a class="btn" href="#/account/lookup">Track an order</a>');
+        '<a class="btn" href="/#/account/lookup">Track an order</a>');
     }
 
     try {
@@ -491,12 +491,12 @@
          订单仍在，可以回去重试，所以给一个回结算页的入口而不是死胡同。 */
       return panel('Payment not completed',
         'Nothing has been charged. Your order is still reserved — you can go back and try again.',
-        '<a class="btn" href="#/cart">Back to bag</a>');
+        '<a class="btn" href="/#/cart">Back to bag</a>');
     } catch (e) {
       return panel('We could not confirm the payment',
         'If you see a PayPal receipt, your payment went through and we will email you shortly. ' +
         'Otherwise contact us and we will sort it out.',
-        '<a class="btn" href="#/account/lookup">Track an order</a>');
+        '<a class="btn" href="/#/account/lookup">Track an order</a>');
     }
   }
 
@@ -1963,11 +1963,11 @@
           return;
         }
         box.innerHTML = res.data.map(function (p) {
-          return '<a class="slres" href="#/products/' + p.handle + '" data-act="close-search">' +
+          return '<a class="slres" href="/#/products/' + p.handle + '" data-act="close-search">' +
             S.U.pic(p.images[0], { alt: '', w: 900, h: 900, sizes: '56px' }) +
             '<span><b>' + S.U.esc(p.title) + '</b><em>' + S.U.money(p.price) + '</em></span></a>';
         }).join('') +
-          '<a class="slres__all" href="#/search?q=' + encodeURIComponent(q) + '" data-act="close-search">See all ' +
+          '<a class="slres__all" href="/#/search?q=' + encodeURIComponent(q) + '" data-act="close-search">See all ' +
           res.meta.total + ' results →</a>';
       } catch (err) { box.innerHTML = ''; }
     }, 260);

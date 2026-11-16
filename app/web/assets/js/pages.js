@@ -66,7 +66,7 @@
         '<h2>Thank you — we have it.</h2>' +
         '<p>Your reference is <b>' + esc(sent) + '</b>. A person (not a bot) reads every request and replies within two working days with a price and a lead time.</p>' +
         '<p>If you want to add a photo later, reply to the confirmation email with your reference in the subject line.</p>' +
-        '<p><a href="#/">Back to the shop</a> · <a href="#/custom">Send another request</a></p>' +
+        '<p><a href="/#/">Back to the shop</a> · <a href="/#/custom">Send another request</a></p>' +
         '</div></div>';
     }
     return '<div class="wrap">' +

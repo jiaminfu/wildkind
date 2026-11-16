@@ -100,6 +100,11 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
     while (Date.now() - t0 < (ms || 20000)) { if (await ev(expr)) return true; await wait(350); }
     return false;
   };
+  /* 站内链接现在一律带前导斜杠（/#/pages/about），这样在 /journal 真路径页面上
+     点击才会整页导航而不是留在原地。拼绝对地址时不能再无脑 BASE + '/' + href
+     —— 那会得到 BASE + '//#/...'，浏览器把开头的 // 当成协议相对路径，页面跑飞。 */
+  const abs = h => (!h ? BASE + '/' : (h.charAt(0) === '/' ? BASE + h : BASE + '/' + h));
+
   const goto = async (url, readyExpr, ms) => {
     await send('Page.navigate', { url });
     return waitFor(readyExpr, ms || 30000);
@@ -133,7 +138,7 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
     /* ═══ U2 集合页筛选与排序 ═══ */
     console.log('\n─── U2 集合页 ───');
     const navHref = await ev(`(function(){var a=document.querySelector('header a[href*="#/collections/"]')||document.querySelector('a[href*="#/collections/"][class*=nav]');return a?a.getAttribute('href'):null})()`);
-    const colUrl = navHref ? BASE + '/' + navHref : BASE + '/#/collections/all';
+    const colUrl = navHref ? abs(navHref) : BASE + '/#/collections/all';
     const colOk = await goto(colUrl, `document.querySelectorAll('a[href*="#/products/"]').length>0`, 30000);
     ok('U2', '集合页能打开并有商品', colOk, colUrl);
     await closeCookie();
@@ -229,7 +234,7 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
 
     /* ═══ U5 结算并下单 ═══ */
     console.log('\n─── U5 结算与下单 ───');
-    await ev(`(function(){var a=document.querySelector('a[href="#/checkout"]');if(a)a.click();return true})()`);
+    await ev(`(function(){var a=document.querySelector('a[href$="#/checkout"]');if(a)a.click();return true})()`);
     const ckOk = await waitFor(`location.hash.indexOf('#/checkout')===0 && !!document.querySelector('input[name=email]')`, 30000);
     ok('U5', '进入结算页并渲染表单', ckOk, await ev('location.hash'));
     const fields = await ev(`(function(){
@@ -757,7 +762,7 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
     })()`);
 
     ok('U13', '页脚法务链接可点击且不少于 5 个',
-      fl.n >= 5 && fl.hrefs.every(function(h){ return /^#\/pages\//.test(h || ''); }),
+      fl.n >= 5 && fl.hrefs.every(function(h){ return /^\/?\#\/pages\//.test(h || ''); }),
       JSON.stringify(fl.hrefs));
     ok('U13', '页脚不再暴露后台入口', fl.admin === 0, 'admin 链接数=' + fl.admin);
     ok('U13', '支付标识不含本站未接入的 SHOP PAY',
@@ -766,7 +771,7 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
     /* 链接存在但内容是空的，同样过不了审核 —— 逐个真打开看正文长度 */
     const deadPages = [];
     for (const h of fl.hrefs) {
-      await send('Page.navigate', { url: BASE + '/' + h });
+      await send('Page.navigate', { url: abs(h) });
       await wait(1100);
       const st = await ev(`(function(){
         var p = document.querySelector('.prose');

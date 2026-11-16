@@ -156,7 +156,7 @@ const getJSON = u => new Promise((res, rej) => {
   await wait(1500);
   const detail = JSON.parse(await ev(`JSON.stringify({
     hash: location.hash,
-    back: !!document.querySelector('a[href="#/admin/orders"]'),
+    back: !!document.querySelector('a[href$="#/admin/orders"]'),
     text: (document.querySelector('.adm__body')||{}).innerText ? document.querySelector('.adm__body').innerText.slice(0,120) : ''
   })`));
   const detOk = rowClick === 'clicked' && /#\/admin\/orders\/./.test(detail.hash) && detail.back;
