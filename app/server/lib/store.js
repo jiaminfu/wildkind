@@ -87,18 +87,40 @@ function get() {
   return db;
 }
 
-/* 原子写：先写临时文件再 rename，避免进程被杀时留下半个 JSON */
+/* 原子写：先写临时文件再 rename，避免进程被杀时留下半个 JSON。
+
+   ⚠️ 这里踩过一个能把数据全丢光的坑：
+   `writeQueue = writeQueue.then(...)` 一旦某次写失败（磁盘满、.tmp 被别的进程占着、
+   rename 跨设备），这个 promise 就变成 rejected，而**后续每一次 .then 都会被跳过**。
+   于是进程照常跑、接口照常返回 200、内存里的数据全都对 —— 只有文件永远停在失败那一刻。
+   实测表现：下了 3 单、退了 1 单，db.json 的修改时间一动不动，重启后全部消失。
+
+   两个修法缺一不可：
+   ① 每次拼接前先 `.catch(() => {})`，把链条拉回 resolved 状态，否则一次失败永久卡死；
+   ② 失败必须留下痕迹（lastWriteError + 日志 + 健康检查），不能让它「看起来在正常写」。 */
+let lastWriteError = null;
+
 function flush() {
   if (!db) return Promise.resolve();
   const snapshot = JSON.stringify(db, null, 1);
-  writeQueue = writeQueue.then(() => new Promise((resolve, reject) => {
+  writeQueue = writeQueue.catch(() => {}).then(() => new Promise((resolve, reject) => {
     const tmp = FILE + '.tmp';
     fs.writeFile(tmp, snapshot, 'utf8', err => {
       if (err) return reject(err);
       fs.rename(tmp, FILE, e2 => (e2 ? reject(e2) : resolve()));
     });
   }));
+  writeQueue = writeQueue.then(() => {
+    lastWriteError = null;
+  }, e => {
+    lastWriteError = { at: new Date().toISOString(), message: String((e && e.message) || e) };
+    console.error('[store] 写盘失败，本次快照未落盘：', (e && e.message) || e);
+  });
   return writeQueue;
+}
+
+function writeHealth() {
+  return { ok: !lastWriteError, lastWriteError: lastWriteError, pending: false };
 }
 
 /* 从磁盘重新装载内存镜像。
@@ -127,4 +149,4 @@ function isReady() { return !!db; }
 function markDirty() { dirty = true; }
 function isDirty() { return dirty; }
 
-module.exports = { get, load, reload, flush, tx, DATA_DIR, FILE, isReady };
+module.exports = { get, load, reload, flush, tx, DATA_DIR, FILE, isReady, writeHealth };

@@ -426,6 +426,67 @@ async function call(method, path, body, headers) {
   chk('退最后一件把运费一并退掉', refundShip.body.data.refunded === so.total,
     '$' + refundShip.body.data.refunded + ' / 订单 $' + so.total);
 
+  /* ---------- 7c. 退款金额上限 ----------
+     实测过：一张 $97.90 的单，POST {amount: 9999} 系统照收，refundedTotal 冲到 $10096.90。
+     这是能直接亏钱的缺口，且没有任何断言会变红。 */
+  section('7c 退款金额上限');
+  const qCap = await call('POST', '/api/v1/checkout/quote', {
+    items: [{ productId: 'LG-101', metal: 'Gold', qty: 2 }],
+  });
+  const oCap = await call('POST', '/api/v1/orders', {
+    quoteId: qCap.body.data.quoteId,
+    email: 'cap@example.com', firstName: 'Cap', lastName: 'Test',
+    address: { line1: '1 Main St', city: 'Austin', state: 'TX', zip: '78701', country: 'United States' },
+  }, { 'Idempotency-Key': IDEM + '-cap' });
+  chk('构造两张同款订单', oCap.status === 201, oCap.body.error && oCap.body.error.message);
+  const capOrder = oCap.body.data.order;
+  const capEnc = encodeURIComponent(capOrder.number);
+
+  /* 先部分退一件，制造「还剩一部分没退」的状态 */
+  const capPart = await call('POST', '/api/v1/admin/orders/' + capEnc + '/refund',
+    { items: [{ sku: capOrder.items[0].sku, qty: 1 }] }, AUTH);
+  chk('先部分退一件', capPart.status === 200, capPart.body.error && capPart.body.error.message);
+  const afterPart = capPart.body.data.refundedTotal;
+  chk('部分退后未结清', afterPart < capOrder.total, '$' + afterPart + ' < $' + capOrder.total);
+
+  /* 超总额 */
+  const capOver = await call('POST', '/api/v1/admin/orders/' + capEnc + '/refund',
+    { amount: 9999 }, AUTH);
+  chk('超额退款被拒 422', capOver.status === 422, 'status=' + capOver.status);
+  chk('错误码 REFUND_EXCEEDS_REMAINING', capOver.body.error &&
+    capOver.body.error.code === 'REFUND_EXCEEDS_REMAINING', capOver.body.error && capOver.body.error.code);
+  /* 被拒之后订单还是「部分退过」的状态：再打一次同样的请求仍然被拒，
+     说明第一次没有留下任何副作用（如果第一次偷偷退了，第二次会变成 409）。 */
+  const capAgain = await call('POST', '/api/v1/admin/orders/' + capEnc + '/refund',
+    { amount: 9999 }, AUTH);
+  chk('拒绝是幂等的（未留下副作用）', capAgain.status === 422,
+    'status=' + capAgain.status + ' / code=' + (capAgain.body.error && capAgain.body.error.code));
+
+  /* 超「剩余」但没超总额：运营看着整单金额填，没注意已经退过一部分 */
+  const capExceedRemain = await call('POST', '/api/v1/admin/orders/' + capEnc + '/refund',
+    { amount: capOrder.total }, AUTH);
+  chk('超过剩余可退额被拒 422', capExceedRemain.status === 422,
+    capExceedRemain.body.error && capExceedRemain.body.error.code);
+
+  /* 整单路径只退一部分：会留下「标了 refunded 但其实没收尾」的订单，必须拒 */
+  const capRemain = Math.round((capOrder.total - afterPart) * 100) / 100;
+  const capMismatch = await call('POST', '/api/v1/admin/orders/' + capEnc + '/refund',
+    { amount: Math.round((capRemain - 1) * 100) / 100 }, AUTH);
+  chk('整单路径只退一部分被拒', capMismatch.status === 422 &&
+    capMismatch.body.error.code === 'REFUND_AMOUNT_MISMATCH',
+    capMismatch.body.error && capMismatch.body.error.code);
+
+  const capZero = await call('POST', '/api/v1/admin/orders/' + capEnc + '/refund',
+    { amount: 0 }, AUTH);
+  chk('退 0 元被拒 400', capZero.status === 400, capZero.status);
+
+  /* 不传 amount 的整单退：只退剩下的，不能变成「再退一整单」 */
+  const capRest = await call('POST', '/api/v1/admin/orders/' + capEnc + '/refund',
+    { reason: 'customer-return' }, AUTH);
+  chk('整单退只退剩余部分', capRest.status === 200 &&
+    Math.abs(capRest.body.data.refundedTotal - capOrder.total) < 0.011,
+    '$' + (capRest.body.data && capRest.body.data.refundedTotal) + ' / 订单 $' + capOrder.total);
+
   /* ---------- 8. 商品与库存 ---------- */
   section('8 商品编辑与补货');
   const prods = await call('GET', '/api/v1/admin/products', undefined, AUTH);

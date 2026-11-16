@@ -141,7 +141,7 @@ node app/server/index.js           # 起服务 → http://localhost:4600
 
 | 套件 | 命令 | 结果 |
 |---|---|---|
-| 接口自动化 | `node tools/api-test.js` | **171 / 171**，连跑三遍稳定（含 2b 行数上限 / 8b 字段上限与零库存 / 9f 券状态） |
+| 接口自动化 | `node tools/api-test.js` | **181 / 181**，连跑三遍稳定（含 2b 行数上限 / 7c 退款上限 / 8b 字段上限与零库存 / 9f 券状态） |
 | 双端适配体检 | `node tools/app-check.js` | 66 / 66（21 路由 × 3 宽度），0 console error |
 | 后台点击巡查 | `node tools/admin-sweep.js` | 13 / 13（13 模块 × 3 宽度） |
 | 定价与库存单元 | `node tools/unit-core.js` | **44 / 44**（库存两种缺货、券三种失效原因分别断言） |

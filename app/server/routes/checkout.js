@@ -670,10 +670,41 @@ function applyRefund(o, opts) {
 
   return store.tx(db => {
     const restock = b.restock !== false;
+    /* 退款上限。不传 amount 时退「还没退的那部分」（部分退过之后整单退，只退剩下的）；
+       传了 amount 就必须校验，否则运营手滑填 9999 会真的退 9999 —— 实测过，
+       一张 $97.90 的单退 $9999 系统照收，refundedTotal 直接冲到 $10096.90。
+       超过剩余额宁可报错也不静默截断：截断会让人以为退了 9999，实际退的是 remaining，
+       月底对账时这笔差额没人认得出来。 */
+    const remaining = toD(toC(o.total) - toC(o.refundedTotal));
+    let amount;
+    if (b.amount != null) {
+      /* 传进来的是「元」，内部一律用「分」比较。这里踩过一次：直接 toD(9999) 得到 99.99，
+         一笔 9999 元的退款被当成 99.99 元放过去了 —— 单位混用不会报错，只会算错。 */
+      const want = toD(toC(b.amount));
+      if (!Number.isFinite(want) || want <= 0) {
+        throw E.badRequest('Refund amount must be greater than 0.');
+      }
+      if (toC(want) > toC(remaining)) {
+        throw E.unprocessable('REFUND_EXCEEDS_REMAINING',
+          'Refund cannot exceed the $' + remaining.toFixed(2) + ' still outstanding on this order.',
+          { remaining: remaining, requested: want });
+      }
+      if (toC(want) < toC(remaining)) {
+        /* 不带 items 的这条路径是「整单退」，只退一部分会让订单标成 refunded 但其实没收尾，
+           客户、账、报表三处都会错。要退部分金额就明确传 items。 */
+        throw E.unprocessable('REFUND_AMOUNT_MISMATCH',
+          'This endpoint refunds the whole outstanding $' + remaining.toFixed(2) +
+          '. To refund part of it, send items[].',
+          { remaining: remaining, requested: want });
+      }
+      amount = want;
+    } else {
+      amount = remaining;
+    }
+
     if (restock) restockOrder(db, o, 'refund');
     releaseCoupon(db, o);
     adjustCustomer(db, o, -1);
-    const amount = b.amount != null ? b.amount : toD(toC(o.total) - toC(o.refundedTotal));
     o.status = 'refunded';
     o.statusLabel = 'Refunded';
     o.refundedAt = new Date().toISOString();

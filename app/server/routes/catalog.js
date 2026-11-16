@@ -133,6 +133,9 @@ function routes(router) {
       version: db.meta.version,
       products: db.products.length,
       orders: db.orders.length,
+      /* 写盘健康：false 表示进程在正常应答，但数据没落到磁盘上 ——
+         这种状态下重启一次就全丢。运维/监控必须能看见这一位。 */
+      storage: store.writeHealth(),
       time: new Date().toISOString(),
     });
   });
