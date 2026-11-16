@@ -595,7 +595,7 @@ DELETE /api/account  { password }
 | 项 | 交付版实际 | 与目标形态的差距 |
 | --- | --- | --- |
 | 运行时 | 宿主机 Node ≥ 18，**零第三方依赖**，没有 `npm install` | 无容器也能跑；容器只是可选封装 |
-| 进程管理 | systemd 单实例（`tideglass-api.service`） | 未用 Coolify |
+| 进程管理 | systemd 单实例（`lastgrove-api.service`） | 未用 Coolify |
 | 存储 | `app/server/data/db.json` 单文件 + 内存镜像 + 原子写；同目录 `uploads/` 存商品实拍图 | 未接 PostgreSQL；图片未上对象存储 |
 | 数据备份 | `deploy/backup.sh` / `backup-docker.sh` 定时快照 + 恢复前 JSON 校验；**v2.5 起连 `uploads/` 一起打包** | 无每日全量 + 30 天保留的自动化，需自己挂 cron（手册第 10 章给了 cron 行） |
 | 反向代理 | 宿主机 Nginx，静态文件由 Nginx 直出，仅 `/api/` 反代 | 一致 |
@@ -615,7 +615,7 @@ DELETE /api/account  { password }
 
 | 决策 | 做法 | 理由 |
 | --- | --- | --- |
-| 存哪 | 数据卷 `tideglass-data`，容器重建不丢 | 与 `db.json` 同一份持久化边界，备份/迁移只有一个源 |
+| 存哪 | 数据卷 `lastgrove-data`，容器重建不丢 | 与 `db.json` 同一份持久化边界，备份/迁移只有一个源 |
 | 命名 | `p-<时间戳 base36>-<随机6位>.<ext>` | 不用原始文件名：中文/空格/重复名都要额外处理，随机名一次解决，且无法被枚举 |
 | 类型判断 | **只读文件头**（JPEG `FF D8 FF`、PNG `89 50 4E 47`、WebP `RIFF….WEBP`） | 扩展名可改、`Content-Type` 可伪造；**SVG 明确拒绝**——它能藏脚本，直接访问链接即 XSS |
 | 体积 | 单张 ≤ 5 MB，前端压到最长边 1600 px、q0.82（实际 200–400 KB） | 饰品图 1600 px 足够 2 倍屏；不压缩的话手机原图 5 MB 一张，前台首屏会拖死 |

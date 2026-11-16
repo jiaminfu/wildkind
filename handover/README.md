@@ -56,6 +56,7 @@ handover/
 │   ├── 测试计划-v1.0.md                （已被 v2.0 取代，仅存档）
 │   ├── 测试用例-v1.4.md                506 条用例索引（394 本地 + 94 线上 + 18 前台）+ 12 条核心场景
 │   ├── 缺陷管理流程-v1.0.md            S1~S4 / P0~P3、生命周期、关闭硬条件
+│   ├── 缺陷台账-v1.0.md                ★ 活动清单（会变的）：12 条缺陷全过程 + 6 处文档写错 + 2 条待决策
 │   └── 测试报告-v1.8.md                ★ 接口 147 + 员工 53 + 博客 46 + 单元 49 + 浏览器 161 全绿；§4c 记运营体检 12 处验证与 4 处测试失灵
 ├── 06-原型/
 │   ├── 原型说明.md                     ← 前端原型 + **后端原型**怎么看、每个页面干什么
@@ -127,22 +128,23 @@ handover/
 > 另外 `server.js` + `data/` + `prototype/` 是最早的**单文件原型**（4400），只用于看设计，不再是交付物。两者不要混用。
 
 ```bash
-node app/server/seed.js            # 生成演示数据（67 SKU / 90 单 / 6 万+ 流水）
+node app/server/seed.js            # 生成演示数据（37 款商品 / 70 个变体 / 90 单 / 210 条库存流水）
 node app/server/index.js           # 起服务 → http://localhost:4600
 ```
 
-后台账号：`owner@tideglassjewelry.com` / `tideglass2026`（owner，10 位权限全开）
-还有一个 `ops@tideglassjewelry.com` 是运营角色，权限位少几个，用来验证越权拦截。
-后台共 **13 个模块**：看板 / 订单 / 商品 / 集合 / 库存 / 券 / 评价 / 定制需求 / 客户 / 内容 / 流水 / 审计 / 设置。
+后台账号：`owner@lastgrove.com`（owner，全权限）、`ops@lastgrove.com`（ops，无设置与管人权限）。
+**口令不在文档里写**：由 seed 时的 `ADMIN_PASSWORD` / `OPS_PASSWORD` 环境变量决定，未设置时用代码内置默认值；上线前必须改掉并轮换。
+后台共 **16 个模块**：看板 / 订单 / 商品 / 集合 / 库存 / 券 / 评价 / 定制需求 / 客户 / 内容 / 文章 / 库存流水 / 销售税 / 员工 / 审计 / 设置。
+侧栏按权限位渲染：没权限的入口不显示（`ops` 看不到 Content / Sales tax / Staff / Settings / Audit log）。
 
 ### 测试
 
 | 套件 | 命令 | 结果 |
 |---|---|---|
-| 接口自动化 | `node tools/api-test.js` | 121 / 121，连跑三遍稳定 |
+| 接口自动化 | `node tools/api-test.js` | **171 / 171**，连跑三遍稳定（含 2b 行数上限 / 8b 字段上限与零库存 / 9f 券状态） |
 | 双端适配体检 | `node tools/app-check.js` | 66 / 66（21 路由 × 3 宽度），0 console error |
 | 后台点击巡查 | `node tools/admin-sweep.js` | 13 / 13（13 模块 × 3 宽度） |
-| 定价与库存单元 | `node tools/unit-core.js` | 38 / 38 |
+| 定价与库存单元 | `node tools/unit-core.js` | **44 / 44**（库存两种缺货、券三种失效原因分别断言） |
 | 端到端（原型） | `node tools/e2e.js` / `e2e-flow.js` | 17 / 17 · 47 / 47 |
 | 溢出专项 | `node tools/overflow-check.js` | 28 / 28 |
 
@@ -213,6 +215,8 @@ ALLOW_TEST_RESET=1 node app/server/index.js
 - **接口文档要跟代码对账**：`node tools/gen-openapi.js` 从路由实现重新生成 `openapi.json`，改接口后必须跑一次，否则文档会悄悄过期。
 - **截图会过期**：改 UI 后跑 `node tools/shot-doc.js <输出目录> [--only=admin|store] [--w=宽度]` 重出，别手工截。
 - **版本号规则**：改需求 → FRD 进位；改技术方案或数据模型 → SDD 进位；只改文案 → 不动版本号，改「最后更新」日期。
+- **品牌沿革，历史文档不追溯**：项目换过三次名 —— `SEREIA` → `Wildkind` → `TIDEGLASS` → **`LASTGROVE`**（2026-11-15 定稿，`LASTGROVE` 之前还有一版 `Weftvale` 候选，已撤回）。**当前有效文档、代码、数据、域名、邮件、券码一律是 LASTGROVE**；被取代的历史版本文档（API v1.2–v1.5、SDD v2.3–v2.6、FRD v2.5–v2.9、部署手册 v1.2 及更早、各期测试报告与验收报告、品牌命名各案）**保持原文不改** —— 改了就看不出「当时是什么样」，版本留档就失去意义。读这些文档时把 `TIDEGLASS` 直接理解成 `LASTGROVE` 即可。
+  文档编号 `TG-*` 同样保留历史值（如 `TG-BR-003`、`TG-OPS-001`），新增文档改用 `LG-*`。
 
 ---
 

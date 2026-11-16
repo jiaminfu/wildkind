@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "TIDEGLASS API",
+    "title": "LASTGROVE API",
     "version": "1.2.0",
-    "description": "TIDEGLASS 跨境饰品独立站接口。\n\n**响应信封**：成功 `{ \"data\": … }`；分页 `{ \"data\": [], \"meta\": {} }`；失败 `{ \"error\": { code, message, details } }`。\n前端必须按 `code` 分支，不要按 `message` 文案匹配。\n\n**两个跨接口机制**：\n- 报价锁：`POST /checkout/quote` 拿 `quoteId`（15 分钟），下单时必须带上；金额不一致返回 `PRICE_CHANGED`。\n- 幂等下单：`POST /orders` 带 `Idempotency-Key` 头，重复提交返回原订单并标记 `replayed: true`。\n\n**权限**：Bearer Token（12 小时，可吊销），按 10 个权限位鉴权，不按角色判断。\n\n详细说明见《API 接口文档 v1.2》。",
+    "description": "LASTGROVE 跨境饰品独立站接口。\n\n**响应信封**：成功 `{ \"data\": … }`；分页 `{ \"data\": [], \"meta\": {} }`；失败 `{ \"error\": { code, message, details } }`。\n前端必须按 `code` 分支，不要按 `message` 文案匹配。\n\n**两个跨接口机制**：\n- 报价锁：`POST /checkout/quote` 拿 `quoteId`（15 分钟），下单时必须带上；金额不一致返回 `PRICE_CHANGED`。\n- 幂等下单：`POST /orders` 带 `Idempotency-Key` 头，重复提交返回原订单并标记 `replayed: true`。\n\n**权限**：Bearer Token（12 小时，可吊销），按 10 个权限位鉴权，不按角色判断。\n\n详细说明见《API 接口文档 v1.6》。",
     "license": {
       "name": "Proprietary"
     }

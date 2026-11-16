@@ -1,6 +1,6 @@
 <!-- 由 tools/html2md.js 从 UI设计说明书-v1.2.html 自动转换；内容与源 HTML 一致，如需修改请改源文件后重新生成 -->
 
-TIDEGLASS · UI Design System
+LASTGROVE · UI Design System
 
 # UI 设计说明书 设计系统 · 组件规范 · 页面规则 · 响应式 · 无障碍 · 验收清单
 
@@ -234,7 +234,7 @@ TIDEGLASS · UI Design System
 | 动作数 | **只给两个**：Only necessary（幽灵）/ Accept all（cream 实底）。不做"管理偏好"二级弹窗 |
 | 桌面 / 移动 | 桌面单行左右分布；≤900px 转上下两行（文案在上、按钮右对齐） |
 | **不留白坑** | 条高桌面约 66px、手机约 110px。**写死 `padding-bottom` 必有一端错**：实现改为 JS 实测条高写入 `--ckh`，`body.ck-open{padding-bottom:calc(var(--ckh, 74px) + 14px)}` |
-| 状态 | 点击写 `localStorage.tideglass_cookie`（`all` / `essential`），条消失、padding 解除，不需要刷新 |
+| 状态 | 点击写 `localStorage.lastgrove_cookie`（`all` / `essential`），条消失、padding 解除，不需要刷新 |
 | 合规 | 条是**归因的前置条件**：未选择前不下发营销像素（FR-S-095 与 7.8 归因模型联动） |
 
 ### 3.9 预计送达行（FR-S-167）
@@ -273,9 +273,9 @@ TIDEGLASS · UI Design System
 | 点击后 | 选项是真实链接（`?metal=Gold`），点击即跳转并**自动关闭抽屉** | 抽屉状态必须随路由渲染清掉，否则返回列表时抽屉还开着 |
 | Clear all | 左下角文字链接（下划线），回到无参数的本集合 | 与右下角实底按钮形成主次，不会两个按钮互相打架 |
 
-### 3.11 字标（v1.2 修订，对应品牌方案 v2.1）
+### 3.11 字标（v1.2 修订，对应品牌方案 v2.1；名称已于 v1.1 品牌案更新为 LASTGROVE）
 
-> TIDEGLASS
+> LASTGROVE
 
 | 项 | v1.1（原） | v1.2（现行） | 为什么 |
 | --- | --- | --- | --- |
@@ -284,7 +284,7 @@ TIDEGLASS · UI Design System
 | 字距 | .18em + text-indent | **.30em** + `margin-right:-.30em` | 0.18em 仍是"等宽方块"观感；末位补偿不能用 text-indent（会把整行右推，符号与文字之间多一道缝） |
 | 符号 | 无（隐藏） | 22px 圆环 + 双波浪，左侧间距 10px | 字距拉开后需要视觉落点，否则整块发飘 |
 
-完整参数与禁用规则见《TIDEGLASS 品牌方案 v2.1》3.1–3.3。本说明书只记录与页面实现相关的部分。
+完整参数与禁用规则见《品牌方案 v2.1》（TIDEGLASS 时期制定，标识沿用）3.1–3.3。本说明书只记录与页面实现相关的部分。
 
 ## 4 页面规范
 
