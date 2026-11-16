@@ -232,6 +232,11 @@
   }
 
   async function render() {
+    /* 真路径页面（/journal 系列）由服务端渲染，不该被 SPA 接管。
+       如果这里进来了且地址栏没有 hash，按空路由会渲染首页 ——
+       等于把一个正在读的文章整页换成首页。宁可什么都不做。 */
+    if (window.__LG_SSR__ && !location.hash) return;
+
     var seq = ++renderSeq;
     var r = S.parseHash();
     var seg = r.seg;
@@ -259,6 +264,10 @@
             break;
           case 'account': body = await renderAccount(r); break;
           case 'pages': {
+            /* Field Notes 已经迁到真路径 /journal，旧地址 #/pages/journal 还有
+               外链和收藏夹指着。用 replace 而不是 assign：不留一条历史记录，
+               否则用户点返回会回到一个立刻又跳走的地址，形成返回死循环。 */
+            if (seg[1] === 'journal') { location.replace('/journal'); return; }
             var pg = Pages.page(seg[1]);
             if (pg) {
               var pmeta = (S.DB.pages || {})[seg[1]] || {};
@@ -873,13 +882,25 @@
     }
   });
 
+  /* 关掉 cookie 条。
+     原来这两个按钮直接调 render() —— 为了藏一条 bar 把整页重渲染一遍，
+     在 hash 页面上只是浪费；在博客这种真路径页面上是灾难：
+     render() 按 location.hash 走，而 /journal 的 hash 是空的，
+     于是整篇文章被替换成首页。用户点「只用必要 Cookie」，文章就没了。 */
+  function dismissCookie() {
+    var ck = document.getElementById('ckbar');
+    if (ck) ck.remove();
+    document.body.classList.remove('ck-open');
+    document.documentElement.style.removeProperty('--ckh');
+  }
+
   S.onClick('ck-all', function () {
     try { localStorage.setItem('lastgrove_cookie', 'all'); } catch (e) { }
-    render();
+    dismissCookie();
   });
   S.onClick('ck-essential', function () {
     try { localStorage.setItem('lastgrove_cookie', 'essential'); } catch (e) { }
-    render();
+    dismissCookie();
   });
 
   S.onClick('go-checkout', function () {
@@ -1981,8 +2002,76 @@
     if (si) si.value = '';
   });
 
+  /* ---------------- SSR 接管 -*-
+     /journal 与 /journal/<slug> 是服务端预渲染的真路径页（SDS D-6）：
+     head、页头页脚、正文全在 HTML 里，首屏零 XHR、零重排，爬虫直接读到正文。
+
+     这里只做四件事：补 bootstrap 数据、挂交互层、同步角标、对齐 head 的 SEO。
+     刻意**不**重新渲染 header/footer —— 服务端输出的就是同一个 shell.js，
+     一模一样；重渲染只会让购物袋角标从 0 闪成真实值，白闪一下很难看。 */
+  function mountOverlays() {
+    if (document.getElementById('cartDrawer')) return;
+    /* 抽屉、搜索层、移动菜单、cookie 条都要 localStorage 里的购物车/收藏，
+       服务端没有这些数据，所以首屏 HTML 里不含它们。点开才用得到 —— 晚一点挂没有感知。 */
+    root.insertAdjacentHTML('beforeend',
+      ui.cartDrawer() + ui.searchLayer() + ui.mobileMenu() + ui.cookieBar() +
+      '<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>');
+  }
+
+  /* 服务端渲染时购物袋与收藏角标恒为 0（预渲染没有访客的 localStorage）。
+     不补这一步，博客页的角标会一直是 0，直到用户下一次加购才「突然」变对。 */
+  function syncBadges() {
+    var bag = document.getElementById('bagCount');
+    if (bag) {
+      var n = S.cartCount();
+      bag.textContent = n;
+      bag.classList.toggle('is-zero', !n);
+    }
+    var wish = document.getElementById('wishCount');
+    if (wish) {
+      var w = S.wishCount();
+      wish.textContent = w;
+      wish.classList.toggle('is-zero', !w);
+    }
+  }
+
+  async function hydrate() {
+    var main = document.querySelector('#app main#main');
+    if (!main) return false;         // 结构异常就退回常规渲染，别留半死页面
+
+    try {
+      if (!S.state.boot) await bootLoad();
+    } catch (e) {
+      /* 接口挂了也要能读文章：正文已经在 DOM 里，拿不到 nav 只是菜单空着。 */
+    }
+
+    /* 交互层单独兜底。它挂了不能连累整页 —— 最坏的结果应该是
+       「购物袋按钮打不开」，而不是「文章页变成空白」。 */
+    try { mountOverlays(); } catch (e) { console.warn('[ssr] overlays failed', e); }
+    try { syncBadges(); } catch (e) { }
+
+    try {
+      var ck = document.getElementById('ckbar');
+      document.body.classList.toggle('ck-open', !!ck);
+      if (ck) {
+        document.documentElement.style.setProperty('--ckh', Math.round(ck.getBoundingClientRect().height) + 'px');
+      }
+    } catch (e) { }
+    return true;
+  }
+
   /* ---------------- 启动 ---------------- */
   async function boot() {
+    /* SSR 页面上即便接管失败也要保住页面：hydrate 里已经各自兜过底，
+       这里再包一层是为了「无论如何不要把一篇能读的文章刷成首页」。 */
+    if (window.__LG_SSR__) {
+      try {
+        if (await hydrate()) return;
+      } catch (e) {
+        console.warn('[ssr] hydrate failed', e);
+        return;
+      }
+    }
     try {
       await bootLoad();
     } catch (e) {

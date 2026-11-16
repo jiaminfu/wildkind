@@ -325,7 +325,8 @@
     }).join('');
     return '<div class="mob-drawer" id="mobDrawer"><div class="mob-drawer__close">' +
       '<button class="icon-btn" data-act="close-menu">' + icon('close') + '</button></div>' +
-      nav + '<a href="/#/account/lookup">Track order</a><a href="/#/pages/about">Our story</a></div>';
+      nav + '<a href="/journal">Journal</a>' +
+    '<a href="/#/account/lookup">Track order</a><a href="/#/pages/about">Our story</a></div>';
   }
 
   // Cookie 同意条（FR-S-095）。合规上必须先于分析类脚本执行，所以它由本层统一渲染，
@@ -408,6 +409,10 @@
     icon: icon, MARK: MARK, header: header, footer: footer, shell: shell,
     payMark: payMark,
     productCard: productCard, cartDrawer: cartDrawer, searchLayer: searchLayer,
+    /* mobileMenu / cookieBar 原本只在 shell() 内部用，没导出。
+       博客的真路径页由服务端预渲染，首屏不含这些交互层（它们要 localStorage），
+       得由 app.js 接管时单独补挂 —— 所以必须能从外部调用。 */
+    mobileMenu: mobileMenu, cookieBar: cookieBar,
     adminShell: adminShell, navItems: navItems, etaText: etaText,
     mark: function () { return MARK; }
   };

@@ -26,6 +26,28 @@ function normalize(d) {
   if (!Array.isArray(d.customRequests)) d.customRequests = [];
   if (!d.sequences) d.sequences = {};
 
+  /* ---------------- 博客 ----------------
+     只在缺失时灌种子，不覆盖已有数据 —— 与 pages / customRequests 的迁移方式一致。
+     三篇旧文现在就在前台 journal 页可见，迁移成草稿等于内容下线，是功能回退。 */
+  if (!Array.isArray(d.posts)) d.posts = JSON.parse(JSON.stringify(require('./posts-default')));
+  /* 阅读时长写入时算好，渲染时不再遍历全文。种子文件里手写的数字可能与
+     正文实际长度对不上（改过文案就会对不上），这里统一重算一次。 */
+  {
+    const R = require('../../web/assets/js/blog-render');
+    d.posts.forEach(p => {
+      if (p && Array.isArray(p.blocks)) p.readMinutes = R.readMinutes(p.blocks);
+    });
+  }
+  /* 栏目取值（SDS S-1）。后台可以增删，前台筛选只认这里列出的。
+     不加这一层的话，运营建了一篇文章选错栏目，它就永远筛不出来。 */
+  if (!Array.isArray(d.settings.postSections) || !d.settings.postSections.length) {
+    d.settings.postSections = ['materials', 'studio', 'giving', 'care'];
+  }
+  /* postsRev 是预渲染缓存的版本号：任何写操作 ++ 一次，
+     服务端整张缓存表随之作废。按 slug 精细失效在千级文章量下没有收益。 */
+  if (!d.meta || typeof d.meta !== 'object') d.meta = {};
+  if (typeof d.meta.postsRev !== 'number') d.meta.postsRev = 1;
+
   /* 销售税配置。默认关闭：没配税率之前一分钱税都不收，
      这是有意的 —— 错收税的代价（退款 + 客户投诉 + 各州申报口径不一）
      远大于晚收几天。后台打开开关并填好税率后才生效。 */

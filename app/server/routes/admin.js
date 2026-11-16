@@ -8,6 +8,7 @@ const auth = require('../lib/auth');
 const pricing = require('../lib/pricing');
 const uploads = require('../lib/uploads');
 const csv = require('../lib/csv');
+const { audit } = require('../lib/audit');
 const notify = require('../lib/notify');
 const mailer = require('../lib/mailer');
 const trackingSync = require('../lib/tracking-sync');
@@ -81,18 +82,7 @@ function taxSummary(db, fromArg, toArg) {
   };
 }
 
-function audit(me, action, target, meta) {
-  const db = store.get();
-  db.auditLog.unshift({
-    id: 'A' + Date.now().toString(36),
-    at: new Date().toISOString(),
-    staffId: me ? me.staffId : null,
-    email: me ? me.email : null,
-    action, target: target || null, meta: meta || null,
-    ip: null,
-  });
-  if (db.auditLog.length > 2000) db.auditLog.length = 2000;
-}
+/* 实现搬到 lib/audit.js，博客模块也要写审计，不能有两份。 */
 
 function inRange(o, days) {
   return (Date.now() - new Date(o.createdAt).getTime()) < days * 864e5;

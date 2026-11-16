@@ -51,6 +51,10 @@ require('./routes/payments').routes(router);
 require('./routes/tracking').routes(router);
 require('./routes/admin').routes(router);
 
+/* 博客真路径渲染（/journal 与 /journal/<slug>）。
+   不注册到 router：router 只管 /api/*，这条走的是页面渲染。 */
+const blogPage = require('./routes/blog-page');
+
 /* ---------------- 测试复位端点（默认关闭） ----------------
    自动化测试会真的下单、退款、改价，跑第二遍时数据已被改过，
    断言必然失败——测试就成了「只能跑一次」的，没有回归价值。
@@ -222,7 +226,29 @@ function assetsStamp() {
   return max;
 }
 
-function renderIndex(req, res) {
+/* 全站 CSP，首页与博客真路径页共用。
+   只允许本站脚本与样式，外加 Google Fonts。注入的 <img onerror> 这类
+   内联事件处理器仍能跑（unsafe-inline），但外部脚本、外链表单、iframe
+   全部被挡——把 XSS 的「外传」这条路先堵住。等前端拆掉内联事件后收紧到 nonce。
+
+   img-src 必须包含 blob: —— 后台上传前会用 URL.createObjectURL 预览裁切，
+   少了这一条，选完图就报 "That file is not a readable image."（实测踩过）。 */
+const CSP = [
+  "default-src 'self'",
+  "img-src 'self' data: blob: https:",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com data:",
+  "connect-src 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'self'",
+  "base-uri 'self'",
+].join('; ');
+
+/* 读 index.html 并把 assets 引用打上 ?v=<mtime>。
+   抽出来是因为 /journal 真路径页要复用同一份 CSS/JS ——
+   各写一份的话，改样式只生效一半，另一半得等缓存过期。 */
+function buildIndexHtml() {
   const file = path.join(WEB_DIR, 'index.html');
   const st = fs.statSync(file);
   const stamp = assetsStamp();
@@ -237,6 +263,41 @@ function renderIndex(req, res) {
     });
     htmlCache = { mtime: st.mtimeMs, stamp, html, gz: zlib.gzipSync(html, { level: 6 }) };
   }
+  return htmlCache.html;
+}
+
+/* 真路径页面（/journal、/journal/<slug>）的资源标签。
+   两处差异都是必须的：
+     · 路径要加前导斜杠 —— /journal/x 页面上的 "assets/css/app.css" 会被
+       解析成 /journal/assets/css/app.css，全部 404；
+     · 版本号沿用同一套 mtime 指纹，避免「首页是新样式、博客页是旧样式」。 */
+function assetTags() {
+  const html = buildIndexHtml();
+  const abs = s => s.replace(/(src|href)="assets\//g, '$1="/assets/');
+  return {
+    css: abs((html.match(/<link[^>]*rel="stylesheet"[^>]*>/g) || []).join('\n')),
+    js: abs((html.match(/<script[^>]*src="assets\/[^"]*"[^>]*><\/script>/g) || []).join('\n')),
+  };
+}
+
+/* 真路径页面复用的 <head> 静态部分：favicon、字体预连接、CSS、内联 API base。
+   来源仍是 index.html —— 各写一份的话，加一个 CSS 文件要改两个地方，
+   而漏掉的那一处会表现为「这个页面样式缺一块」，很难联想到原因。 */
+function headStatic() {
+  const html = buildIndexHtml();
+  const m = /<head>([\s\S]*?)<\/head>/.exec(html);
+  let head = m ? m[1] : '';
+  head = head
+    .replace(/<meta charset[^>]*>/i, '')
+    .replace(/<meta name="viewport"[^>]*>/i, '')
+    .replace(/<title>[\s\S]*?<\/title>/i, '')
+    .replace(/<meta name="description"[^>]*>/i, '');
+  /* 相对路径在 /journal/x 上会解析成 /journal/assets/…，必须加前导斜杠 */
+  return head.replace(/(src|href)="assets\//g, '$1="/assets/').trim();
+}
+
+function renderIndex(req, res) {
+  buildIndexHtml();
   const body = acceptsGzip(req) ? htmlCache.gz : Buffer.from(htmlCache.html);
   const headers = {
     'Content-Type': MIME['.html'],
@@ -244,24 +305,7 @@ function renderIndex(req, res) {
     'Cache-Control': 'no-cache',
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
-    /* 现阶段的 CSP：只允许本站脚本与样式，外加 Google Fonts。
-       注入的 <img onerror> 这类内联事件处理器仍能跑（unsafe-inline），
-       但外部脚本、外链表单、iframe 全部被挡——把 XSS 的"外传"这条路先堵住。
-       等前端拆掉内联事件后可以收紧到 nonce。
-
-       img-src 必须包含 blob: —— 后台上传前会用 URL.createObjectURL 预览裁切，
-       少了这一条，选完图就报 "That file is not a readable image."（实测踩过）。 */
-    'Content-Security-Policy': [
-      "default-src 'self'",
-      "img-src 'self' data: blob: https:",
-      "script-src 'self' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "font-src 'self' https://fonts.gstatic.com data:",
-      "connect-src 'self'",
-      "form-action 'self'",
-      "frame-ancestors 'self'",
-      "base-uri 'self'",
-    ].join('; '),
+    'Content-Security-Policy': CSP,
   };
   if (acceptsGzip(req)) { headers['Content-Encoding'] = 'gzip'; headers['Vary'] = 'Accept-Encoding'; }
   res.writeHead(200, headers);
@@ -379,27 +423,31 @@ function serveSitemap(req, res) {
   const db = store.get();
   const urls = [];
 
-  /* SPA 用的是 hash 路由，但 # 之后的部分爬虫不当独立 URL。
-     这里给出不带 hash 的路径没有意义，所以统一给出根路径 + 可被索引的入口，
-     真正的商品页靠前端渲染后由搜索引擎执行 JS 抓取。
-     等迁到 history 路由后，这里可以逐商品输出。 */
+  /* 这里改过一次口径，值得写清楚为什么。
+     原来给每个集合、每个商品、每个内容页都输出 `origin + '/#/collections/xxx'`。
+     但 **# 之后的部分不是 URL 的一部分** —— 爬虫看到的是 80 个一模一样的
+     `origin + '/'`。等于亲口告诉 Google「本站有 80 个重复的首页」，
+     比只有 1 条更糟。站内 hash 路由没迁走之前，这些条目一条都不该出现。
+     现在只输出真正的路径：首页、/journal、以及每篇文章。 */
   urls.push({ loc: origin + '/', pr: '1.0', freq: 'daily' });
 
-  const cols = (db.collections || []).filter(c => c.visible !== false);
-  for (const c of cols) {
-    urls.push({ loc: origin + '/#/collections/' + c.handle, pr: '0.8', freq: 'weekly' });
-  }
-  for (const p of (db.products || []).filter(x => x.active)) {
-    urls.push({ loc: origin + '/#/products/' + p.handle, pr: '0.7', freq: 'weekly' });
-  }
-  for (const key of Object.keys(db.pages || {})) {
-    urls.push({ loc: origin + '/#/pages/' + key, pr: '0.3', freq: 'monthly' });
+  /* 博客是真路径，能被正常收录 —— 这也是当初只给博客开真路径的全部理由。 */
+  urls.push({ loc: origin + '/journal', pr: '0.7', freq: 'weekly' });
+  for (const p of (db.posts || []).filter(x => x.status === 'published')) {
+    urls.push({
+      loc: origin + '/journal/' + p.slug,
+      pr: '0.6', freq: 'monthly',
+      /* lastmod 是 Google 判断「要不要重抓」的主要信号，
+         整份 sitemap 以前一条都没有，等于让爬虫每次都靠猜。 */
+      lastmod: String(p.updatedAt || p.publishedAt || '').slice(0, 10),
+    });
   }
 
   const body = '<?xml version="1.0" encoding="UTF-8"?>\n' +
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
     urls.map(u =>
       '  <url><loc>' + u.loc.replace(/&/g, '&amp;') + '</loc>' +
+      (u.lastmod ? '<lastmod>' + u.lastmod + '</lastmod>' : '') +
       '<priority>' + u.pr + '</priority>' +
       '<changefreq>' + u.freq + '</changefreq></url>').join('\n') +
     '\n</urlset>\n';
@@ -436,6 +484,19 @@ const server = http.createServer(async (req, res) => {
     }
     if (pathname === '/robots.txt') return serveRobots(req, res);
     if (pathname === '/sitemap.xml') return serveSitemap(req, res);
+    /* 博客是唯一的真路径（/journal、/journal/<slug>）。
+       必须排在 serveStatic 之前 —— 那玩意儿未命中会回 index.html 兜底，
+       博客页就永远出不来。 */
+    if (pathname === '/journal' || pathname.indexOf('/journal/') === 0) {
+      return blogPage.handle(req, res, {
+        pathname,
+        query: Object.fromEntries(url.searchParams.entries()),
+        origin: siteOrigin(req),
+        headHtml: headStatic(),
+        jsHtml: assetTags().js,
+        csp: CSP,
+      });
+    }
     if (pathname.startsWith('/uploads/')) return serveUpload(req, res, pathname);
     return serveStatic(req, res, pathname);
   }

@@ -211,13 +211,21 @@
       '</div>';
   }
 
+  /* 桌面顶栏的横向空间是硬约束：1220–1600px 这几个断点本来就在临界点上
+     （实测 1280px 时导航已经占满），再加一项直接溢出。
+     Custom orders 是低频咨询入口，页脚 About 组里有、移动端抽屉里也有，
+     所以让它在桌面顶栏不显示，位置留给 Journal。
+     要恢复它：把这里改成空对象，同时接受顶栏在 1280px 换行或溢出。 */
+  var NAV_SKIP_ON_DESKTOP = { custom: 1 };
+
   /* ---------------- 页头 ---------------- */
   function header(data) {
     var d = norm(data);
     var seg = (d.route && d.route.seg) || [];
     var cur = seg[0] === 'collections' ? (seg[1] || '') : '';
 
-    var nav = d.nav.map(function (c, i) {
+    var nav = d.nav.filter(function (c) { return !NAV_SKIP_ON_DESKTOP[c.handle]; })
+      .map(function (c, i) {
       var k = [];
       if (c.handle === 'sale') k.push('hot');
       if (c.handle === cur) k.push('is-active');
@@ -233,6 +241,12 @@
       ? 'Account — hello, ' + esc(d.user.first)
       : 'Sign in or create an account';
 
+    /* Journal 不是集合，长不出 mega panel，所以是写死的最后一项。
+       没有这个入口，博客上线等于没人找得到（FR-B-028）。 */
+    var journalOn = seg[0] === 'journal';
+    var journalLink = '<a href="/journal"' +
+      (journalOn ? ' class="is-active" aria-current="page"' : '') + '>Journal</a>';
+
     return '' +
       '<div class="annbar"><div class="annbar__track">' +
       announcement(d.announce) +
@@ -240,7 +254,7 @@
       '</div></div>' +
       '<header class="hdr" id="hdr"><div class="wrap"><div class="hdr__inner">' +
       '<button class="mob-menu-btn" data-act="open-menu" aria-label="Menu">' + icon('menu') + '</button>' +
-      '<nav class="hdr__nav">' + nav + '</nav>' +
+      '<nav class="hdr__nav">' + nav + journalLink + '</nav>' +
       '<a href="/#" class="brand" aria-label="LASTGROVE home"><span class="brand__mark" aria-hidden="true">' + MARK + '</span><span class="brand__word">LASTGROVE</span></a>' +
       '<div class="hdr__tools">' +
       '<button class="icon-btn" data-act="open-search" aria-label="Search">' + icon('search') + '</button>' +
