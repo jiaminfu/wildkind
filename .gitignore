@@ -25,6 +25,7 @@ npm-debug.log*
 # ---------- 临时产物 ----------
 .tmp/
 tmp_*/
+tmp_*.js
 .tmprecovered
 *.tmp
 

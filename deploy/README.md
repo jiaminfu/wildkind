@@ -1,7 +1,7 @@
 # deploy/ —— 部署产物
 
 完整步骤、验证清单、故障排查在
-**[`handover/07-交付准备/服务器部署说明书-v1.0.md`](../handover/07-交付准备/服务器部署说明书-v1.0.md)**
+**[`handover/07-交付准备/服务器部署说明书-v1.1.md`](../handover/07-交付准备/服务器部署说明书-v1.1.md)**
 （针对 `194.36.85.20` 的单线流程）与
 **[`handover/07-交付准备/服务器部署手册-v1.2.md`](../handover/07-交付准备/服务器部署手册-v1.2.md)**
 （通用版）。
@@ -10,9 +10,10 @@
 | 文件 | 用途 |
 |---|---|
 | `install.sh` | 首次部署一条命令搞定（Ubuntu 22.04/24.04、Debian 12） |
-| `update.sh` | 更新发布：备份 → 拉代码 → 重启 → 探活，失败给回滚命令 |
+| `update.sh` | 更新发布：备份 → 拉代码 → 重启 → 探活，失败给回滚命令（**systemd / 裸机**） |
+| `update-docker.sh` | 同上，**Docker 部署用**：备份 → fetch+reset → `compose up --build` → 探活；支持 `--rev` 回退、`--no-backup` 调试 |
 | `backup.sh` | 备份 / 列备份 / 恢复，带 JSON 合法性硬校验（**裸机部署**用，依赖宿主机 `node`） |
-| `backup-docker.sh` | 同上，**Docker 部署**用：数据从容器里取、用容器里的 node 校验（宿主机无需 node） |
+| `backup-docker.sh` | 同上，**Docker 部署**用：数据从容器里取、用容器里的 node 校验（宿主机无需 node）；路径与容器名自动探测 |
 | `lastgrove-api.service` | systemd 单元，含最小权限加固 |
 | `nginx-lastgrove.conf` | 有域名版：Nginx 反代 + 静态托管 + HTTPS + 安全头 |
 | `nginx-lastgrove-port.conf` | **无域名版**：只听独立端口，不碰已有站点的 80/443 |

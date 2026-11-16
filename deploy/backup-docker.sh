@@ -2,9 +2,9 @@
 # ============================================================
 # LASTGROVE · Docker 模式数据备份 / 恢复
 #
-#   bash /opt/lastgrove/backup.sh              备份一次
-#   bash /opt/lastgrove/backup.sh --list       看已有备份
-#   bash /opt/lastgrove/backup.sh --restore <文件>   从备份恢复
+#   bash deploy/backup-docker.sh                    备份一次
+#   bash deploy/backup-docker.sh --list             看已有备份
+#   bash deploy/backup-docker.sh --restore <文件>   从备份恢复
 #
 # 与仓库里 deploy/backup.sh 的区别：那份假设数据在宿主机目录、且宿主机有 node。
 # 这台机器是纯 Docker 部署、宿主机没有 node，所以数据从容器里取、用容器里的
@@ -21,6 +21,24 @@ IMAGE="lastgrove:1.0.0"
 DEST="${BACKUP_DIR:-/var/backups/lastgrove}"
 KEEP="${BACKUP_KEEP:-30}"
 
+# 路径一律从脚本自身位置推导，不写死 /opt/xxx。
+# 这台机器的代码目录历史上叫 /opt/tideglass，品牌改名后没有搬（搬目录要停机、
+# 要改 compose 与 systemd，收益为零），写死路径会让脚本在新机器上静默跑错目录。
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$(cd "$SELF_DIR/.." && pwd)"
+
+# 容器名以 compose 为准，镜像以实际运行的容器为准：改过名、换过 tag 都不会失效。
+if [ -f "$SELF_DIR/docker-compose.yml" ]; then
+  _cn="$(awk '/^[[:space:]]*container_name:/{print $2; exit}' "$SELF_DIR/docker-compose.yml" 2>/dev/null || true)"
+  [ -n "${_cn:-}" ] && CONTAINER="$_cn"
+fi
+_running="$(docker ps --filter "name=^${CONTAINER}$" --format '{{.Image}}' 2>/dev/null | head -1 || true)"
+[ -n "${_running:-}" ] && IMAGE="$_running"
+
+# 探活端口同样从 .env 读，别假设 8080
+HOST_PORT="$(sed -n 's/^HOST_PORT=//p' "$SELF_DIR/.env" 2>/dev/null | tail -1)"
+HOST_PORT="${HOST_PORT:-4600}"
+
 red()   { printf '\033[31m%s\033[0m\n' "$*"; }
 green() { printf '\033[32m%s\033[0m\n' "$*"; }
 die()   { red "[x] $*"; exit 1; }
@@ -30,7 +48,7 @@ die()   { red "[x] $*"; exit 1; }
 # ---------- 恢复 ----------
 if [ "${1:-}" = "--restore" ]; then
   SRC="${2:-}"
-  [ -n "$SRC" ] || die "用法：bash /opt/lastgrove/backup.sh --restore /var/backups/lastgrove/db-xxx.json.gz"
+  [ -n "$SRC" ] || die "用法：bash $SELF_DIR/backup-docker.sh --restore /var/backups/lastgrove/db-xxx.json.gz"
   [ -f "$SRC" ] || die "找不到文件：$SRC"
 
   TMP="$(mktemp)"
@@ -57,7 +75,7 @@ if [ "${1:-}" = "--restore" ]; then
   echo "即将用 $SRC 覆盖现网数据，5 秒后开始（Ctrl+C 取消）"
   sleep 5
 
-  cd /opt/lastgrove/current/deploy
+  cd "$SELF_DIR"
   docker compose stop >/dev/null
   # 以 root 写卷，写完把属主调回 10001，否则容器起来写不了数据
   docker run --rm --user 0:0 -v "$VOLUME":/data -v "$TMP":/chk.json:ro --entrypoint sh "$IMAGE" \
@@ -65,10 +83,10 @@ if [ "${1:-}" = "--restore" ]; then
   docker compose start >/dev/null
 
   for i in $(seq 1 20); do
-    if curl -fsS -m 3 http://127.0.0.1:8080/api/v1/health >/dev/null 2>&1; then break; fi
+    if curl -fsS -m 3 "http://127.0.0.1:$HOST_PORT/api/v1/health" >/dev/null 2>&1; then break; fi
     sleep 1
   done
-  green "已恢复并重启：$(curl -s -m 5 http://127.0.0.1:8080/api/v1/health)"
+  green "已恢复并重启：$(curl -s -m 5 "http://127.0.0.1:$HOST_PORT/api/v1/health")"
   exit 0
 fi
 
