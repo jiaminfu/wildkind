@@ -9,11 +9,16 @@
 
   var U = S.U;
 
+  /* 第三项是进入这一页所需的最小权限位，与后端 requirePerm 一一对应（见 auth.js）。
+     挂上它，没权限的人根本看不到入口，而不是点进去吃 403 ——
+     403 页面不会告诉他「这个功能不归你管」，只会让他以为系统坏了。
+     只有「能看」级别的权限才放进来：比如 Inventory 挂 products:read，
+     因为看得见库存和改得动库存是两件事，改的那一步在页内还会再拦一次。 */
   var NAV = [
-    { g: 'Overview', items: [['', 'Dashboard'], ['orders', 'Orders']] },
-    { g: 'Catalog', items: [['products', 'Products'], ['collections', 'Collections'], ['inventory', 'Inventory']] },
-    { g: 'Growth', items: [['coupons', 'Coupons'], ['reviews', 'Reviews'], ['custom', 'Custom requests'], ['customers', 'Customers']] },
-    { g: 'System', items: [['content', 'Content'], ['articles', 'Articles', 'posts:write'], ['ledger', 'Stock ledger'], ['tax', 'Sales tax'], ['staff', 'Staff', 'staff:read'], ['audit', 'Audit log'], ['settings', 'Settings']] },
+    { g: 'Overview', items: [['', 'Dashboard', 'metrics:read'], ['orders', 'Orders', 'orders:read']] },
+    { g: 'Catalog', items: [['products', 'Products', 'products:read'], ['collections', 'Collections', 'products:read'], ['inventory', 'Inventory', 'products:read']] },
+    { g: 'Growth', items: [['coupons', 'Coupons', 'coupons:write'], ['reviews', 'Reviews', 'products:read'], ['custom', 'Custom requests', 'orders:read'], ['customers', 'Customers', 'customers:read']] },
+    { g: 'System', items: [['content', 'Content', 'settings:write'], ['articles', 'Articles', 'posts:write'], ['ledger', 'Stock ledger', 'products:read'], ['tax', 'Sales tax', 'settings:write'], ['staff', 'Staff', 'staff:read'], ['audit', 'Audit log', 'settings:write'], ['settings', 'Settings', 'settings:write']] },
   ];
 
   function shell(body, active, title, staff) {
@@ -495,7 +500,11 @@
         '<td><span class="pill ' + (r.risk === 'out' ? 'cancelled' : r.risk === 'reorder' ? 'paid' : 'completed') + '">' + label + '</span></td>' +
         '<td style="text-align:right;white-space:nowrap">' +
         '<button class="abtn sm" data-act="open-ledger" data-sku="' + U.esc(r.sku) + '">History</button> ' +
-        '<button class="abtn sm" data-act="restock" data-id="' + U.esc(r.productId) + '" data-sku="' + U.esc(r.sku) + '">+20</button></td></tr>';
+        /* 原来只有一个写死 +20 的按钮：进 15 件也点 +20，只能点一次再手动核减。
+           接口一直支持任意整数（含负数），是界面自己把能力关掉了。 */
+        '<input class="rqty" type="number" step="1" value="20" aria-label="Quantity to add" ' +
+        'style="width:62px;text-align:right;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:transparent;color:inherit"> ' +
+        '<button class="abtn sm" data-act="restock" data-id="' + U.esc(r.productId) + '" data-sku="' + U.esc(r.sku) + '">Add</button></td></tr>';
     }).join('');
     var out = rows.filter(function (r) { return r.risk === 'out'; }).length;
     var low = rows.filter(function (r) { return r.risk === 'reorder'; }).length;
@@ -869,8 +878,12 @@
 
   /* ---------------- 优惠券 / 营销 ---------------- */
   function coupons(list) {
-    var live = list.filter(function (c) { return c.status === 'active'; }).length;
-    var sched = list.filter(function (c) { return c.status === 'scheduled'; }).length;
+    /* 一律用服务端派生的 state，不用存储的 status：status 是人工快照，
+       券过期、发满都不会自动改它，按 status 数「在跑的券」会把死券算进来。 */
+    function st(c) { return c.state || c.status; }
+    var live = list.filter(function (c) { return st(c) === 'active'; }).length;
+    var sched = list.filter(function (c) { return st(c) === 'scheduled'; }).length;
+    var closed = list.filter(function (c) { return st(c) === 'expired' || st(c) === 'exhausted'; }).length;
     var redeemed = list.reduce(function (a, c) { return a + (c.used || 0); }, 0);
 
     function money(c) {
@@ -878,21 +891,26 @@
     }
 
     var rows = list.map(function (c) {
+      var state = st(c);
       var cap = c.limit == null ? '∞' : c.limit;
       var pct = c.limit ? Math.min(100, Math.round((c.used || 0) / c.limit * 100)) : null;
-      var klass = c.status === 'active' ? 'completed' : c.status === 'scheduled' ? 'paid' : 'cancelled';
+      var klass = state === 'active' ? 'completed' : state === 'scheduled' ? 'paid' : 'cancelled';
+      /* 一张券可以既过期又发满。主状态只显示一个，但另一个必须留痕 ——
+         否则运营看到 Expired 会以为「早点发就好了」，其实名额也早就没了。 */
+      var also = (c.reasons || []).filter(function (r) { return r !== state; });
       return '<tr><td><b>' + U.esc(c.code) + '</b>' + (c.note ? '<br><span class="sub">' + U.esc(c.note) + '</span>' : '') + '</td>' +
         '<td class="num">' + U.esc(money(c)) + '</td>' +
         '<td class="num">' + (c.minSubtotal ? U.money(c.minSubtotal) : '—') + '</td>' +
         '<td class="num">' + (c.used || 0) + ' / ' + cap + (pct != null ? ' <span class="sub">' + pct + '%</span>' : '') + '</td>' +
         '<td><span class="sub">' + U.esc(c.startsAt || '—') + ' → ' + U.esc(c.endsAt || '—') + '</span></td>' +
-        '<td><span class="pill ' + klass + '">' + U.esc(c.status) + '</span></td>' +
+        '<td><span class="pill ' + klass + '">' + U.esc(state) + '</span>' +
+        (also.length ? '<br><span class="sub">also ' + U.esc(also.join(' · ')) + '</span>' : '') + '</td>' +
         '<td style="text-align:right"><button class="abtn sm danger" data-act="del-coupon" data-code="' + U.esc(c.code) + '">Delete</button></td></tr>';
     }).join('');
 
     return '<div class="kpis">' +
       '<div class="kpi"><span>Codes total</span><b>' + list.length + '</b></div>' +
-      '<div class="kpi"><span>Live now</span><b>' + live + '</b><em>' + sched + ' scheduled</em></div>' +
+      '<div class="kpi"><span>Live now</span><b>' + live + '</b><em>' + sched + ' scheduled · ' + closed + ' closed</em></div>' +
       '<div class="kpi"><span>Redemptions</span><b>' + redeemed + '</b></div></div>' +
       '<div class="panel"><div class="panel__hd"><h2>Discount codes</h2>' +
       '<span class="sub">Checked server-side on every quote and order</span></div>' +
@@ -908,7 +926,7 @@
       '<option value="percent">Percent off</option><option value="fixed">Fixed amount off</option></select></label>' +
       '<label class="afld"><span>Value</span><input name="value" type="number" step="0.01" min="0.01" placeholder="15" required></label>' +
       '<label class="afld"><span>Min spend (0 = none)</span><input name="minSubtotal" type="number" step="1" min="0" value="0"></label>' +
-      '<label class="afld"><span>Usage limit (blank = ∞)</span><input name="limit" type="number" step="1" min="1" placeholder=""></label>' +
+      '<label class="afld"><span>Usage limit (blank = ∞, 0 = closed)</span><input name="limit" type="number" step="1" min="0" placeholder=""></label>' +
       '<label class="afld"><span>Note</span><input name="note" placeholder="Where this code runs"></label>' +
       '<button class="btn" type="submit">Create code</button></form></div></div>';
   }
@@ -938,6 +956,12 @@
         '<span class="pill ' + klass + '">' + U.esc(r.status) + '</span></div>' +
         '<h3>' + U.esc(r.title || '(no title)') + '</h3>' +
         '<p>' + U.esc(r.body || '') + '</p>' +
+        /* 拒绝理由原先只存在审计日志里，页面上看不到 —— 下一个人打开列表
+           只见到一条 rejected，不知道为什么。 */
+        (r.status === 'rejected' && r.rejectReason
+          ? '<p class="sub" style="border-left:2px solid var(--line);padding-left:10px">Rejected: ' +
+            U.esc(r.rejectReason) + '</p>'
+          : '') +
         '<div class="revcard__ft"><span>' + U.esc(r.name || 'Anonymous') +
         (r.verified ? ' <span class="tag">Verified</span>' : '') +
         '<br><span class="sub">' + U.esc(r.productTitle || r.productId || '') + ' · ' + U.fmtDate(r.createdAt) + '</span></span>' +

@@ -99,34 +99,69 @@ function assertStock(lines) {
       });
     }
   });
-  if (problems.length) throw E.unprocessable('OUT_OF_STOCK', problems[0].message, problems);
+  /* 顶层错误码跟随首条问题。原来一律抛 OUT_OF_STOCK，把「库存不够」说成「卖光了」，
+     前端只看 error.message 时用户无感，但任何按 code 分支的调用方（含测试）都会走错。 */
+  if (problems.length) throw E.unprocessable(problems[0].code, problems[0].message, problems);
+}
+
+/* 券的「真实状态」由事实推导，不信任存储的 status 字段。
+   存储字段是人工写的快照：运营想停用会写 disabled，但「过期」和「发满」是随时间与用量
+   自己发生的，没有人会回去把 status 改成 expired / exhausted。于是列表上会出现一张
+   写着 active 的券，其实早就死了 —— 运营照着它做投放，客户拿到手却用不了。
+
+   优先级（与客户视角一致）：
+     expired  > disabled > exhausted > scheduled > active
+   expired 排第一是有意的：客户看到 "expired" 知道是自己来晚了，
+   看到 "not active" 会以为自己拿错了码，而实际上两者都可能成立。
+
+   reasons 记录全部成立的原因，不丢信息：一张券可以既过期又发满，
+   后台必须能同时看到这两件事，否则对不上账。 */
+function couponState(c, now) {
+  const t = now == null ? Date.now() : now;
+  const reasons = [];
+
+  const ends = c.endsAt || c.expiresAt;
+  const endsAt = ends
+    ? new Date(String(ends).length === 10 ? ends + 'T23:59:59Z' : ends).getTime()
+    : null;
+  if (c.status === 'expired' || (endsAt && endsAt < t)) reasons.push('expired');
+
+  if (c.status === 'disabled') reasons.push('disabled');
+
+  if (typeof c.limit === 'number' && (c.used || 0) >= c.limit) reasons.push('exhausted');
+
+  const startsAt = c.startsAt
+    ? new Date(String(c.startsAt).length === 10 ? c.startsAt + 'T00:00:00Z' : c.startsAt).getTime()
+    : null;
+  /* 标了 scheduled 却没有开始时间，等于永远开不了 —— 那是配置错误，按失效处理。 */
+  if (c.status === 'scheduled') {
+    if (startsAt && startsAt > t) reasons.push('scheduled');
+    else if (!startsAt) reasons.push('disabled');
+  }
+
+  const order = ['expired', 'disabled', 'exhausted', 'scheduled'];
+  let state = 'active';
+  for (let i = 0; i < order.length; i++) {
+    if (reasons.indexOf(order[i]) >= 0) { state = order[i]; break; }
+  }
+  return { state, reasons };
 }
 
 /* 优惠券校验。返回 { coupon } 或抛 422，错误码细分到原因，
-   前端不需要自己拼文案。 */
+   前端不需要自己拼文案。
+   判定顺序与 couponState 完全一致 —— 两处各写一套是这套代码最容易走偏的地方：
+   校验按 A 规则拒绝、列表按 B 规则展示，客户和运营看到的就是两个事实。 */
 function resolveCoupon(db, code, subtotal) {
   if (!code) return null;
   const c = db.coupons.find(x => String(x.code).toUpperCase() === String(code).toUpperCase());
   if (!c) throw E.unprocessable('COUPON_NOT_FOUND', "That code isn't valid. Check the spelling and try again.");
-  // 过期优先于「未启用」：用户看到 "expired" 比 "not active" 更知道下一步做什么
-  const ends = c.endsAt || c.expiresAt;
-  const endsAt = ends ? new Date(String(ends).length === 10 ? ends + 'T23:59:59Z' : ends).getTime() : null;
-  if (c.status === 'expired' || (endsAt && endsAt < Date.now())) {
-    throw E.unprocessable('COUPON_EXPIRED', 'This code has expired.');
-  }
-  if (c.status === 'disabled') {
-    throw E.unprocessable('COUPON_INACTIVE', 'This code is no longer active.');
-  }
-  const startsAt = c.startsAt ? new Date(String(c.startsAt).length === 10 ? c.startsAt + 'T00:00:00Z' : c.startsAt).getTime() : null;
-  if (startsAt && startsAt > Date.now()) {
-    throw E.unprocessable('COUPON_NOT_STARTED', 'This code is not active yet.');
-  }
-  if (c.status === 'scheduled' && !startsAt) {
-    throw E.unprocessable('COUPON_INACTIVE', 'This code is no longer active.');
-  }
-  if (typeof c.limit === 'number' && c.used >= c.limit) {
-    throw E.unprocessable('COUPON_EXHAUSTED', 'This code has reached its limit.');
-  }
+
+  const st = couponState(c).state;
+  if (st === 'expired') throw E.unprocessable('COUPON_EXPIRED', 'This code has expired.');
+  if (st === 'disabled') throw E.unprocessable('COUPON_INACTIVE', 'This code is no longer active.');
+  if (st === 'exhausted') throw E.unprocessable('COUPON_EXHAUSTED', 'This code has reached its limit.');
+  if (st === 'scheduled') throw E.unprocessable('COUPON_NOT_STARTED', 'This code is not active yet.');
+
   if (subtotal < (c.minSubtotal || 0)) {
     throw E.unprocessable('COUPON_MIN_SUBTOTAL',
       'Add $' + round2(c.minSubtotal - subtotal).toFixed(2) + ' more to use this code.',
@@ -233,5 +268,5 @@ function quote(db, items, options) {
 
 module.exports = {
   round2, findProduct, findVariant, unitPrice, totalStock,
-  normalizeItems, assertStock, resolveCoupon, discountFor, shippingFor, giftFor, taxFor, quote,
+  normalizeItems, assertStock, couponState, resolveCoupon, discountFor, shippingFor, giftFor, taxFor, quote,
 };

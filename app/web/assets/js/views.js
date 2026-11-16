@@ -346,7 +346,7 @@
       '<div class="fld"><label>Your review</label>' +
       '<textarea name="rbody" rows="4" required minlength="10" maxlength="2000" placeholder="How does it wear? Does the colour hold?"></textarea></div>' +
       '<div class="fld"><label>Order number <span class="small">(optional — marks it Verified)</span></label>' +
-      '<input name="rorder" placeholder="#TG1041"></div>' +
+      '<input name="rorder" placeholder="#LG1041"></div>' +
       '<button class="btn" type="submit">Submit review</button>' +
       '<p class="small" style="color:var(--muted);margin:10px 0 0">Reviews appear once we have checked them — usually within a day.</p>' +
       '</form>';
@@ -772,7 +772,7 @@
     return '<div class="wrap" style="max-width:520px"><div class="collhead"><h1>Track an order</h1>' +
       '<p>Order number and email, both needed — that\'s how we keep other people out of your order.</p></div>' +
       '<form data-act="lookup">' +
-      '<div class="fld"><label>Order number</label><input name="number" value="' + esc(f.number || '') + '" placeholder="#TG1041" required></div>' +
+      '<div class="fld"><label>Order number</label><input name="number" value="' + esc(f.number || '') + '" placeholder="#LG1041" required></div>' +
       '<div class="fld"><label>Email</label><input name="email" type="email" value="' + esc(f.email || '') + '" placeholder="you@email.com" required></div>' +
       (err ? '<div class="falert">' + esc(err.message) + '</div>' : '') +
       '<button class="btn btn--full" type="submit">Find my order</button></form></div>';

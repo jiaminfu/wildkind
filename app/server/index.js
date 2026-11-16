@@ -87,7 +87,7 @@ if (process.env.ALLOW_TEST_RESET === '1') {
         orders: db.orders.length,
         coupons: db.coupons.length,
         sessionsKept: liveSessions.length,
-        nextOrderNumber: '#' + (db.sequences && db.sequences.order ? 'TG' + db.sequences.order : '?'),
+        nextOrderNumber: '#' + (db.sequences && db.sequences.order ? 'LG' + db.sequences.order : '?'),
       },
     });
   });

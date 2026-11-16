@@ -180,7 +180,7 @@ if (taxResidue) {
     Object.keys(db.settings.tax.rates).join('/') + '）。要保留请加 --keep-tax');
 }
 console.log('  ' + '商品'.padEnd(16) + '不动（' + (db.products || []).length + ' 款全部保留）');
-console.log('  ' + '单号序列'.padEnd(16) + '不动（下一个仍是 #TG' + ((db.sequences || {}).order || '?') + '）');
+console.log('  ' + '单号序列'.padEnd(16) + '不动（下一个仍是 #LG' + ((db.sequences || {}).order || '?') + '）');
 
 if (!APPLY) {
   console.log('\n以上为预演。确认无误后加 --apply 执行（会自动备份）。\n');

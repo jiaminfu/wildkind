@@ -1480,7 +1480,11 @@ function routes(router) {
   router.get('/api/v1/admin/coupons', (req, res) => {
     const me = auth.requireAuth(req);
     auth.requirePerm(me, 'coupons:write');
-    ok(res, store.get().coupons);
+    /* 附上派生状态。存储的 status 是人工快照，不会因为「过期」「发满」自动变化，
+       直接把它交给前端等于让列表撒谎。state 是唯一可用于展示与筛选的字段，
+       reasons 保留全部成立原因（既过期又发满时后台要能同时看到）。 */
+    const now = Date.now();
+    ok(res, store.get().coupons.map(c => Object.assign({}, c, pricing.couponState(c, now))));
   });
 
   router.post('/api/v1/admin/coupons', (req, res) => {
@@ -1504,7 +1508,9 @@ function routes(router) {
       code, type, value: pricing.round2(value),
       minSubtotal: pricing.round2(Number(b.minSubtotal) || 0),
       used: 0,
-      limit: b.limit == null ? null : Math.max(1, parseInt(b.limit, 10)),
+      /* limit=0 是合法值：预建一张「名额已用完」的券，或临时把券关死但保留记录。
+         原来 Math.max(1, …) 把 0 悄悄改成 1，等于系统自己改了运营的意思。 */
+      limit: b.limit == null ? null : Math.max(0, parseInt(b.limit, 10)),
       startsAt: b.startsAt || null,
       endsAt: b.endsAt || null,
       status: b.status || 'active',
@@ -1549,10 +1555,18 @@ function routes(router) {
     if (['approved', 'rejected', 'pending'].indexOf(status) < 0) {
       throw E.badRequest('Status must be approved, rejected or pending.');
     }
+    /* 拒绝理由：选填，但拒绝时建议填。
+       不强制必填是刻意的 —— 垃圾评论（外链推广、辱骂）一眼就能判，逼着填理由
+       只会让人随手写「spam」，那比空着更没用。真正需要理由的是「疑似假评」
+       这类要跟供应商核对的case，那时运营自己会想写。 */
+    const reason = String((req.body || {}).reason || '').trim().slice(0, 200);
     r.status = status;
     r.moderatedAt = new Date().toISOString();
     r.moderatedBy = me.staffId;
-    audit(me, 'review.moderate', r.id, { status });
+    /* 换状态就换理由：从 rejected 改回 approved 还留着旧的拒绝理由，
+       下一个人看到会以为这条评价被否过两次。 */
+    r.rejectReason = status === 'rejected' ? reason : '';
+    audit(me, 'review.moderate', r.id, { status, reason: r.rejectReason });
     store.flush();
     ok(res, { review: r });
   });

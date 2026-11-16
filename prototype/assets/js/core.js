@@ -177,13 +177,30 @@
     return state.cart.reduce(function (a, l) { return a + l.qty; }, 0);
   }
 
+  /* 券的真实状态由事实推导，不读存储的 status 快照（与 app/server/lib/pricing.js 同口径）。
+     存储字段只有运营手动停用时才会变，过期和发满都不会自动改它。 */
+  function couponState(c) {
+    var now = Date.now();
+    var ends = c.endsAt || c.expiresAt;
+    var endsAt = ends ? new Date(String(ends).length === 10 ? ends + 'T23:59:59Z' : ends).getTime() : null;
+    if (c.status === 'expired' || (endsAt && endsAt < now)) return 'expired';
+    if (c.status === 'disabled') return 'disabled';
+    if (typeof c.limit === 'number' && (c.used || 0) >= c.limit) return 'exhausted';
+    var startsAt = c.startsAt ? new Date(String(c.startsAt).length === 10 ? c.startsAt + 'T00:00:00Z' : c.startsAt).getTime() : null;
+    if (startsAt && startsAt > now) return 'scheduled';
+    return 'active';
+  }
+
   function couponError(code) {
     var c = DB.coupons.filter(function (x) { return x.code.toUpperCase() === String(code).toUpperCase(); })[0];
-    if (!c) return { ok: false, msg: "That code isn't valid. Check the spelling and try again." };
-    if (c.status === 'expired') return { ok: false, msg: 'This code has expired.' };
-    if (c.used >= c.limit) return { ok: false, msg: 'This code has reached its limit.' };
+    if (!c) return { ok: false, code: 'COUPON_NOT_FOUND', msg: "That code isn't valid. Check the spelling and try again." };
+    var st = couponState(c);
+    if (st === 'expired') return { ok: false, code: 'COUPON_EXPIRED', msg: 'This code has expired.' };
+    if (st === 'disabled') return { ok: false, code: 'COUPON_INACTIVE', msg: 'This code is no longer active.' };
+    if (st === 'exhausted') return { ok: false, code: 'COUPON_EXHAUSTED', msg: 'This code has reached its limit.' };
+    if (st === 'scheduled') return { ok: false, code: 'COUPON_NOT_STARTED', msg: 'This code is not active yet.' };
     var sub = rawSubtotal();
-    if (sub < c.minSubtotal) return { ok: false, msg: 'Add ' + U.money(c.minSubtotal - sub) + ' more to use this code.' };
+    if (sub < c.minSubtotal) return { ok: false, code: 'COUPON_MIN_SUBTOTAL', msg: 'Add ' + U.money(c.minSubtotal - sub) + ' more to use this code.' };
     return { ok: true, coupon: c };
   }
 
@@ -278,7 +295,7 @@
       var m = /(\d+)\s*$/.exec(String(o.number || ''));
       if (m) max = Math.max(max, parseInt(m[1], 10));
     });
-    return '#TG' + (max + 1);
+    return '#LG' + (max + 1);
   }
 
   function placeOrder(info) {
@@ -302,9 +319,12 @@
       }
     });
     if (short) {
+      /* 两种缺货要分开报：「还有 2 件但你要 5 件」和「一件都没有」对客户是两件事，
+         前者改数量就能下单，后者只能等补货。原来统一返回 OUT_OF_STOCK，
+         文案分开了、码没分开，任何按 code 分支的调用方都会走错。 */
       return {
         ok: false,
-        code: 'OUT_OF_STOCK',
+        code: short.have > 0 ? 'INSUFFICIENT_STOCK' : 'OUT_OF_STOCK',
         msg: short.have > 0
           ? 'Only ' + short.have + ' left in ' + short.metal + ' for ' + short.title + '. Please update your bag.'
           : short.title + ' in ' + short.metal + ' just sold out. Please update your bag.'
@@ -322,7 +342,7 @@
         saveState();
         return {
           ok: false,
-          code: 'COUPON_INVALID',
+          code: chk.code || 'COUPON_INVALID',
           msg: chk.msg + ' The code has been removed — please review your total.'
         };
       }

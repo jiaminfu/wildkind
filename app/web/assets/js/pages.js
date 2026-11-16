@@ -220,7 +220,7 @@
           '<h2>Email</h2>' +
           '<p><a href="mailto:' + esc(c.email) + '">' + esc(c.email) + '</a><br>Replies within one business day, usually the same afternoon.</p>' +
           '<h2>Order enquiries</h2>' +
-          '<p>Include the order number (<code>#TG…</code>) so we do not have to ask. If it is about a fit, a photo helps more than a description.</p>' +
+          '<p>Include the order number (<code>#LG…</code>) so we do not have to ask. If it is about a fit, a photo helps more than a description.</p>' +
           '<h2>Custom work</h2>' +
           '<p>We take a small number of custom pieces each month. Send the motif, the metal, and the deadline — if it is under three weeks out we will tell you honestly whether it is possible.</p>' +
           '<h2>Press and wholesale</h2>' +

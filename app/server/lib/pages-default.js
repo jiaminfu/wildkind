@@ -19,5 +19,7 @@ module.exports = {
   privacy: { slug: 'privacy', title: 'Privacy policy', intro: 'What we collect, why, and how to get rid of it.' },
   terms: { slug: 'terms', title: 'Terms of service', intro: 'The plain-language version.' },
   accessibility: { slug: 'accessibility', title: 'Accessibility', intro: 'Where we are, and what we are fixing.' },
-  journal: { slug: 'journal', title: 'Field notes', intro: 'Materials, workshops, and where the 1% goes.' },
+  /* 这里原来还有一个 journal 键。博客迁到真路径 /journal 之后，它就成了死数据：
+     后台 Content 页照样列出来、照样能存，但改完前台没有任何地方读它。
+     「能改但改了没用」比「没有这个入口」更糟，所以直接删掉。 */
 };

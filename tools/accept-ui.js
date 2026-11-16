@@ -268,9 +268,9 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
     ok('U5', '提交订单后跳到订单页', orderOk, hashNow);
     orderNumber = await ev(`(function(){
       var m=(location.hash||'').match(/order\\/([^\\/?]+)/); if(m) return decodeURIComponent(m[1]);
-      var t=document.body.innerText.match(/#TG\\d+/); return t?t[0]:null;
+      var t=document.body.innerText.match(/#LG\\d+/); return t?t[0]:null;
     })()`);
-    ok('U5', '订单页显示订单号', !!orderNumber && /TG/.test(orderNumber), String(orderNumber));
+    ok('U5', '订单页显示订单号', !!orderNumber && /LG/.test(orderNumber), String(orderNumber));
     await shot('06-order');
     const orderBody = await ev(`document.body.innerText.replace(/\\s+/g,' ').slice(0,400)`);
     ok('U5', '订单页显示金额与状态', /\$\s?\d/.test(orderBody) && /paid|preparing|confirmed/i.test(orderBody), orderBody.slice(0, 160));

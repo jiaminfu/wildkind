@@ -146,7 +146,7 @@ const IMG = {
 const products = [
   // ---------- Necklaces ----------
   P({
-    id: 'TG-101', handle: 'foxtrot-pendant-necklace', title: 'Foxtrot Pendant Necklace',
+    id: 'LG-101', handle: 'foxtrot-pendant-necklace', title: 'Foxtrot Pendant Necklace',
     collections: ['necklaces', 'best-sellers', 'pendant-necklaces', 'woodland', 'for-her'],
     price: 62, compareAt: 78, cost: 7.4, stock: 34, image: IMG.fox, imageAlt: IMG.lifestyle,
     motif: 'fox', sizes: ['16"', '18"', '20"'], badge: 'Best Seller', featured: 1, age: 8,
@@ -154,7 +154,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', pendant: '16 × 14 mm', chain: '1.6 mm cable, 16–20 in', weight: '3.1 g' },
   }),
   P({
-    id: 'TG-102', handle: 'moonlit-hare-necklace', title: 'Moonlit Hare Necklace',
+    id: 'LG-102', handle: 'moonlit-hare-necklace', title: 'Moonlit Hare Necklace',
     collections: ['necklaces', 'best-sellers', 'pendant-necklaces', 'woodland'],
     price: 58, cost: 6.8, stock: 21, image: IMG.moon, imageAlt: IMG.lifestyle,
     motif: 'hare', sizes: ['16"', '18"'], badge: 'New', featured: 1, age: 3,
@@ -162,7 +162,7 @@ const products = [
     details: { material: '316L stainless steel, rhodium finish', pendant: '14 × 18 mm', chain: '1.4 mm cable, 16–18 in', weight: '2.9 g' },
   }),
   P({
-    id: 'TG-103', handle: 'solstice-sun-necklace', title: 'Solstice Sun Necklace',
+    id: 'LG-103', handle: 'solstice-sun-necklace', title: 'Solstice Sun Necklace',
     collections: ['necklaces', 'best-sellers', 'pendant-necklaces', 'celestial', 'birthday-gifts'],
     price: 64, compareAt: 80, cost: 7.6, stock: 42, image: IMG.sun, imageAlt: IMG.lifestyle,
     motif: 'sun', sizes: ['16"', '18"'], badge: 'Best Seller', featured: 1, age: 12,
@@ -170,7 +170,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', pendant: '15 mm disc', chain: '1.6 mm cable, 16–18 in', weight: '3.4 g' },
   }),
   P({
-    id: 'TG-104', handle: 'sea-turtle-necklace', title: 'Sea Turtle Necklace',
+    id: 'LG-104', handle: 'sea-turtle-necklace', title: 'Sea Turtle Necklace',
     collections: ['necklaces', 'ocean', 'pendant-necklaces', 'best-sellers'],
     price: 66, cost: 7.9, stock: 17, image: IMG.turtle, imageAlt: IMG.lifestyle,
     motif: 'turtle', metal: 'Silver', metals: ['Silver', 'Gold'], sizes: ['16"', '18"', '20"'], featured: 1, age: 20,
@@ -178,7 +178,7 @@ const products = [
     details: { material: '316L stainless steel, rhodium finish', pendant: '18 × 16 mm', chain: '1.4 mm cable, 16–20 in', weight: '3.0 g' },
   }),
   P({
-    id: 'TG-105', handle: 'coral-bloom-necklace', title: 'Coral Bloom Necklace',
+    id: 'LG-105', handle: 'coral-bloom-necklace', title: 'Coral Bloom Necklace',
     collections: ['necklaces', 'ocean', 'for-her'],
     price: 72, compareAt: 88, cost: 8.6, stock: 26, image: IMG.turtle, imageAlt: IMG.lifestyle,
     motif: 'coral', sizes: ['16"', '18"'], badge: 'Low stock', age: 32,
@@ -186,7 +186,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', pendant: '20 × 22 mm', chain: '1.4 mm cable, 16–18 in', weight: '3.6 g' },
   }),
   P({
-    id: 'TG-106', handle: 'fern-frond-necklace', title: 'Fern Frond Necklace',
+    id: 'LG-106', handle: 'fern-frond-necklace', title: 'Fern Frond Necklace',
     collections: ['necklaces', 'woodland', 'pendant-necklaces'],
     price: 52, cost: 6.1, stock: 48, image: IMG.fox, imageAlt: IMG.lifestyle,
     motif: 'fern', sizes: ['16"', '18"', '20"'], age: 44,
@@ -194,7 +194,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', pendant: '11 × 26 mm', chain: '1.4 mm cable, 16–20 in', weight: '2.6 g' },
   }),
   P({
-    id: 'TG-107', handle: 'clover-chain-necklace', title: 'Clover Chain Necklace',
+    id: 'LG-107', handle: 'clover-chain-necklace', title: 'Clover Chain Necklace',
     collections: ['necklaces', 'floral', 'for-her', 'birthday-gifts'],
     price: 56, compareAt: 68, cost: 6.5, stock: 39, image: IMG.sun, imageAlt: IMG.lifestyle,
     motif: 'clover', sizes: ['16"', '18"'], badge: 'Best Seller', age: 60,
@@ -202,7 +202,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', pendant: '10 mm', chain: '1.4 mm cable, 16–18 in', weight: '2.4 g' },
   }),
   P({
-    id: 'TG-108', handle: 'tidepool-choker', title: 'Tidepool Choker',
+    id: 'LG-108', handle: 'tidepool-choker', title: 'Tidepool Choker',
     collections: ['necklaces', 'ocean', 'gold-chokers'],
     price: 48, cost: 5.6, stock: 31, image: IMG.anklet, imageAlt: IMG.lifestyle,
     motif: 'shell', sizes: ['14"', '16"'], age: 70,
@@ -210,7 +210,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', shells: 'Natural cowrie, 8–10 mm', chain: '1.2 mm cable, 14–16 in', weight: '2.2 g' },
   }),
   P({
-    id: 'TG-109', handle: 'hummingbird-locket', title: 'Hummingbird Locket',
+    id: 'LG-109', handle: 'hummingbird-locket', title: 'Hummingbird Locket',
     collections: ['necklaces', 'woodland', 'pendant-necklaces', 'for-her'],
     price: 84, compareAt: 104, cost: 10.1, stock: 12, image: IMG.pearlN, imageAlt: IMG.lifestyle,
     motif: 'hummingbird', metals: ['Gold'], sizes: ['18"', '20"'], badge: 'Low stock', age: 15,
@@ -220,7 +220,7 @@ const products = [
 
   // ---------- Rings ----------
   P({
-    id: 'TG-201', handle: 'stargazer-stacking-rings', title: 'Stargazer Stacking Rings',
+    id: 'LG-201', handle: 'stargazer-stacking-rings', title: 'Stargazer Stacking Rings',
     collections: ['rings', 'stacking-rings', 'celestial', 'best-sellers'],
     price: 78, compareAt: 96, cost: 9.4, stock: 29, image: IMG.rings, imageAlt: IMG.lifestyle,
     motif: 'star', sizes: ['5', '6', '7', '8', '9'], badge: 'Best Seller', featured: 1, age: 6,
@@ -228,7 +228,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', bands: '1.2 / 1.4 / 1.6 mm', set: '3 rings', weight: '4.2 g' },
   }),
   P({
-    id: 'TG-202', handle: 'sun-signet-ring', title: 'Sun Signet Ring',
+    id: 'LG-202', handle: 'sun-signet-ring', title: 'Sun Signet Ring',
     collections: ['rings', 'signet-rings', 'celestial'],
     price: 54, cost: 6.3, stock: 36, image: IMG.rings, imageAlt: IMG.lifestyle,
     motif: 'sun', sizes: ['5', '6', '7', '8', '9'], age: 38,
@@ -236,7 +236,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', face: '11 × 9 mm oval', band: '2.4 mm', weight: '4.6 g' },
   }),
   P({
-    id: 'TG-203', handle: 'wave-band-ring', title: 'Wave Band Ring',
+    id: 'LG-203', handle: 'wave-band-ring', title: 'Wave Band Ring',
     collections: ['rings', 'stacking-rings', 'ocean'],
     price: 46, cost: 5.4, stock: 44, image: IMG.rings, imageAlt: IMG.lifestyle,
     motif: 'wave', sizes: ['5', '6', '7', '8', '9'], age: 52,
@@ -244,7 +244,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', band: '1.8 mm', weight: '2.8 g' },
   }),
   P({
-    id: 'TG-204', handle: 'moonphase-ring', title: 'Moonphase Ring',
+    id: 'LG-204', handle: 'moonphase-ring', title: 'Moonphase Ring',
     collections: ['rings', 'celestial', 'for-her'],
     price: 62, compareAt: 74, cost: 7.2, stock: 18, image: IMG.rings, imageAlt: IMG.lifestyle,
     motif: 'moon', metals: ['Gold', 'Silver'], sizes: ['5', '6', '7', '8'], badge: 'New', age: 2,
@@ -252,7 +252,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', band: '2.2 mm', weight: '3.4 g' },
   }),
   P({
-    id: 'TG-205', handle: 'leaf-wrap-ring', title: 'Leaf Wrap Ring',
+    id: 'LG-205', handle: 'leaf-wrap-ring', title: 'Leaf Wrap Ring',
     collections: ['rings', 'woodland', 'stacking-rings'],
     price: 52, cost: 6.1, stock: 33, image: IMG.rings, imageAlt: IMG.lifestyle,
     motif: 'leaf', sizes: ['5', '6', '7', '8', '9'], age: 66,
@@ -262,7 +262,7 @@ const products = [
 
   // ---------- Bracelets ----------
   P({
-    id: 'TG-301', handle: 'clover-charm-bracelet', title: 'Clover Charm Bracelet',
+    id: 'LG-301', handle: 'clover-charm-bracelet', title: 'Clover Charm Bracelet',
     collections: ['bracelets', 'chain-bracelets', 'floral', 'best-sellers'],
     price: 54, compareAt: 66, cost: 6.3, stock: 27, image: IMG.clover, imageAlt: IMG.lifestyle,
     motif: 'clover', metal: 'Silver', metals: ['Silver', 'Gold'], sizes: ['S', 'M', 'L'], badge: 'Best Seller', featured: 1, age: 10,
@@ -270,7 +270,7 @@ const products = [
     details: { material: '316L stainless steel, rhodium finish', charm: '9 mm', chain: '1.2 mm rolo, 16–19 cm', weight: '2.1 g' },
   }),
   P({
-    id: 'TG-302', handle: 'wildflower-beaded-bracelet', title: 'Wildflower Beaded Bracelet',
+    id: 'LG-302', handle: 'wildflower-beaded-bracelet', title: 'Wildflower Beaded Bracelet',
     collections: ['bracelets', 'beaded-bracelets', 'floral', 'birthday-gifts'],
     price: 62, cost: 7.2, stock: 22, image: IMG.beaded, imageAlt: IMG.lifestyle,
     motif: 'flower', metals: ['Gold'], sizes: ['S', 'M', 'L'], age: 25,
@@ -278,7 +278,7 @@ const products = [
     details: { material: '316L steel beads, lampwork glass, 18k gold PVD', bead: '6 mm', elastic: '0.8 mm, double-strung', weight: '5.2 g' },
   }),
   P({
-    id: 'TG-303', handle: 'driftwood-chain-bracelet', title: 'Driftwood Chain Bracelet',
+    id: 'LG-303', handle: 'driftwood-chain-bracelet', title: 'Driftwood Chain Bracelet',
     collections: ['bracelets', 'chain-bracelets', 'ocean'],
     price: 58, cost: 6.8, stock: 35, image: IMG.beaded, imageAlt: IMG.lifestyle,
     motif: 'wave', sizes: ['S', 'M', 'L'], age: 41,
@@ -286,7 +286,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', link: '4 × 11 mm paperclip', length: '16–19 cm', weight: '6.4 g' },
   }),
   P({
-    id: 'TG-304', handle: 'seahorse-bracelet', title: 'Seahorse Bracelet',
+    id: 'LG-304', handle: 'seahorse-bracelet', title: 'Seahorse Bracelet',
     collections: ['bracelets', 'ocean', 'for-her'],
     price: 56, cost: 6.5, stock: 19, image: IMG.clover, imageAlt: IMG.lifestyle,
     motif: 'seahorse', sizes: ['S', 'M', 'L'], badge: 'New', age: 4,
@@ -294,7 +294,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', charm: '6 × 15 mm', chain: '1.2 mm rolo, 16–19 cm', weight: '2.4 g' },
   }),
   P({
-    id: 'TG-305', handle: 'fern-cuff', title: 'Fern Cuff',
+    id: 'LG-305', handle: 'fern-cuff', title: 'Fern Cuff',
     collections: ['bracelets', 'thin-bracelets', 'woodland'],
     price: 68, compareAt: 82, cost: 8.0, stock: 14, image: IMG.beaded, imageAlt: IMG.lifestyle,
     motif: 'fern', metals: ['Gold'], sizes: ['M', 'L'], badge: 'Low stock', age: 18,
@@ -304,7 +304,7 @@ const products = [
 
   // ---------- Anklets ----------
   P({
-    id: 'TG-401', handle: 'cowrie-anklet', title: 'Cowrie Anklet',
+    id: 'LG-401', handle: 'cowrie-anklet', title: 'Cowrie Anklet',
     collections: ['anklets', 'shell-anklets', 'ocean', 'best-sellers'],
     price: 48, cost: 5.6, stock: 40, image: IMG.anklet, imageAlt: IMG.lifestyle,
     motif: 'shell', sizes: ['One size'], badge: 'Best Seller', featured: 1, age: 14,
@@ -312,7 +312,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', shells: 'Natural cowrie, sealed', length: '23 + 3 cm', weight: '2.6 g' },
   }),
   P({
-    id: 'TG-402', handle: 'starfish-anklet', title: 'Starfish Anklet',
+    id: 'LG-402', handle: 'starfish-anklet', title: 'Starfish Anklet',
     collections: ['anklets', 'shell-anklets', 'ocean'],
     price: 46, cost: 5.3, stock: 33, image: IMG.anklet, imageAlt: IMG.lifestyle,
     motif: 'starfish', sizes: ['One size'], age: 47,
@@ -320,7 +320,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', charm: '12 mm', length: '23 + 3 cm', weight: '2.4 g' },
   }),
   P({
-    id: 'TG-403', handle: 'wave-chain-anklet', title: 'Wave Chain Anklet',
+    id: 'LG-403', handle: 'wave-chain-anklet', title: 'Wave Chain Anklet',
     collections: ['anklets', 'chain-anklets', 'ocean'],
     price: 42, cost: 4.9, stock: 52, image: IMG.anklet, imageAlt: IMG.lifestyle,
     motif: 'wave', sizes: ['One size'], age: 58,
@@ -328,7 +328,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', chain: '2.5 mm herringbone', length: '23 + 3 cm', weight: '3.2 g' },
   }),
   P({
-    id: 'TG-404', handle: 'daisy-chain-anklet', title: 'Daisy Chain Anklet',
+    id: 'LG-404', handle: 'daisy-chain-anklet', title: 'Daisy Chain Anklet',
     collections: ['anklets', 'chain-anklets', 'floral', 'birthday-gifts'],
     price: 44, compareAt: 54, cost: 5.1, stock: 26, image: IMG.anklet, imageAlt: IMG.lifestyle,
     motif: 'flower', sizes: ['One size'], age: 22,
@@ -338,7 +338,7 @@ const products = [
 
   // ---------- Earrings ----------
   P({
-    id: 'TG-501', handle: 'sunburst-hoops', title: 'Sunburst Hoops',
+    id: 'LG-501', handle: 'sunburst-hoops', title: 'Sunburst Hoops',
     collections: ['earrings', 'hoop-earrings', 'celestial', 'best-sellers'],
     price: 52, cost: 6.1, stock: 44, image: IMG.hoop, imageAlt: IMG.lifestyle,
     motif: 'sun', sizes: ['12 mm', '16 mm', '22 mm'], badge: 'Best Seller', featured: 1, age: 9,
@@ -346,7 +346,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', diameter: '12 / 16 / 22 mm', weight: '4.1 g / pair' },
   }),
   P({
-    id: 'TG-502', handle: 'fern-huggies', title: 'Fern Huggies',
+    id: 'LG-502', handle: 'fern-huggies', title: 'Fern Huggies',
     collections: ['earrings', 'huggie-earrings', 'woodland'],
     price: 46, cost: 5.3, stock: 38, image: IMG.hoop, imageAlt: IMG.lifestyle,
     motif: 'fern', sizes: ['8 mm', '10 mm'], age: 34,
@@ -354,7 +354,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', diameter: '8 / 10 mm', closure: 'Hinged snap', weight: '1.8 g / pair' },
   }),
   P({
-    id: 'TG-503', handle: 'pearl-drop-earrings', title: 'Pearl Drop Earrings',
+    id: 'LG-503', handle: 'pearl-drop-earrings', title: 'Pearl Drop Earrings',
     collections: ['earrings', 'pearl-earrings', 'pearls', 'for-her'],
     price: 58, compareAt: 72, cost: 6.8, stock: 23, image: IMG.pearlN, imageAlt: IMG.lifestyle,
     motif: 'pearl', metals: ['Gold', 'Silver'], sizes: ['One size'], badge: 'New', age: 5,
@@ -362,7 +362,7 @@ const products = [
     details: { material: '316L steel, 18k gold PVD, freshwater pearl', pearl: '9–10 mm baroque', drop: '22 mm', weight: '2.2 g / pair' },
   }),
   P({
-    id: 'TG-504', handle: 'crescent-studs', title: 'Crescent Studs',
+    id: 'LG-504', handle: 'crescent-studs', title: 'Crescent Studs',
     collections: ['earrings', 'stud-earrings', 'celestial'],
     price: 42, cost: 4.9, stock: 50, image: IMG.hoop, imageAlt: IMG.lifestyle,
     motif: 'moon', metals: ['Gold', 'Silver'], sizes: ['One size'], age: 55,
@@ -370,7 +370,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', size: '6 mm', closure: 'Push back', weight: '0.9 g / pair' },
   }),
   P({
-    id: 'TG-505', handle: 'bee-studs', title: 'Bee Studs',
+    id: 'LG-505', handle: 'bee-studs', title: 'Bee Studs',
     collections: ['earrings', 'stud-earrings', 'floral'],
     price: 44, cost: 5.1, stock: 29, image: IMG.hoop, imageAlt: IMG.lifestyle,
     motif: 'bee', sizes: ['One size'], age: 62,
@@ -380,7 +380,7 @@ const products = [
 
   // ---------- Pearls ----------
   P({
-    id: 'TG-601', handle: 'baroque-pearl-necklace', title: 'Baroque Pearl Necklace',
+    id: 'LG-601', handle: 'baroque-pearl-necklace', title: 'Baroque Pearl Necklace',
     collections: ['pearls', 'pearl-necklaces', 'best-sellers', 'for-her'],
     price: 82, compareAt: 98, cost: 9.8, stock: 16, image: IMG.pearlN, imageAlt: IMG.lifestyle,
     motif: 'pearl', metals: ['Gold', 'Silver'], sizes: ['16"', '18"'], badge: 'Best Seller', featured: 1, age: 11,
@@ -388,7 +388,7 @@ const products = [
     details: { material: '316L steel, 18k gold PVD, freshwater pearl', pearl: '14–16 mm baroque', chain: '1.2 mm cable, 16–18 in', weight: '3.8 g' },
   }),
   P({
-    id: 'TG-602', handle: 'pearl-strand-bracelet', title: 'Pearl Strand Bracelet',
+    id: 'LG-602', handle: 'pearl-strand-bracelet', title: 'Pearl Strand Bracelet',
     collections: ['pearls', 'pearl-bracelets', 'for-her', 'gifts-for-mom'],
     price: 68, cost: 8.0, stock: 24, image: IMG.beaded, imageAlt: IMG.lifestyle,
     motif: 'pearl', metals: ['Gold', 'Silver'], sizes: ['S', 'M', 'L'], age: 30,
@@ -396,7 +396,7 @@ const products = [
     details: { material: 'Freshwater pearls, silk thread, 14k gold-filled clasp', pearl: '6–7 mm', length: '16–19 cm', weight: '6.1 g' },
   }),
   P({
-    id: 'TG-603', handle: 'pearl-hoop-earrings', title: 'Pearl Hoop Earrings',
+    id: 'LG-603', handle: 'pearl-hoop-earrings', title: 'Pearl Hoop Earrings',
     collections: ['pearls', 'pearl-earrings', 'earrings', 'earth'],
     price: 64, compareAt: 78, cost: 7.5, stock: 20, image: IMG.clover, imageAlt: IMG.lifestyle,
     motif: 'pearl', metals: ['Gold'], sizes: ['One size'], age: 27,
@@ -406,7 +406,7 @@ const products = [
 
   // ---------- Custom ----------
   P({
-    id: 'TG-701', handle: 'initial-charm-necklace', title: 'Initial Charm Necklace',
+    id: 'LG-701', handle: 'initial-charm-necklace', title: 'Initial Charm Necklace',
     collections: ['custom', 'custom-all', 'initial-jewelry', 'best-sellers'],
     price: 66, cost: 7.7, stock: 60, image: IMG.fox, imageAlt: IMG.lifestyle,
     motif: 'letter', metals: ['Gold', 'Silver', 'Rose Gold'], sizes: ['16"', '18"'], badge: 'Custom', featured: 1, age: 7,
@@ -414,7 +414,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', initial: '12 mm, hand-polished', lead: 'Dispatched in 5 working days', weight: '3.2 g' },
   }),
   P({
-    id: 'TG-702', handle: 'birthstone-ring', title: 'Toi et Moi Birthstone Ring',
+    id: 'LG-702', handle: 'birthstone-ring', title: 'Toi et Moi Birthstone Ring',
     collections: ['custom', 'custom-all', 'birthstone-jewelry', 'birthstone-rings'],
     price: 76, compareAt: 92, cost: 8.9, stock: 42, image: IMG.rings, imageAlt: IMG.lifestyle,
     motif: 'gem', metals: ['Gold', 'Silver'], sizes: ['5', '6', '7', '8', '9'], badge: 'Custom', age: 13,
@@ -422,7 +422,7 @@ const products = [
     details: { material: '316L steel, 18k gold PVD, cubic zirconia', stone: '4 mm × 2', lead: 'Dispatched in 7 working days', weight: '3.6 g' },
   }),
   P({
-    id: 'TG-703', handle: 'name-bracelet', title: 'Custom Name Bracelet',
+    id: 'LG-703', handle: 'name-bracelet', title: 'Custom Name Bracelet',
     collections: ['custom', 'custom-all', 'initial-jewelry', 'for-her'],
     price: 74, cost: 8.6, stock: 38, image: IMG.clover, imageAlt: IMG.lifestyle,
     motif: 'name', metals: ['Gold', 'Silver'], sizes: ['S', 'M', 'L'], badge: 'Custom', age: 16,
@@ -432,7 +432,7 @@ const products = [
 
   // ---------- Gifts ----------
   P({
-    id: 'TG-801', handle: 'woodland-gift-set', title: 'Woodland Gift Set',
+    id: 'LG-801', handle: 'woodland-gift-set', title: 'Woodland Gift Set',
     collections: ['gifts', 'gift-sets', 'woodland', 'for-her'],
     price: 96, compareAt: 124, cost: 11.5, stock: 18, image: IMG.fox, imageAlt: IMG.lifestyle,
     motif: 'fox', metals: ['Gold'], sizes: ['One size'], badge: 'Gift', featured: 1, age: 1,
@@ -440,7 +440,7 @@ const products = [
     details: { material: '316L stainless steel, 18k gold PVD', includes: 'Pendant necklace + huggies + pouch', lead: 'Dispatched in 2 working days', weight: '7.0 g' },
   }),
   P({
-    id: 'TG-802', handle: 'ocean-gift-set', title: 'Ocean Gift Set',
+    id: 'LG-802', handle: 'ocean-gift-set', title: 'Ocean Gift Set',
     collections: ['gifts', 'gift-sets', 'ocean', 'for-her'],
     price: 92, compareAt: 118, cost: 10.9, stock: 21, image: IMG.turtle, imageAlt: IMG.lifestyle,
     motif: 'turtle', metal: 'Silver', metals: ['Silver'], sizes: ['One size'], badge: 'Gift', age: 19,
@@ -526,7 +526,7 @@ for (let i = 0; i < 186; i++) {
   orderSeq += 1;
   orders.push({
     id: 'o_' + (1000 + orders.length),
-    number: '#TG' + orderSeq,
+    number: '#LG' + orderSeq,
     createdAt,
     status,
     items: chosen,

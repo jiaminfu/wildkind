@@ -19,7 +19,7 @@ const SUPPORTED_COUNTRIES = ['United States', 'Canada', 'United Kingdom'];
 function nextOrderNumber(db) {
   db.sequences.order = (db.sequences.order || 1041);
   const n = db.sequences.order++;
-  return '#TG' + n;
+  return '#LG' + n;
 }
 
 function ledger(db, entry) {

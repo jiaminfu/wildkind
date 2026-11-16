@@ -187,8 +187,8 @@ const chk = (name, cond, extra) => cond ? ok(name, extra) : bad(name, extra);
   await click('.acct2__nav a[href$="#/account/orders"]');
   await waitFor('location.hash === "#/account/orders"', 3000);
   const listTxt = await text();
-  chk('订单列表能找到刚才那一单', listTxt.indexOf(orderNo.replace(/^%23/, '#')) >= 0 || /#TG\d+/.test(listTxt),
-    (listTxt.match(/#TG\d+/) || [''])[0]);
+  chk('订单列表能找到刚才那一单', listTxt.indexOf(orderNo.replace(/^%23/, '#')) >= 0 || /#LG\d+/.test(listTxt),
+    (listTxt.match(/#LG\d+/) || [''])[0]);
   await click('.ol');
   await waitFor('location.hash.indexOf("/account/orders/")>=0', 3000);
   chk('订单详情打开', /Items/.test(await text()) && /Shipping to/.test(await text()));

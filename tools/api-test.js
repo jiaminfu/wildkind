@@ -149,6 +149,24 @@ async function call(method, path, body, headers) {
   chk('无效码返回 COUPON_NOT_FOUND', couponFake.status === 422 &&
     couponFake.body.error.code === 'COUPON_NOT_FOUND');
 
+  /* ---------- 2b. 购物车行数上限 ----------
+     normalizeItems 里有一条 items.length > 30 的守卫，此前一条用例都没有。
+     守卫在、测试不在，重构时删掉它没有任何东西会变红。 */
+  section('2b 购物车行数上限');
+  const many = n => catalog.slice(0, n).map(p => ({
+    productId: p.id, metal: p.variants[0].metal, qty: 1,
+  }));
+  if (catalog.length < 31) {
+    chk('目录至少 31 款可测行数上限', false, '当前 ' + catalog.length + ' 款，跳过');
+  } else {
+    const q30 = await call('POST', '/api/v1/checkout/quote', { items: many(30) });
+    chk('30 行在上限内可报价', q30.status === 200, 'status=' + q30.status);
+    const q31 = await call('POST', '/api/v1/checkout/quote', { items: many(31) });
+    chk('31 行被拒 400', q31.status === 400, 'status=' + q31.status);
+    chk('拒绝原因指向行数', q31.body.error && /30 lines|too many/i.test(q31.body.error.message),
+      q31.body.error && q31.body.error.message);
+  }
+
   /* ---------- 3. 下单 ---------- */
   section('3 下单与库存');
   const beforeStock = (await call('GET', '/api/v1/products/foxtrot-pendant-necklace'))
@@ -177,6 +195,17 @@ async function call(method, path, body, headers) {
   chk('逐字段列出错误', Array.isArray(badAddr.body.error.details) && badAddr.body.error.details.length >= 5,
     badAddr.body.error.details.length + ' 项');
 
+  /* 国家白名单单独验一次：上面那条一次塞了 6 个错误，看不出是哪条拦住的。
+     只带「国家不在三国」这一个问题，错误必须精确指向 address.country。 */
+  const badCountry = await call('POST', '/api/v1/orders', {
+    quoteId, email: 'country@example.com', firstName: 'C', lastName: 'T',
+    address: { line1: '1 Main St', city: 'Lyon', state: 'RA', zip: '69001', country: 'France' },
+  });
+  chk('非三国地址被拒 400', badCountry.status === 400, 'status=' + badCountry.status);
+  chk('错误定位到 address.country', (badCountry.body.error.details || [])
+    .some(d => d.field === 'address.country'),
+    JSON.stringify((badCountry.body.error || {}).details || {}).slice(0, 120));
+
   const payload = {
     quoteId,
     email: 'ApiTest@Example.com',
@@ -187,7 +216,7 @@ async function call(method, path, body, headers) {
   const created = await call('POST', '/api/v1/orders', payload, { 'Idempotency-Key': IDEM });
   chk('下单 201', created.status === 201, created.body.error && created.body.error.message);
   const order = created.body.data.order;
-  chk('单号格式 #TGxxxx', /^#TG\d+$/.test(order.number), order.number);
+  chk('单号格式 #LGxxxx', /^#LG\d+$/.test(order.number), order.number);
   chk('订单邮箱已小写', order.email === 'apitest@example.com', order.email);
   chk('订单含赠品行', order.items.some(i => i.isGift), order.items.map(i => i.title).join(' | '));
   chk('赠品单价为 0', order.items.filter(i => i.isGift).every(i => i.unitPrice === 0));
@@ -435,6 +464,69 @@ async function call(method, path, body, headers) {
   const ledger2 = await call('GET', '/api/v1/admin/stock-ledger?sku=' + sku, undefined, AUTH);
   chk('补货写流水', ledger2.body.data.some(l => l.reason === 'purchase-order'));
 
+  /* ---------- 8b. 字段上限与零库存 ----------
+     三条守卫此前只存在于实现里：变体 ≤ 12、图片 ≤ 6、库存 0 的变体不能卖。
+     这里只走「拒绝」路径，不新建临时商品 —— 新建会污染后面按总数做断言的用例。 */
+  section('8b 字段上限与零库存');
+  const pNow = (await call('GET', '/api/v1/admin/products', undefined, AUTH))
+    .body.data.find(p => p.id === p0.id);
+
+  const v13 = await call('PATCH', '/api/v1/admin/products/' + p0.id, {
+    version: pNow.version,
+    variants: Array.from({ length: 13 }, (_, i) => ({ sku: 'APIV13-' + i, metal: 'Gold', stock: 1, price: 50 })),
+  }, AUTH);
+  chk('13 个变体被拒 400', v13.status === 400, 'status=' + v13.status);
+  chk('错误指向 variants 字段', !!(v13.body.error && (v13.body.error.details || [])
+    .some(d => String(d.field || '').indexOf('variants') === 0)),
+    JSON.stringify((v13.body.error || {}).details || {}).slice(0, 100));
+
+  const img7 = await call('PATCH', '/api/v1/admin/products/' + p0.id, {
+    version: pNow.version,
+    images: Array.from({ length: 7 }, (_, i) => 'assets/img/opt/p-' + i + '.jpg'),
+  }, AUTH);
+  chk('7 张图被拒 400', img7.status === 400, 'status=' + img7.status);
+  chk('错误指向 images 字段', !!(img7.body.error && (img7.body.error.details || [])
+    .some(d => String(d.field || '').indexOf('images') === 0)),
+    JSON.stringify((img7.body.error || {}).details || {}).slice(0, 100));
+
+  /* 零库存：负数补货把库存清到 0，再报价。这里同时验证「卖光」与「不够」是两个码 ——
+     原来两者都抛 OUT_OF_STOCK，前端只能拿 message 猜。 */
+  const zSku = pNow.variants[0].sku;
+  const zMetal = pNow.variants[0].metal;
+  const zStock = pNow.variants[0].stock;
+  const drain = await call('POST', '/api/v1/admin/products/' + p0.id + '/variants/' + zSku + '/restock',
+    { qty: -zStock, reason: 'test-drain' }, AUTH);
+  chk('可用负数补货把库存清零', drain.status === 200 && drain.body.data.stock === 0,
+    zStock + ' → ' + (drain.body.data && drain.body.data.stock));
+
+  const qZero = await call('POST', '/api/v1/checkout/quote', {
+    items: [{ productId: p0.id, metal: zMetal, qty: 1 }],
+  });
+  chk('零库存报价被拒 422', qZero.status === 422, 'status=' + qZero.status);
+  chk('错误码为 OUT_OF_STOCK', qZero.body.error && qZero.body.error.code === 'OUT_OF_STOCK',
+    qZero.body.error && qZero.body.error.code);
+
+  /* 先只补 3 件，再要 5 件 —— 这样才能构造「有货但不够」。
+     直接把库存补回原值再要 10 件，多数货根本够，这条断言就成了假红。 */
+  const three = await call('POST', '/api/v1/admin/products/' + p0.id + '/variants/' + zSku + '/restock',
+    { qty: 3, reason: 'test-partial' }, AUTH);
+  chk('库存回到 3 件', three.status === 200 && three.body.data.stock === 3,
+    String(three.body.data && three.body.data.stock));
+
+  const qShort = await call('POST', '/api/v1/checkout/quote', {
+    items: [{ productId: p0.id, metal: zMetal, qty: 5 }],
+  });
+  chk('库存不够时错误码为 INSUFFICIENT_STOCK', qShort.status === 422 &&
+    qShort.body.error && qShort.body.error.code === 'INSUFFICIENT_STOCK',
+    (qShort.body.error || {}).code + ' / ' + ((qShort.body.error || {}).message || ''));
+  chk('明细里带可售数量', !!(qShort.body.error && (qShort.body.error.details || [])
+    .some(d => typeof d.available === 'number')), JSON.stringify((qShort.body.error || {}).details || {}).slice(0, 120));
+
+  const restored = await call('POST', '/api/v1/admin/products/' + p0.id + '/variants/' + zSku + '/restock',
+    { qty: zStock - 3, reason: 'test-restore' }, AUTH);
+  chk('库存已复原', restored.status === 200 && restored.body.data.stock === zStock,
+    String(restored.body.data && restored.body.data.stock));
+
   /* ---------- 9. 设置与优惠券 ---------- */
   section('9 设置与优惠券');
   const settings = await call('GET', '/api/v1/admin/settings', undefined, AUTH);
@@ -457,6 +549,49 @@ async function call(method, path, body, headers) {
   chk('非法码被拒', badCoupon.status === 400, badCoupon.status);
   const delCoupon = await call('DELETE', '/api/v1/admin/coupons/APITEST20', undefined, AUTH);
   chk('删除优惠码 200', delCoupon.status === 200);
+
+  /* ---------- 9f. 券状态：过期与发满必须分得开 ----------
+     这一节锁的是产品口径，不是技术细节：
+     券「过期」和「发满」是两个不同的事实，客户该看到哪个、后台该记下哪些，都不能含糊。
+     原来列表直接吐存储的 status 快照，一张早就发满的券会一直显示 active。 */
+  section('9f 券状态派生与发满');
+  const cList = await call('GET', '/api/v1/admin/coupons', undefined, AUTH);
+  const summer = (cList.body.data || []).find(c => c.code === 'SUMMER20');
+  chk('列表返回派生 state（不信任 status 快照）', !!summer && summer.state === 'expired',
+    summer && summer.state);
+  chk('过期与发满同时留痕', !!summer && (summer.reasons || []).indexOf('exhausted') >= 0,
+    JSON.stringify(summer && summer.reasons));
+
+  const oneUnit = [{ productId: 'LG-101', metal: 'Gold', qty: 1 }];
+  const one = await call('POST', '/api/v1/admin/coupons',
+    { code: 'APIONE', type: 'percent', value: 5, limit: 1 }, AUTH);
+  chk('建 limit=1 的券', one.status === 201, one.body.error && one.body.error.message);
+
+  const qOne = await call('POST', '/api/v1/checkout/quote',
+    { items: oneUnit, couponCode: 'APIONE', state: 'TX' });
+  const oOne = await call('POST', '/api/v1/orders', {
+    quoteId: qOne.body.data && qOne.body.data.quoteId,
+    email: 'one@example.com', firstName: 'One', lastName: 'Shot',
+    address: { line1: '1 Main St', city: 'Austin', state: 'TX', zip: '78701', country: 'United States' },
+    payment: { last4: '4242' },
+  }, { 'Idempotency-Key': IDEM + '-one' });
+  chk('限额 1 的券可以正常用一次', oOne.status === 201, oOne.body.error && oOne.body.error.message);
+
+  const gone = await call('POST', '/api/v1/coupons/validate', { code: 'APIONE', items: oneUnit });
+  chk('用满后报 COUPON_EXHAUSTED', gone.status === 422 &&
+    gone.body.error.code === 'COUPON_EXHAUSTED', gone.body.error && gone.body.error.code);
+  chk('不会被误报成 COUPON_EXPIRED', gone.body.error.code !== 'COUPON_EXPIRED');
+
+  const zero = await call('POST', '/api/v1/admin/coupons',
+    { code: 'APIZERO', type: 'percent', value: 5, limit: 0 }, AUTH);
+  chk('limit=0 建券成功（不再被悄悄改成 1）', zero.status === 201 && zero.body.data.limit === 0,
+    zero.status === 201 ? 'limit=' + zero.body.data.limit : zero.status);
+  const zGone = await call('POST', '/api/v1/coupons/validate', { code: 'APIZERO', items: oneUnit });
+  chk('limit=0 立刻报发满', zGone.status === 422 && zGone.body.error.code === 'COUPON_EXHAUSTED',
+    zGone.body.error && zGone.body.error.code);
+
+  await call('DELETE', '/api/v1/admin/coupons/APIONE', undefined, AUTH);
+  await call('DELETE', '/api/v1/admin/coupons/APIZERO', undefined, AUTH);
 
   /* ---------- 9b. 集合（A-06） ---------- */
   section('9b 集合管理');

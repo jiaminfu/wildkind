@@ -23,6 +23,10 @@ function normalize(d) {
   if (!d.pages || typeof d.pages !== 'object') {
     d.pages = JSON.parse(JSON.stringify(DEFAULT_PAGES));
   }
+  /* 老库里 pages 还挂着 journal。博客迁到 /journal 真路径 + posts 表之后，
+     这条键改了没有任何地方会读它 —— 留着只会让后台继续列一个假入口。
+     只删这一个键，不动其他页；下一次写操作自然落盘。 */
+  if (Object.prototype.hasOwnProperty.call(d.pages, 'journal')) delete d.pages.journal;
   if (!Array.isArray(d.customRequests)) d.customRequests = [];
   if (!d.sequences) d.sequences = {};
 

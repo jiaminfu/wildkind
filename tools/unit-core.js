@@ -83,7 +83,7 @@ const n1 = S.placeOrder; // 只取引用，实际单号通过下单观察
   const r = S.placeOrder({ email: 'unit@test.com', first: 'U', last: 'T', line1: 'x', city: 'y', state: 'CA', zip: '1', shipping: 'Standard' });
   chk('下单成功', r.ok, r.ok ? r.order.number : r.msg);
   const num = r.order.number;
-  chk('单号前缀为 #TG', /^#TG\d+$/.test(num), num);
+  chk('单号前缀为 #LG', /^#LG\d+$/.test(num), num);
   chk('单号大于库内最大号', parseInt(num.slice(3), 10) > maxBefore, num + ' > #' + maxBefore);
   chk('单号在库内唯一', DB.orders.filter(o => o.number === num).length === 1);
 }
@@ -100,19 +100,36 @@ section('2 下单扣库存');
   chk('库存按数量扣减', stockOf(p.id, metal) === before - 3, before + ' → ' + stockOf(p.id, metal));
 }
 
-/* ---------- 3. 库存不足整单拒绝 ---------- */
+/* ---------- 3. 库存二次校验 ---------- */
 section('3 库存二次校验');
 {
   const p = DB.products[2];
   const metal = p.variants[0].metal;
-  // 绕过 addToCart 的库存校验，直接把超量行塞进购物车，模拟「加购后库存被买走」
-  S.state.cart = [{ pid: p.id, metal, size: '', qty: p.variants[0].stock + 5 }];
+  const real = p.variants[0].stock;
+
+  /* 3a 有货但不够：必须报 INSUFFICIENT_STOCK。
+     这一条原来断言的是 OUT_OF_STOCK —— 和当时实现一起写错，所以永远是绿的。
+     两种缺货混成一个码，前端只能拿 message 猜，任何按 code 分支的地方都会走错。 */
+  chk('前置：该变体有库存', real > 0, String(real));
+  S.state.cart = [{ pid: p.id, metal, size: '', qty: real + 5 }];
   S.saveState();
   const r = S.placeOrder({ email: 'unit@test.com', first: 'U', last: 'T', line1: 'x', city: 'y', state: 'CA', zip: '1', shipping: 'Standard' });
   chk('超量下单被拒绝', !r.ok, r.msg || '');
-  chk('错误码为 OUT_OF_STOCK', r.code === 'OUT_OF_STOCK', r.code || '');
+  chk('错误码为 INSUFFICIENT_STOCK', r.code === 'INSUFFICIENT_STOCK', r.code || '(无 code)');
   chk('被拒绝时未产生订单', DB.orders[0].email !== 'unit@test.com' || DB.orders[0].items[0].productId !== p.id);
-  chk('被拒绝时库存未变动', stockOf(p.id, metal) === p.variants[0].stock);
+  chk('被拒绝时库存未变动', stockOf(p.id, metal) === real, real + ' → ' + stockOf(p.id, metal));
+
+  /* 3b 一件都没有：必须是 OUT_OF_STOCK，不能和 3a 混用同一个码。
+     库存置 0 后再下单，绕过加购校验（加购时就该拦住），直接看结算侧。 */
+  p.variants[0].stock = 0;
+  S.state.cart = [{ pid: p.id, metal, size: '', qty: 1 }];
+  S.saveState();
+  const r0 = S.placeOrder({ email: 'zero@test.com', first: 'Z', last: 'T', line1: 'x', city: 'y', state: 'CA', zip: '1', shipping: 'Standard' });
+  chk('零库存下单被拒绝', !r0.ok, r0.msg || '');
+  chk('错误码为 OUT_OF_STOCK', r0.code === 'OUT_OF_STOCK', r0.code || '(无 code)');
+  p.variants[0].stock = real;
+  chk('测试后库存已复原', stockOf(p.id, metal) === real, String(stockOf(p.id, metal)));
+
   S.state.cart = []; S.saveState();
 }
 
@@ -139,9 +156,11 @@ section('4 满额赠品');
 }
 
 /* ---------- 5. 优惠券二次校验 ---------- */
-section('5 优惠券门槛二次校验');
+section('5 优惠券二次校验');
 {
-  const c = DB.coupons.find(x => x.status === 'active' && x.minSubtotal > 0);
+  /* 挑一张「真能用」的券：status 是快照，不能只看它 —— 还要没过期、没发满。 */
+  const c = DB.coupons.find(x => x.status === 'active' && x.minSubtotal > 0 &&
+    (x.limit == null || (x.used || 0) < x.limit));
   if (!c) {
     chk('存在带门槛的有效优惠码', false, '数据里没有，跳过');
   } else {
@@ -157,11 +176,33 @@ section('5 优惠券门槛二次校验');
     } else {
       const r = S.placeOrder({ email: 'coupon@test.com', first: 'C', last: 'T', line1: 'x', city: 'y', state: 'CA', zip: '1', shipping: 'Standard' });
       chk('低于门槛时下单被拒绝', !r.ok, r.msg || '');
-      chk('错误码为 COUPON_INVALID', r.code === 'COUPON_INVALID', r.code || '');
+      chk('错误码为 COUPON_MIN_SUBTOTAL', r.code === 'COUPON_MIN_SUBTOTAL', r.code || '');
       chk('失效券已从会话移除', S.state.coupon === null);
       S.state.cart = []; S.state.coupon = null; S.saveState();
     }
   }
+}
+
+/* ---------- 5b. 过期与发满必须分得开 ---------- */
+section('5b 券状态区分：发满 ≠ 过期');
+{
+  /* 造一张「没过期但发满」的券。它必须报 COUPON_EXHAUSTED；
+     如果报 COUPON_EXPIRED，说明判定顺序把两个原因揉在一起了 ——
+     客户会以为自己来晚了，其实是名额没了，两者的下一步动作完全不同。 */
+  const full = {
+    code: 'UNITFULL', type: 'percent', value: 10, minSubtotal: 0,
+    used: 5, limit: 5, startsAt: null, endsAt: '2099-12-31', status: 'active',
+  };
+  DB.coupons.push(full);
+  const p = DB.products.find(x => x.variants[0].stock >= 1);
+  S.state.cart = []; S.state.coupon = null;
+  S.addToCart(p.id, p.variants[0].metal, '', 1);
+  S.state.coupon = full; S.saveState();
+  const r = S.placeOrder({ email: 'full@test.com', first: 'F', last: 'T', line1: 'x', city: 'y', state: 'CA', zip: '1', shipping: 'Standard' });
+  chk('发满的券下单被拒绝', !r.ok, r.msg || '');
+  chk('原因是 COUPON_EXHAUSTED 而不是 COUPON_EXPIRED', r.code === 'COUPON_EXHAUSTED', r.code || '(无 code)');
+  DB.coupons.pop();
+  S.state.cart = []; S.state.coupon = null; S.saveState();
 }
 
 /* ---------- 6. 退款回补 ---------- */

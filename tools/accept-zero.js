@@ -407,7 +407,7 @@ async function main() {
   const stockBefore = (await req('/api/v1/admin/products/' + P1.id)).json.data.variants.find(v => v.metal === 'Gold').stock;
   const o1 = await req('/api/v1/orders', { method: 'POST', headers: { 'Idempotency-Key': 'az-' + SUF + '-1' }, body: orderBase });
   const O1 = (okBody(o1) && okBody(o1).order) || null;
-  chk('P7', '下单成功返回订单号', o1.status === 201 && O1 && /^#TG\d+$/.test(O1.number), `HTTP ${o1.status} ${o1.text.slice(0, 160)}`);
+  chk('P7', '下单成功返回订单号', o1.status === 201 && O1 && /^#LG\d+$/.test(O1.number), `HTTP ${o1.status} ${o1.text.slice(0, 160)}`);
   created.orders.push(O1.number);
   eq('P7', '订单初始状态 paid', O1.status, 'paid');
   eq('P7', '订单金额与报价一致', O1.total, Q1.total);

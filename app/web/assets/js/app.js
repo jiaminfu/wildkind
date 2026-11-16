@@ -1873,11 +1873,19 @@
   });
 
   S.onClick('restock', async function (el) {
+    /* 数量取自同一行的输入框。默认 20，但允许任意整数 —— 负数用于核减
+       （盘点少了 2 件、退货缺件），接口本来就支持，界面不该替运营做主。 */
+    var box = el.parentNode && el.parentNode.querySelector('.rqty');
+    var qty = Math.floor(Number(box ? box.value : 20));
+    if (!Number.isFinite(qty) || qty === 0) {
+      S.toast('Enter a whole number other than 0', 'err');
+      return;
+    }
     try {
       var res = await API.post('/admin/products/' + encodeURIComponent(el.dataset.id) +
         '/variants/' + encodeURIComponent(el.dataset.sku) + '/restock',
-        { qty: 20, reason: 'manual-restock' }, { auth: true });
-      S.toast('+20 → ' + res.data.stock + ' on hand', 'ok');
+        { qty: qty, reason: 'manual-restock' }, { auth: true });
+      S.toast((qty > 0 ? '+' + qty : String(qty)) + ' → ' + res.data.stock + ' on hand', 'ok');
       render();
     } catch (e) { S.toast(e.message, 'err'); }
   });
@@ -1913,10 +1921,18 @@
 
   /* --- 评价审核 --- */
   S.onClick('modreview', async function (el) {
+    var to = el.dataset.to;
+    var body = { status: to };
+    if (to === 'rejected') {
+      /* 拒绝理由是内部记录，不展示给客户。取消（null）= 不改状态，
+         空字符串 = 就是要拒、但不想写理由（垃圾评论一眼可判）。 */
+      var why = window.prompt('Why reject this review? (optional, kept internally)', '');
+      if (why === null) return;
+      body.reason = why;
+    }
     try {
-      await API.patch('/admin/reviews/' + encodeURIComponent(el.dataset.id),
-        { status: el.dataset.to }, { auth: true });
-      S.toast('Review ' + el.dataset.to, 'ok');
+      await API.patch('/admin/reviews/' + encodeURIComponent(el.dataset.id), body, { auth: true });
+      S.toast(to === 'rejected' ? 'Review rejected' : 'Review ' + to, 'ok');
       render();
     } catch (e) { S.toast(e.message, 'err'); }
   });

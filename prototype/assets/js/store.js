@@ -537,8 +537,8 @@
 
   /* ---------------- 订单完成 ---------------- */
   function orderDone(r) {
-    // 订单号形如 #TG1132，URL 里需转义成 %23；这里兼容三种写法：
-    // %23TG1132 / TG1132 / #TG1132
+    // 订单号形如 #LG1132，URL 里需转义成 %23；这里兼容三种写法：
+    // %23TG1132 / TG1132 / #LG1132
     var key = String(r.seg[1] || '');
     try { key = decodeURIComponent(key); } catch (e) { }
     var bare = key.replace(/^#/, '');
@@ -609,12 +609,12 @@
       '<h1>Track your order</h1>' +
       '<p>Enter your order number and the email you checked out with. No account needed.</p>' +
       '<form data-act="lookup">' +
-      '<div class="fld"><label>Order number</label><input name="number" placeholder="#TG1041"></div>' +
+      '<div class="fld"><label>Order number</label><input name="number" placeholder="#LG1041"></div>' +
       '<div class="fld"><label>Email</label><input name="email" type="email" placeholder="you@email.com"></div>' +
       '<button class="btn btn--full" type="submit" style="margin-top:8px">Find my order</button></form>' +
       box +
       '<div style="margin-top:34px;padding-top:20px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted)">' +
-      '<p style="margin-bottom:6px">Just placed an order? Your number starts with <b>#TG</b> and was emailed to you.</p>' +
+      '<p style="margin-bottom:6px">Just placed an order? Your number starts with <b>#LG</b> and was emailed to you.</p>' +
       '<p>Need help? <a href="#/pages/contact" class="link-u">Contact us</a> — we answer within one business day.</p></div>' +
       '</div></div>';
   }
