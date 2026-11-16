@@ -261,10 +261,14 @@
           : '<span class="sub">' + (i.isGift ? 'gift' : '—') + '</span>') + '</td></tr>';
     }).join('');
 
+    /* 状态流转按钮必须长得像「动作」，不能像「状态」。
+       原来只写状态名（Completed / Cancelled），和左边那枚状态徽章并排放在一行，
+       两个都是"边框 + 大写小字"，肉眼读成「这单既是 Shipped 又是 Completed」。
+       运营要判断的是"当前是什么状态"，看错一次就会漏发或错发。 */
     var acts = transitions.map(function (t) {
       if (t === 'refunded') return '';
       return '<button class="abtn" data-act="ostatus" data-num="' + U.esc(o.number) + '" data-to="' + t + '">' +
-        t.charAt(0).toUpperCase() + t.slice(1) + '</button>';
+        'Mark as ' + t.charAt(0).toUpperCase() + t.slice(1).toLowerCase() + '</button>';
     }).join('');
 
     return '<div class="panel"><div class="panel__hd"><h2>' + U.esc(o.number) + '</h2>' +
@@ -911,7 +915,11 @@
         (also.length ? '<br><span class="sub">also ' + also.map(function (r) {
           return '<span class="sub c-' + r + '">' + U.esc(r.charAt(0).toUpperCase() + r.slice(1)) + '</span>';
         }).join(' · ') + '</span>' : '') + '</td>' +
-        '<td style="text-align:right"><button class="abtn sm danger" data-act="del-coupon" data-code="' + U.esc(c.code) + '">Delete</button></td></tr>';
+        '<td style="text-align:right;white-space:nowrap">' +
+        '<button class="abtn sm" data-act="toggle-coupon" data-code="' + U.esc(c.code) +
+        '" data-to="' + (c.status === 'disabled' ? 'active' : 'disabled') + '">' +
+        (c.status === 'disabled' ? 'Enable' : 'Disable') + '</button> ' +
+        '<button class="abtn sm danger" data-act="del-coupon" data-code="' + U.esc(c.code) + '">Delete</button></td></tr>';
     }).join('');
 
     return '<div class="kpis">' +

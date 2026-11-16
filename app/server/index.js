@@ -63,9 +63,17 @@ const blogPage = require('./routes/blog-page');
    生产环境不设该变量，这个路由根本不存在（不是靠权限挡，而是压根没注册）。 */
 if (process.env.ALLOW_TEST_RESET === '1') {
   router.post('/api/v1/__test/reset', (req, res) => {
-    const baseline = path.join(store.DATA_DIR, 'db.seed.json');
+    /* 两套基线，按用途选：
+         seed  （默认）—— 24 件商品的回归基线，接口用例的断言依赖这些具体条数
+         empty        —— 只有 settings / staff / pages，用于「模拟真实运营从零建数据」
+       复位接口以前写死 db.seed.json，于是想在空库上测就只能手动 copyFile，
+       一不留神把回归基线也改了。 */
+    const fixture = String((req.body && req.body.fixture) || (req.query && req.query.fixture) || 'seed');
+    const file = fixture === 'empty' ? 'db.empty.json' : 'db.seed.json';
+    const baseline = path.join(store.DATA_DIR, file);
     if (!fs.existsSync(baseline)) {
-      throw new ApiError(500, 'NO_BASELINE', '缺少基线快照 db.seed.json，请先运行 node app/server/seed.js');
+      throw new ApiError(500, 'NO_BASELINE', '缺少基线快照 ' + file +
+        '，请先运行 node app/server/seed.js' + (fixture === 'empty' ? ' --empty' : ''));
     }
 
     /* 会话必须跨复位保留。
@@ -83,6 +91,7 @@ if (process.env.ALLOW_TEST_RESET === '1') {
     send(res, 200, {
       data: {
         reset: true,
+        fixture: fixture,
         products: db.products.length,
         orders: db.orders.length,
         coupons: db.coupons.length,

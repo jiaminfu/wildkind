@@ -181,9 +181,11 @@
      存储字段只有运营手动停用时才会变，过期和发满都不会自动改它。 */
   function couponState(c) {
     var now = Date.now();
+    /* status 只有一个人工取值 disabled（运营关掉）。过期与未开始一律由日期算，
+       不再读存储的 expired / scheduled —— 那两个值已废除，见 pricing.js。 */
     var ends = c.endsAt || c.expiresAt;
     var endsAt = ends ? new Date(String(ends).length === 10 ? ends + 'T23:59:59Z' : ends).getTime() : null;
-    if (c.status === 'expired' || (endsAt && endsAt < now)) return 'expired';
+    if (endsAt && endsAt < now) return 'expired';
     if (c.status === 'disabled') return 'disabled';
     if (typeof c.limit === 'number' && (c.used || 0) >= c.limit) return 'exhausted';
     var startsAt = c.startsAt ? new Date(String(c.startsAt).length === 10 ? c.startsAt + 'T00:00:00Z' : c.startsAt).getTime() : null;

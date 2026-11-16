@@ -99,8 +99,11 @@
       heroTitle +
       '<p class="hero__desc">' + esc(c.heroBody || '') + '</p>' +
       '<div class="hero__actions">' +
-      '<a href="/#/collections/best-sellers" class="btn">Shop best sellers</a>' +
-      '<a href="/#/collections/new" class="btn btn--ghost">What\'s new</a></div>' +
+      '<a href="' + ui.shopEntry().href + '" class="btn">' + ui.shopEntry().label + '</a>' +
+      /* 「What's new」只在 new 集合真的存在时才出现。
+         写死一个 #/collections/new，新站还没建它就点进报错页 —— 首屏两个按钮坏一个。 */
+      ((S.DB.collections || []).some(function (c) { return c.handle === 'new' && c.visible !== false; })
+        ? '<a href="/#/collections/new" class="btn btn--ghost">What\'s new</a>' : '') + '</div>' +
       '<div class="hero__meta">' +
       '<div><b>316L</b>surgical steel</div>' +
       '<div><b>PVD</b>colour lock</div>' +
@@ -439,7 +442,7 @@
       return '<div class="wrap"><div class="collhead"><h1>Your bag</h1></div>' +
         '<div class="empty" style="padding:80px 0;text-align:center"><h3>Your bag is empty</h3>' +
         '<p style="color:var(--muted);margin:10px 0 22px">Start with the pieces everyone reorders.</p>' +
-        '<a class="btn" href="/#/collections/best-sellers">Shop best sellers</a></div></div>';
+        '<a class="btn" href="' + ui.shopEntry().href + '">' + ui.shopEntry().label + '</a></div></div>';
     }
     var rows = lines.map(function (l) {
       return '<div class="cline">' +

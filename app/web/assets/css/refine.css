@@ -156,7 +156,7 @@ select:focus-visible, textarea:focus-visible, .card__media:focus-visible{
 .card__swrow i.silver{background:linear-gradient(140deg,#E4E4E2,#A9A9A6)}
 .card__swrow i.rose{background:linear-gradient(140deg,#EFC9B8,#C9947C)}
 .card__swrow span{font-size:var(--t1); color:var(--muted); letter-spacing:.03em; margin-left:2px}
-.card__body{padding:var(--sp3) 0 0; gap:var(--sp1)}
+.card__body{padding:var(--sp3) 0 0; gap:var(--sp1); flex:1}
 .card__title{font-size:var(--t3); line-height:1.4; letter-spacing:0; color:var(--ink)}
 .card__title:hover{color:var(--sea)}
 .card__rate{font-size:var(--t1); color:var(--muted-2); gap:6px; letter-spacing:.02em}
@@ -165,8 +165,11 @@ select:focus-visible, textarea:focus-visible, .card__media:focus-visible{
 .card__price b{font-size:var(--t3); font-weight:600}
 .card__price s{font-size:var(--t2); color:var(--muted-2)}
 .card__price em{display:none}                /* 与角标信息重复，删掉减噪 */
+/* margin-top:auto 而不是固定间距：有多金属色的商品比单色商品多一行色点，
+   用固定间距会让同一行的 Add to bag 高低错开 24px，网格看起来像没对齐。
+   auto 把按钮压到卡片底部，最小间距由 .card__price 的 margin-bottom 兜住。 */
 .card__add{
-  margin-top:var(--sp3); height:38px;
+  margin-top:auto; height:38px;
   border:1px solid var(--line-2); background:transparent; color:var(--ink-2);
   font-size:var(--t1); letter-spacing:.14em; text-transform:uppercase; font-weight:500;
   transition:background .18s, color .18s, border-color .18s;
@@ -746,3 +749,50 @@ body.ck-open{padding-bottom:calc(var(--ckh, 74px) + 14px)}
   border-radius:999px;color:var(--muted);text-decoration:none;background:#fff}
 .admrange a:hover{border-color:var(--ink);color:var(--ink)}
 .admrange a.on{background:var(--ink);border-color:var(--ink);color:#fff}
+
+/* ---------- 触屏可点区域 ----------
+   头部图标视觉上仍是 22px，但 .icon-btn 的实际可点盒子只有 22×22 ——
+   远低于 Apple HIG 44pt / Material 48dp 的底线，手指按下去经常落空。
+   用伪元素把命中区扩到 44×44：只扩透明区域，不参与排版，视觉节奏完全不变。
+   只在粗指针（触屏）设备上生效，桌面鼠标的精确点击不受影响。 */
+@media (pointer:coarse){
+  .icon-btn::after{content:''; position:absolute; inset:-11px; border-radius:10px}
+  /* 最右那枚（购物袋）的命中区改为向左扩。
+     四枚图标是贴着头右边缘排的，往右扩 11px 会顶出视口 —— 实测整页多出 4px 横向滚动。
+     向左扩虽然会和前一枚的命中区叠 9px，但两块区域的交点只落在两道图标的空隙里，
+     按到图标本体时归属仍然是确定的。 */
+  .hdr__tools .icon-btn:last-child::after{left:-22px; right:0}
+
+  /* 同一批"看得见但按不准"的小按钮：汉堡 34×34、抽屉关闭 34×34。
+     它们不是 .icon-btn，得单独给一次，否则张开手机菜单、关掉筛选抽屉这两步最容易点空。 */
+  .mob-menu-btn, .fdrawer__x, .drawer__x, .search__x{position:relative}
+  .mob-menu-btn::after, .fdrawer__x::after, .drawer__x::after, .search__x::after{
+    content:''; position:absolute; inset:-8px; border-radius:10px;
+  }
+
+  /* 商品卡右上角的收藏心。32×32，实测命中率只有 36% ——
+     它在卡片边缘，手指按偏一点就落到图片上看大图去了，收藏很难成功。
+     扩到 44×44 后仍留在卡片内（距上/右各 10px），不会盖到相邻卡片。 */
+  .card__wish::after{content:''; position:absolute; inset:-6px; border-radius:50%}
+
+  /* 首屏轮播的指示条：视觉上是 22×2 的一道细线，可点区域也就只有 44 平方像素，
+     在触屏上等于点不到。上下各补 10px、左右各补 4px，变成 30×22 的透明热区。 */
+  .hero__dots i{position:relative}
+  .hero__dots i::after{content:''; position:absolute; inset:-10px -4px}
+}
+
+/* ---------- 360px 以下的头部 ----------
+   实测：320px 视口下 .hdr__tools 右边缘到 383px，整页横向溢出 63px。
+   原因是四枚图标 + 20px 字标 + 20px 内边距在 320 里放不下。
+   这一段只做"挤进窄屏"的收窄，不删任何入口。 */
+@media (max-width:360px){
+  :root{--pad:14px}
+  .hdr__inner{gap:6px}
+  .brand__word{font-size:16px; letter-spacing:.14em; margin-right:-.14em}
+  .brand__mark{width:16px; height:16px}
+  .hdr__tools{gap:6px}
+  .icon-btn{width:20px; height:20px}
+  .icon-btn svg{width:16px; height:16px}
+  /* 命中区按 20px 盒子重新算，仍是 44×44 */
+  .icon-btn::after{inset:-12px}
+}

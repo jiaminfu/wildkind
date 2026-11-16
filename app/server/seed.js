@@ -21,6 +21,13 @@ function readSeed() {
   return JSON.parse(src.slice(i, j + 1));
 }
 
+/* --empty：只留功能，不留数据。
+   用途是「像刚部署一样」验一遍 —— 空站点会长什么样、运营从零点第一件商品
+   要几步、空列表有没有空状态提示。演示数据永远不会暴露这些问题。
+   保留的：settings（运费/免邮/店铺开关）、staff（否则没人能登录）、pages（栏目结构）。
+   清空的：商品/集合/订单/客户/券/评价/流水/博客/定制需求。 */
+const EMPTY = process.argv.indexOf('--empty') >= 0;
+
 function nextSeq(orders) {
   return orders.reduce((max, o) => {
     const m = /(\d+)\s*$/.exec(String(o.number || ''));
@@ -93,6 +100,9 @@ const db = {
     currency: 'USD',
     seededAt: new Date().toISOString(),
     seedSource: 'prototype/assets/js/data.js',
+    /* 预渲染缓存的版本号。缺失时 normalize 会补 1，但补出来的那次不会
+       让已缓存的博客页失效 —— 显式写进来，基线本身就带正确起点。 */
+    postsRev: 1,
   },
   settings: Object.assign({}, seed.settings, {
     // 后台可改、前台必须跟着变的一组开关
@@ -121,6 +131,16 @@ const db = {
   }, c)),
   reviews: seed.reviews,
   giftRule: seed.giftRule,
+
+  /* ---- 内容与服务端独有 ----
+     这三项以前不在种子里，靠 store.normalize() 兜底补。后果是基线快照
+     db.seed.json 只有 16 个键、运行库有 19 个：测试复位时 copyFileSync 覆盖，
+     pages 与 posts 当场回退到出厂默认 —— 运营改过的 11 个内容页文案、
+     3 篇博客的标题正文全部静默丢失，而复位接口只返回商品/订单数，看不出来。
+     种子里显式写全，基线才是「一个内容完整的干净库」。 */
+  pages: JSON.parse(JSON.stringify(require('./lib/pages-default'))),
+  posts: JSON.parse(JSON.stringify(require('./lib/posts-default'))),
+  customRequests: [],
 
   /* ---- 服务端独有 ---- */
   staff: [
@@ -155,6 +175,26 @@ const db = {
   sequences: { order: nextSeq(seed.orders) },
 };
 
+/* 空库模式：把演示数据整段拿掉，只留能跑起来的骨架。 */
+if (EMPTY) {
+  db.collections = [];
+  db.products = [];
+  db.orders = [];
+  db.customers = [];
+  db.coupons = [];
+  db.reviews = [];
+  db.posts = [];
+  db.customRequests = [];
+  db.stockLedger = [];
+  db.auditLog = [];
+  db.quotes = [];
+  db.sequences = { order: 1001 };
+  /* 赠品规则指向的 SKU 已经不存在，留着会让后台显示「满 $120 送某款」但送不出来。
+     空库里清掉，运营建好商品后再自己设。 */
+  db.giftRule = { threshold: 0, sku: '', name: '', maxPerOrder: 1 };
+  db.settings.giftThreshold = 0;
+}
+
 // 流水由真实订单推导，必须在 products / orders 就位之后再算
 db.stockLedger = buildLedger(db);
 
@@ -163,12 +203,19 @@ fs.writeFileSync(OUT, JSON.stringify(db, null, 1), 'utf8');
 
 /* 同时留一份基线快照。自动化测试会改数据（下单、退款、改价），
    没有基线就只能靠「重跑 seed + 重启服务」才能重复跑，测试就不是可重复的了。
-   测试开跑前把 SEED_OUT 拷回 db.json 再让服务 reload 即可。 */
-const SEED_OUT = path.join(path.dirname(OUT), 'db.seed.json');
-fs.writeFileSync(SEED_OUT, JSON.stringify(db, null, 1), 'utf8');
+   测试开跑前把 SEED_OUT 拷回 db.json 再让服务 reload 即可。
+
+   --empty 必须写到另一个文件。
+   以前两种情况都写 db.seed.json，于是「清空数据做一轮运营模拟」这个动作
+   会顺手把 24 件商品的回归基线覆盖成空库 —— 紧接着跑 api-test 就是一片红，
+   而且报错看起来像"接口坏了"，不像"基线被自己删了"。两个用途不同，文件就该分开：
+     db.seed.json  —— 演示/回归基线（24 商品，断言依赖具体条数）
+     db.empty.json —— 空库基线（只有 settings / staff / pages，用于运营模拟） */
+const BASELINE = path.join(path.dirname(OUT), EMPTY ? 'db.empty.json' : 'db.seed.json');
+fs.writeFileSync(BASELINE, JSON.stringify(db, null, 1), 'utf8');
 
 console.log('已生成 ' + OUT);
-console.log('       ' + SEED_OUT + '（基线快照，供测试复位）');
+console.log('       ' + BASELINE + (EMPTY ? '（空库基线，供运营模拟复位）' : '（回归基线，供测试复位）'));
 console.log('  商品 %d · 集合 %d · 订单 %d · 客户 %d · 优惠码 %d · 评价 %d',
   db.products.length, db.collections.length, db.orders.length,
   db.customers.length, db.coupons.length, db.reviews.length);

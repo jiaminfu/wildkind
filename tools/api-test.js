@@ -651,6 +651,52 @@ async function call(method, path, body, headers) {
   chk('limit=0 立刻报发满', zGone.status === 422 && zGone.body.error.code === 'COUPON_EXHAUSTED',
     zGone.body.error && zGone.body.error.code);
 
+  /* --- 9f-2. 启用 / 停用：券唯一需要人工干预的动作 ---
+     以前没有这个入口，运营想停一张券只能改 Ends 到昨天或把 Limit 改成 Used，
+     两个都会把「档期」「名额」这两个事实写坏。 */
+  const offC = await call('POST', '/api/v1/admin/coupons',
+    { code: 'APIOFF', type: 'percent', value: 5 }, AUTH);
+  chk('建一张无日期无上限的券', offC.status === 201 && offC.body.data.state === 'active',
+    offC.body.data && offC.body.data.state);
+
+  const okUse = await call('POST', '/api/v1/coupons/validate', { code: 'APIOFF', items: oneUnit });
+  chk('停用前可正常校验', okUse.status === 200, okUse.status);
+
+  const off = await call('PATCH', '/api/v1/admin/coupons/APIOFF', { status: 'disabled' }, AUTH);
+  chk('停用成功且返回派生 state', off.status === 200 && off.body.data.state === 'disabled',
+    off.body.data && off.body.data.state);
+
+  const offUse = await call('POST', '/api/v1/coupons/validate', { code: 'APIOFF', items: oneUnit });
+  chk('停用后报 COUPON_INACTIVE', offUse.status === 422 &&
+    offUse.body.error.code === 'COUPON_INACTIVE', offUse.body.error && offUse.body.error.code);
+  chk('停用文案是 available 不是 active（提前作废也走这条路）',
+    /no longer available/.test((offUse.body.error || {}).message || ''),
+    (offUse.body.error || {}).message);
+
+  const backOn = await call('PATCH', '/api/v1/admin/coupons/APIOFF', { status: 'active' }, AUTH);
+  chk('重新启用成功', backOn.status === 200 && backOn.body.data.state === 'active',
+    backOn.body.data && backOn.body.data.state);
+  const okUse2 = await call('POST', '/api/v1/coupons/validate', { code: 'APIOFF', items: oneUnit });
+  chk('启用后又能用', okUse2.status === 200, okUse2.status);
+
+  /* expired / scheduled 不再是可存储的状态 —— 传进来必须被挡住，
+     否则库里会重新长出跟日期打架的快照字段 */
+  const badSt = await call('PATCH', '/api/v1/admin/coupons/APIOFF', { status: 'expired' }, AUTH);
+  chk('PATCH 传 expired 被拒 400', badSt.status === 400, badSt.status);
+  const badNew = await call('POST', '/api/v1/admin/coupons',
+    { code: 'APIBADST', type: 'percent', value: 5, status: 'scheduled' }, AUTH);
+  chk('建券传 scheduled 被拒 400', badNew.status === 400, badNew.status);
+
+  const miss = await call('PATCH', '/api/v1/admin/coupons/NOSUCHCODE', { status: 'disabled' }, AUTH);
+  chk('停用不存在的券 404', miss.status === 404, miss.status);
+
+  /* 停用不影响历史订单的折扣：券是「以后不能用」，不是「以前那笔要退」 */
+  const offList = await call('GET', '/api/v1/admin/coupons', undefined, AUTH);
+  const summerSt = (offList.body.data || []).find(c => c.code === 'SUMMER20');
+  chk('SUMMER20 仍派生为 expired（种子里的 status 已归一为 active）',
+    summerSt && summerSt.state === 'expired', summerSt && summerSt.state);
+
+  await call('DELETE', '/api/v1/admin/coupons/APIOFF', undefined, AUTH);
   await call('DELETE', '/api/v1/admin/coupons/APIONE', undefined, AUTH);
   await call('DELETE', '/api/v1/admin/coupons/APIZERO', undefined, AUTH);
 

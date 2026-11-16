@@ -244,7 +244,7 @@
       body = '<div style="text-align:center;padding:70px 0;color:var(--muted)">' +
         '<p style="font-family:var(--serif);font-size:22px;color:var(--ink);margin-bottom:8px">Your bag is empty</p>' +
         '<p style="font-size:12px;margin-bottom:20px">Steel that stays gold. Start with a best seller.</p>' +
-        '<a href="/#/collections/best-sellers" class="btn" data-act="close-cart">Shop best sellers</a></div>';
+        '<a href="' + shopEntry().href + '" class="btn" data-act="close-cart">' + shopEntry().label + '</a></div>';
     } else {
       body = lines.map(function (l) {
         if (l.isGift) {
@@ -345,6 +345,20 @@
       '</div></div>';
   }
 
+  /* 「去看看有什么可买」的落点。
+     以前三处入口（首页主按钮、空购物车、空收藏）都写死 #/collections/best-sellers。
+     新店刚上传完第一件商品、还没来得及建策展集合时，首屏主按钮点下去是
+     "That collection does not exist." + "Something went wrong" —— 第一下点击就撞墙。
+     优先用运营策展的 best-sellers（意图优先），没有就退到虚拟集合 all（永远存在）。 */
+  function shopEntry() {
+    var cols = (S.DB.collections || []);
+    var hasBest = cols.some(function (c) { return c.handle === 'best-sellers' && c.visible !== false; });
+    if (hasBest) return { href: '/#/collections/best-sellers', label: 'Shop best sellers' };
+    var first = cols.filter(function (c) { return c.visible !== false && c.nav !== false; })[0];
+    if (first) return { href: '/#/collections/' + first.handle, label: 'Shop ' + String(first.title || 'all').toLowerCase() };
+    return { href: '/#/collections/all', label: 'Shop all' };
+  }
+
   function shell(body, r) {
     return header(r) + '<main id="main">' + body + '</main>' + footer() +
       cartDrawer() + searchLayer() + mobileMenu() + cookieBar() +
@@ -410,6 +424,7 @@
     icon: icon, MARK: MARK, header: header, footer: footer, shell: shell,
     payMark: payMark,
     productCard: productCard, cartDrawer: cartDrawer, searchLayer: searchLayer,
+    shopEntry: shopEntry,
     /* mobileMenu / cookieBar 原本只在 shell() 内部用，没导出。
        博客的真路径页由服务端预渲染，首屏不含这些交互层（它们要 localStorage），
        得由 app.js 接管时单独补挂 —— 所以必须能从外部调用。 */

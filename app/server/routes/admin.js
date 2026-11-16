@@ -1513,13 +1513,53 @@ function routes(router) {
       limit: b.limit == null ? null : Math.max(0, parseInt(b.limit, 10)),
       startsAt: b.startsAt || null,
       endsAt: b.endsAt || null,
-      status: b.status || 'active',
+      /* status 只剩两个合法值：active（默认）/ disabled（人工关掉）。
+         expired 与 scheduled 已从「可存储的状态」降级为「按日期算出来的结果」，
+         传进来直接 400 —— 否则库里会重新长出跟时间打架的快照字段。 */
+      status: (function () {
+        const st = b.status == null ? 'active' : String(b.status);
+        if (['active', 'disabled'].indexOf(st) < 0) {
+          throw E.badRequest('Status must be active or disabled.',
+            [{ field: 'status', message: 'Expired and scheduled are derived from the dates, not stored.' }]);
+        }
+        return st;
+      })(),
       note: String(b.note || '').slice(0, 200),
     };
     db.coupons.push(coupon);
     audit(me, 'coupon.create', code);
     store.flush();
-    ok(res, coupon, 201);
+    ok(res, Object.assign({}, coupon, pricing.couponState(coupon)), 201);
+  });
+
+  /* 启用 / 停用。这是券唯一需要人工干预的动作，也是原来缺掉的那一步 ——
+     以前想停一张券只能改 Ends 到昨天，或者把 Limit 改成当前 Used，
+     两个都是绕路，还会把「名额」和「档期」这两个事实改坏。 */
+  router.patch('/api/v1/admin/coupons/:code', (req, res) => {
+    const me = auth.requireAuth(req);
+    auth.requirePerm(me, 'coupons:write');
+    const db = store.get();
+    const code = String(req.params.code).toUpperCase();
+    const c = db.coupons.find(x => x.code.toUpperCase() === code);
+    if (!c) throw E.notFound('Coupon not found.');
+
+    const b = req.body || {};
+    const status = b.status == null ? '' : String(b.status);
+    if (['active', 'disabled'].indexOf(status) < 0) {
+      throw E.badRequest('Status must be active or disabled.',
+        [{ field: 'status', message: 'Only the on/off switch can be changed here.' }]);
+    }
+    const before = c.status === 'disabled' ? 'disabled' : 'active';
+    if (before === status) {
+      /* 重复切换不写审计、不动 updatedAt：运营连点两下不该在日志里留两条 */
+      ok(res, Object.assign({}, c, pricing.couponState(c)));
+      return;
+    }
+    c.status = status;
+    c.updatedAt = new Date().toISOString();
+    audit(me, 'coupon.update', code, { before: before, after: status });
+    store.flush();
+    ok(res, Object.assign({}, c, pricing.couponState(c)));
   });
 
   router.delete('/api/v1/admin/coupons/:code', (req, res) => {

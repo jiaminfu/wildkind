@@ -30,6 +30,17 @@ function normalize(d) {
   if (!Array.isArray(d.customRequests)) d.customRequests = [];
   if (!d.sequences) d.sequences = {};
 
+  /* ---------------- 优惠券 status 归一 ----------------
+     老库里 status 有四个取值，其中 expired / scheduled 与日期字段表达的是
+     同一件事，两处并存必然打架（改 Ends 忘改 status）。现在只保留 active /
+     disabled，其余一律归一到 active —— 展示结果不变，因为过期与未开始都由
+     startsAt / endsAt 现算。 */
+  if (Array.isArray(d.coupons)) {
+    d.coupons.forEach(c => {
+      if (c && c.status !== 'disabled') c.status = 'active';
+    });
+  }
+
   /* ---------------- 博客 ----------------
      只在缺失时灌种子，不覆盖已有数据 —— 与 pages / customRequests 的迁移方式一致。
      三篇旧文现在就在前台 journal 页可见，迁移成草稿等于内容下线，是功能回退。 */

@@ -273,7 +273,13 @@
 
     seo = null;   // 每次渲染重置，避免上一页的 SEO 上下文串到这一页
 
-    document.body.classList.remove('menu-open', 'search-open');
+    /* 每次换页都要把浮层收起来。
+       这里原来只清 menu-open / search-open / filter-open，漏了 drawer-open。
+       加购会自动弹开购物车抽屉（见 add 处理器），此时用户按浏览器后退、
+       或点抽屉外任何会换页的链接，页面已经换掉了，抽屉还悬在新页面上 ——
+       在新的页面右侧看到「YOUR BAG (1)」盖住正文，挡住一半可点区域。
+       浮层属于「上一次操作」的临时状态，路由一变就该归零。 */
+    document.body.classList.remove('menu-open', 'search-open', 'drawer-open');
     if (seg[0] !== 'admin') document.body.classList.remove('filter-open');
 
     try {
@@ -398,7 +404,9 @@
 
   /* ---------------- 集合页 ---------------- */
   async function renderCollection(r) {
-    var handle = r.seg[1] || 'best-sellers';
+    /* 没带 handle 时用「当前真实可用的入口」，不再硬编码 best-sellers：
+       新站还没建这个集合时，/#/collections 会直接落到报错页。 */
+    var handle = r.seg[1] || ui.shopEntry().href.split('/').pop();
     var qs = new URLSearchParams();
     ['metal', 'price', 'stock', 'sort', 'page', 'q', 'cat', 'motif', 'set'].forEach(function (k) {
       if (r.query[k]) qs.set(k, r.query[k]);
@@ -1908,6 +1916,21 @@
       S.toast('Code created — live on the storefront', 'ok');
       render();
     } catch (e) { S.toast(e.message, 'err'); }
+  });
+
+  /* 启用 / 停用。停用不动 Ends、不动 Limit —— 那两个字段是「档期」和「名额」，
+     把停用实现成改它们，等于用一次操作写坏两个事实。 */
+  S.onClick('toggle-coupon', async function (el) {
+    var to = el.dataset.to;
+    if (to === 'disabled' && !confirm('Disable code ' + el.dataset.code +
+      '? It stops working immediately, but past orders keep their discount.')) return;
+    el.disabled = true;
+    try {
+      var res = await API.patch('/admin/coupons/' + encodeURIComponent(el.dataset.code),
+        { status: to }, { auth: true });
+      S.toast(el.dataset.code + ' → ' + (res.data && res.data.state ? res.data.state : to), 'ok');
+      render();
+    } catch (e) { el.disabled = false; S.toast(e.message, 'err'); }
   });
 
   S.onClick('del-coupon', async function (el) {

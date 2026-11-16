@@ -86,6 +86,22 @@ const get = u => new Promise((res, rej) => { http.get(u, r => { let d = ''; r.on
   await send('Network.setCacheDisabled', { cacheDisabled: true });
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
 
+  /* 先复位到演示基线。
+     这套用例的断言里有具体条数（首页卡片 ≥4、商品总数、价格单调），
+     跑在"运营从零建的 1 件商品"那种库上必然红 —— 但红的是数据不够，不是界面坏了。
+     自动化套件不该依赖"当前库里恰好有什么"，自己把前置状态摆好。
+     服务没开复位端点（缺 ALLOW_TEST_RESET=1）时只提示，不中断。 */
+  try {
+    const r = await fetch(BASE + '/api/v1/__test/reset', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fixture: 'seed' }),
+    });
+    const j = await r.json();
+    console.log('已复位到演示基线：商品 ' + (j.data ? j.data.products : '?') + ' 件');
+  } catch (e) {
+    console.log('⚠️ 复位失败（' + e.message + '），按当前库继续');
+  }
+
   const ev = async e => {
     const r = await send('Runtime.evaluate', { expression: e, awaitPromise: true, returnByValue: true });
     if (r.exceptionDetails) throw new Error(r.exceptionDetails.text + ' ' + (r.result && r.result.description || ''));

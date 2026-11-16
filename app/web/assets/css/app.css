@@ -25,6 +25,17 @@ body{
 body.no-scroll{overflow:hidden}
 body.drawer-open, body.menu-open{overflow:hidden}
 img{max-width:100%; display:block}
+/* 图片的 width / height 属性不只是"占位提示"，它们本身就是生效的 CSS 尺寸
+   （HTML 表现性提示，等价于 width:900px; height:900px）。
+   全站所有商品图都带这对属性（用来防布局抖动），于是只要某处 CSS 只收窄了宽度，
+   属性里的 height 就会原样生效 —— 盒子变成一条竖线，aspect-ratio 根本轮不到参与。
+   这个坑已经咬过两次：商品详情缩略图变成 52×900、结算页摘要图变成 269×900。
+
+   修法用 :where() 把特异性压到 0：
+   - 任何 CSS 明确写了 height 的地方（.card__media img{height:100%} 之类）照旧覆盖它；
+   - 只写了 width 的地方，高度就按图片自带比例走，永远不会出现竖条。
+   不给 height:auto 加高特异性，是为了不误伤那些真的需要拉伸裁切的图。 */
+:where(img[width][height]){height:auto}
 a{color:inherit; text-decoration:none}
 button{font-family:inherit; font-size:inherit; cursor:pointer; border:0; background:none; color:inherit}
 input,select,textarea{font-family:inherit; font-size:inherit; color:inherit}
@@ -163,16 +174,19 @@ ul{margin:0; padding:0; list-style:none}
 .card__sw i.gold{background:linear-gradient(140deg,#E3C48B,#B9924F)}
 .card__sw i.silver{background:linear-gradient(140deg,#E4E4E2,#A9A9A6)}
 .card__sw i.rose{background:linear-gradient(140deg,#EFC9B8,#C9947C)}
-.card__body{padding:11px 0 0; display:flex; flex-direction:column; gap:3px}
+.card__body{padding:11px 0 0; display:flex; flex-direction:column; gap:3px; flex:1}
+/* 卡片正文撑满剩余高度，按钮用 auto 外边距贴底。
+   不这样做时，有多金属色的商品（多一行色点）会比单色商品高一行，
+   同一行的 Add to bag 按钮高低错开 —— 网格看起来像没对齐。 */
 .card__title{font-size:12.5px; color:var(--ink); line-height:1.4; letter-spacing:.01em}
 .card__rate{font-size:10px; color:var(--muted); letter-spacing:.02em; display:flex; align-items:center; gap:5px}
 .card__rate .st{color:var(--brass); letter-spacing:.5px; font-size:9.5px}
-.card__price{display:flex; align-items:baseline; gap:7px; margin-top:1px}
+.card__price{display:flex; align-items:baseline; gap:7px; margin-top:1px; margin-bottom:6px}
 .card__price b{font-size:12.5px; font-weight:600; color:var(--ink)}
 .card__price s{font-size:11px; color:var(--muted-2); font-weight:400}
 .card__price em{font-size:9.5px; font-style:normal; color:var(--clay); letter-spacing:.06em; font-weight:600}
 .card__add{
-  margin-top:9px; width:100%; padding:9px; border:1px solid var(--line-2);
+  margin-top:auto; width:100%; padding:9px; border:1px solid var(--line-2);
   font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2);
   background:transparent; transition:.22s;
 }
@@ -230,6 +244,11 @@ ul{margin:0; padding:0; list-style:none}
 .news .btn{border-radius:0}
 
 /* ---------- 页脚 ---------- */
+/* 主内容与页脚之间必须留一段浅色呼吸区。
+   不加这一条时，短页面（查单、定制确认、404）最后一个元素如果是深绿实心按钮，
+   它会直接贴上同样深绿的页脚 —— 两块同色连成一片，按钮的上下边界都消失，
+   用户看不出哪里能点。桌面上尤其明显：按钮居中、页脚通栏，拼成一个 T 形色块。 */
+#main{padding-bottom:clamp(48px,7vw,84px)}
 .ftr{background:var(--sea); color:rgba(250,246,239,.72); padding:54px 0 0; font-size:11.5px}
 .ftr__top{display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:34px; padding-bottom:40px}
 .ftr h5{font-family:var(--sans); font-size:9.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--cream); margin:0 0 14px; font-weight:600}
@@ -274,7 +293,11 @@ ul{margin:0; padding:0; list-style:none}
 .pdp{display:grid; grid-template-columns:1.18fr 1fr; gap:56px; padding:20px 0 60px; align-items:start}
 .gal{display:grid; grid-template-columns:76px 1fr; gap:12px; position:sticky; top:86px}
 .gal__thumbs{display:flex; flex-direction:column; gap:9px}
-.gal__thumbs img{aspect-ratio:4/5; object-fit:cover; cursor:pointer; border:1px solid transparent; opacity:.72; transition:.2s}
+/* 缩略图必须显式 height:auto。
+   图片标签带 width/height 属性（防布局抖动），CSS 只给 width 时，
+   HTML 的 height 属性会直接生效 —— 于是缩略图变成 52px 宽 × 900px 高的一条竖线，
+   aspect-ratio 根本没机会参与。手机上看到的就是「图片没法看」。 */
+.gal__thumbs img{width:100%; height:auto; aspect-ratio:4/5; object-fit:cover; cursor:pointer; border:1px solid transparent; opacity:.72; transition:.2s}
 .gal__thumbs img.on{border-color:var(--sea); opacity:1}
 .gal__main{aspect-ratio:4/5; overflow:hidden; background:var(--cream-d); position:relative}
 .gal__main img{width:100%;height:100%;object-fit:cover}
@@ -438,6 +461,10 @@ body.drawer-open .drawer{transform:none}
 .paysum h4{font-size:11px; letter-spacing:.16em; text-transform:uppercase; font-family:var(--sans); font-weight:600; margin-bottom:14px; color:var(--muted)}
 .paysum__line{display:grid; grid-template-columns:46px 1fr auto; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); align-items:center}
 .paysum__line img{aspect-ratio:4/5; object-fit:cover; width:100%}
+/* 商品图外层是 <picture>（webp 带 source），它才是网格的第一列子元素。
+   picture 默认 inline，宽度收缩到内容宽，`img{width:100%}` 于是相对它算 ——
+   循环依赖被解析成了 269px，把 46px 的图片列撑成正文宽度。显式给它块级和整列宽。 */
+.paysum__line picture{display:block; width:100%}
 .paysum__line div{font-size:11.5px; line-height:1.4}
 .paysum__line span{font-size:10px; color:var(--muted); display:block}
 .mono{font-family:ui-monospace,Consolas,monospace}

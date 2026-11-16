@@ -120,24 +120,27 @@ function couponState(c, now) {
   const t = now == null ? Date.now() : now;
   const reasons = [];
 
+  /* status 只剩一个人工取值：disabled —— 运营手动关掉这张券。
+     原来的 expired / scheduled 两个取值已废除：它们分别等价于
+     "endsAt 已过" 与 "startsAt 未到"，人工再标一遍只会跟时间打架
+     （改了日期忘改 status，两个字段互相打脸）。这两个状态一律由时间派生。
+
+     这也是为什么不再有 PATCH 改 status 之外字段的必要：
+     要停就 disabled，要改档期就改日期，各自只有一个入口。 */
+  if (c.status === 'disabled') reasons.push('disabled');
+
   const ends = c.endsAt || c.expiresAt;
   const endsAt = ends
     ? new Date(String(ends).length === 10 ? ends + 'T23:59:59Z' : ends).getTime()
     : null;
-  if (c.status === 'expired' || (endsAt && endsAt < t)) reasons.push('expired');
-
-  if (c.status === 'disabled') reasons.push('disabled');
+  if (endsAt && endsAt < t) reasons.push('expired');
 
   if (typeof c.limit === 'number' && (c.used || 0) >= c.limit) reasons.push('exhausted');
 
   const startsAt = c.startsAt
     ? new Date(String(c.startsAt).length === 10 ? c.startsAt + 'T00:00:00Z' : c.startsAt).getTime()
     : null;
-  /* 标了 scheduled 却没有开始时间，等于永远开不了 —— 那是配置错误，按失效处理。 */
-  if (c.status === 'scheduled') {
-    if (startsAt && startsAt > t) reasons.push('scheduled');
-    else if (!startsAt) reasons.push('disabled');
-  }
+  if (startsAt && startsAt > t) reasons.push('scheduled');
 
   const order = ['expired', 'disabled', 'exhausted', 'scheduled'];
   let state = 'active';
@@ -158,7 +161,10 @@ function resolveCoupon(db, code, subtotal) {
 
   const st = couponState(c).state;
   if (st === 'expired') throw E.unprocessable('COUPON_EXPIRED', 'This code has expired.');
-  if (st === 'disabled') throw E.unprocessable('COUPON_INACTIVE', 'This code is no longer active.');
+  /* disabled 有两种来源：运营主动停用，或提前作废（还没到期就不发了）。
+     对客户来说都是"这个码不能用了"，所以文案用 available 而不是 active ——
+     "no longer active" 会让昨天还用过的客户怀疑自己拿错了码。 */
+  if (st === 'disabled') throw E.unprocessable('COUPON_INACTIVE', 'This code is no longer available.');
   if (st === 'exhausted') throw E.unprocessable('COUPON_EXHAUSTED', 'This code has reached its limit.');
   if (st === 'scheduled') throw E.unprocessable('COUPON_NOT_STARTED', 'This code is not active yet.');
 

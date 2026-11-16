@@ -3,6 +3,7 @@
 # 两者都含口令 hash 与会话令牌，绝不入库。
 app/server/data/db.json
 app/server/data/db.seed.json
+app/server/data/db.empty.json
 app/server/data/db.json.tmp
 app/server/data/db.json.bak
 data/db.json
