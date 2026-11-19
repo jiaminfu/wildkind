@@ -40,7 +40,14 @@ die()   { red "[x] $*"; exit 1; }
 # 端口从 .env 读，别假设 8080
 HOST_PORT="$(sed -n 's/^HOST_PORT=//p' "$SELF_DIR/.env" 2>/dev/null | tail -1)"
 HOST_PORT="${HOST_PORT:-4600}"
-HEALTH_URL="http://127.0.0.1:$HOST_PORT/api/v1/health"
+
+# 探活地址跟着 BIND_ADDR 走（锚定 172.18.0.1 时 127.0.0.1 无监听）
+BIND_ADDR="$(sed -n 's/^BIND_ADDR=//p' "$SELF_DIR/.env" 2>/dev/null | tail -1)"
+case "${BIND_ADDR:-}" in
+  ''|0.0.0.0|'[::]'|::) PROBE_HOST=127.0.0.1 ;;
+  *)                   PROBE_HOST="$BIND_ADDR" ;;
+esac
+HEALTH_URL="http://$PROBE_HOST:$HOST_PORT/api/v1/health"
 
 OLD_REV="$(git -C "$APP_DIR" rev-parse --short HEAD)"
 step "当前版本 $OLD_REV"

@@ -39,6 +39,14 @@ _running="$(docker ps --filter "name=^${CONTAINER}$" --format '{{.Image}}' 2>/de
 HOST_PORT="$(sed -n 's/^HOST_PORT=//p' "$SELF_DIR/.env" 2>/dev/null | tail -1)"
 HOST_PORT="${HOST_PORT:-4600}"
 
+# 探活地址要跟着 BIND_ADDR 走：绑定到网桥地址（如 172.18.0.1）时 127.0.0.1 上没有监听，
+# 写死 127.0.0.1 会把「服务正常」误判成「服务没起来」
+BIND_ADDR="$(sed -n 's/^BIND_ADDR=//p' "$SELF_DIR/.env" 2>/dev/null | tail -1)"
+case "${BIND_ADDR:-}" in
+  ''|0.0.0.0|'[::]'|::) PROBE_HOST=127.0.0.1 ;;
+  *)                   PROBE_HOST="$BIND_ADDR" ;;
+esac
+
 red()   { printf '\033[31m%s\033[0m\n' "$*"; }
 green() { printf '\033[32m%s\033[0m\n' "$*"; }
 die()   { red "[x] $*"; exit 1; }
@@ -83,10 +91,10 @@ if [ "${1:-}" = "--restore" ]; then
   docker compose start >/dev/null
 
   for i in $(seq 1 20); do
-    if curl -fsS -m 3 "http://127.0.0.1:$HOST_PORT/api/v1/health" >/dev/null 2>&1; then break; fi
+    if curl -fsS -m 3 "http://$PROBE_HOST:$HOST_PORT/api/v1/health" >/dev/null 2>&1; then break; fi
     sleep 1
   done
-  green "已恢复并重启：$(curl -s -m 5 "http://127.0.0.1:$HOST_PORT/api/v1/health")"
+  green "已恢复并重启：$(curl -s -m 5 "http://$PROBE_HOST:$HOST_PORT/api/v1/health")"
   exit 0
 fi
 
